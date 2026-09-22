@@ -59,3 +59,17 @@ describe("site metadata", () => {
     expect(tag("name", "theme-color")).toBe(manifest.theme_color);
   });
 });
+
+// The bundled 月蝕綺譚 material is not ours to license, and the repository's own MIT file
+// sits two directories up where nobody downloading these files would look.
+describe("bundled asset licensing", () => {
+  it("states in public/kitan that MIT does not cover it, for each kind of material", () => {
+    const text = readFileSync(publicFile("kitan/LICENSE"), "utf8");
+    expect(text).toMatch(/MIT/);
+    expect(text).toMatch(/does NOT apply/);
+    for (const marker of ["icon/", "voice/", "sound/", "CC0", "fanworks"]) {
+      expect(text, marker).toContain(marker);
+    }
+    expect(readFileSync(publicFile("kitan/README.md"), "utf8")).toContain("LICENSE");
+  });
+});

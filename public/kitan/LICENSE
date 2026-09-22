@@ -1,0 +1,72 @@
+public/kitan/ の素材について — Assets in this folder
+===================================================
+
+このフォルダの中身には、リポジトリ直下の LICENSE (MIT) は適用されません。
+The MIT license at the root of this repository does NOT apply to anything in this folder.
+
+素材ごとに出どころと条件が違います。下の 3 つに分かれています。
+The material here comes from three different places, on three different terms.
+
+
+1. 画像 — icon/ canon/ cutin/
+------------------------------
+
+出典  『月蝕綺譚 -Luna Occulta-』の公式二次創作資料と素材蔵 (kura.vibe.co.jp)
+権利  原作 (月蝕綺譚 / CryptoNinja) に属します。CC0 ではありません。
+条件  二次創作の掟の範囲でのみ利用できます。掟の範囲内なら許可を取らずに制作・頒布・販売でき、
+      AI に読み込ませることもできます。ただし「公式」を名乗ること、公式と誤認させる見せ方、
+      素材そのままの転載・再配布 (素材集としての配布) は禁じられています。
+正本  https://vibe.co.jp/luna-occulta/fanworks
+      https://www.ninja-dao.com/guidelines
+
+Source  Official fan-work materials for 月蝕綺譚 -Luna Occulta- and its asset vault.
+Rights  Belong to the original work (月蝕綺譚 / CryptoNinja). These are NOT CC0.
+Terms   Usable only within the fan-work guidelines linked above: no permission needed for
+        making, distributing or selling fan works, and AI may read them — but you may not
+        present yourself as official, imply that you are, or redistribute the material
+        as-is (for instance as an asset pack).
+
+
+2. 声 — voice/
+---------------
+
+公式の声見本に添えられた声の設計 (caption と seed) を Irodori-TTS の VoiceDesign モデルに
+渡して、このゲームのセリフ用に生成した mp3 です。公式の声見本そのものではありません。
+公式は「音源を AI に読み込ませてキャラボイスを作るのは可、音源そのままの単体再配布・販売は不可」
+としています。ここで生成した mp3 も同じ扱いにしてください。作品に組み込んで公開するのは
+かまいませんが、音声集として切り出して配らないでください。
+
+Generated for this game with Irodori-TTS, from the voice design (caption and seed) published
+alongside each 御霊's official voice sample. They are not the official samples. The official
+terms allow feeding the samples to an AI to make character voices, but not redistributing or
+selling audio on its own; treat these clips the same way.
+
+
+3. BGM と効果音 — sound/
+-------------------------
+
+出典      宵闇素材庫 https://vibe.co.jp/yoiyami/
+ライセンス CC0 1.0 (パブリックドメイン相当)
+条件      商用利用・改変・再配布すべて自由で、クレジット表記も要りません。
+          このフォルダで自由に使えるのはここだけです。
+
+Source   宵闇素材庫 (Yoiyami Asset Vault), https://vibe.co.jp/yoiyami/
+License  CC0 1.0 — https://creativecommons.org/publicdomain/zero/1.0/
+Terms    Commercial use, modification and redistribution are all free, and no credit is
+         required. This is the only part of this folder you may take freely.
+
+
+取り込みの記録 — How these were built
+--------------------------------------
+
+出典 URL と加工内容は scripts/kitan-assets.json (画像) と scripts/sound-assets.json (音) に
+あり、`pnpm assets:kitan` と `pnpm assets:sound` で再現できます。声の作り方は
+scripts/voice/README.md を見てください。
+
+The source URLs and the processing applied are recorded in scripts/kitan-assets.json (images)
+and scripts/sound-assets.json (sound); `pnpm assets:kitan` and `pnpm assets:sound` rebuild
+them. scripts/voice/README.md covers the voices.
+
+
+本作は『月蝕綺譚 -Luna Occulta-』の非公式な二次創作です。公式とは関係ありません。
+This game is an unofficial fan work. It is not affiliated with the official 月蝕綺譚.

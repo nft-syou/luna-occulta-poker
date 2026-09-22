@@ -208,5 +208,9 @@ Node.js 24 と pnpm が必要です。
 
 ## ライセンス
 
-コードは MIT — [`LICENSE`](LICENSE) を参照。`public/kitan/` の画像・動画・声は『月蝕綺譚』の
-二次創作素材で、掟の範囲でこのゲームが使うために同梱しています。素材集として転載・再配布しないでください。
+コードは MIT — [`LICENSE`](LICENSE) を参照。
+
+`public/kitan/` の素材には **MIT は適用されません**。条件は
+[`public/kitan/LICENSE`](public/kitan/LICENSE) にまとめてあります。画像と声は『月蝕綺譚』の
+二次創作素材で、掟の範囲でこのゲームが使うために同梱しています (素材集としての転載・再配布は
+不可)。`public/kitan/sound/` の BGM と効果音だけは宵闇素材庫の CC0 です。

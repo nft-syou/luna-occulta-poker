@@ -222,6 +222,10 @@ listed in [CHANGELOG.md](CHANGELOG.md).
 
 ## License
 
-The code is MIT — see [`LICENSE`](LICENSE). The images, videos and voices under `public/kitan/`
-are 月蝕綺譚 fan-work materials bundled for this game under its guidelines; do not redistribute
-them as an asset collection.
+The code is MIT — see [`LICENSE`](LICENSE).
+
+**MIT does not cover `public/kitan/`.** Its terms are set out in
+[`public/kitan/LICENSE`](public/kitan/LICENSE): the images and voices are 月蝕綺譚 fan-work
+materials bundled for this game under its guidelines, and may not be redistributed as an asset
+collection. Only the music and effects under `public/kitan/sound/` are free — those are CC0
+from 宵闇素材庫.

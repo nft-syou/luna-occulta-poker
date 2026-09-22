@@ -1,5 +1,8 @@
 # public/kitan — 月蝕綺譚の公式素材
 
+**このフォルダの素材にリポジトリ直下の LICENSE (MIT) は適用されません。条件は
+[LICENSE](LICENSE) を読んでください。**
+
 このディレクトリの画像は『月蝕綺譚 -Luna Occulta-』の公式二次創作資料
 (<https://vibe.co.jp/luna-occulta/fanworks>) と素材蔵 (kura.vibe.co.jp) から取り込んだものです。
 二次創作の掟の範囲で、このゲームが表示するためだけに同梱しています。
