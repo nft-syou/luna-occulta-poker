@@ -254,21 +254,18 @@ export function TableView({
       }
     }
   }, [voice, fxCallouts, fxSpeech, fxCutIn]);
-  // Warm the showcase videos while the first hand is dealt, so a cut-in never buffers. Done
-  // with detached <video preload> elements, not fetch: the app's fetch is Jev's.
+  // Warm the cut-in drawings while the first hand is dealt, so one never pops in blank.
   useEffect(() => {
-    const warm: HTMLVideoElement[] = [];
+    const warm: HTMLImageElement[] = [];
     for (const id of CPU_SPIRIT_IDS) {
-      const url = spirit(id).showcase;
+      const url = spirit(id).cutin;
       if (url === null) continue;
-      const video = document.createElement("video");
-      video.preload = "auto";
-      video.muted = true;
-      video.src = url;
-      warm.push(video);
+      const image = new Image();
+      image.src = url;
+      warm.push(image);
     }
     return () => {
-      for (const video of warm) video.removeAttribute("src");
+      for (const image of warm) image.removeAttribute("src");
     };
   }, []);
   const count = state.seats.length;
@@ -461,12 +458,7 @@ export function TableView({
             <TableFxLayer moves={fx.chipMoves} spots={spots} bigBlind={bigBlind} />
 
             {/* A 御霊's all-in, big pot or bust, over the middle. */}
-            <CutInLayer
-              cutIn={fx.cutIn}
-              spirit={cutInSpirit}
-              reducedMotion={reducedMotion}
-              gate={gate}
-            />
+            <CutInLayer cutIn={fx.cutIn} spirit={cutInSpirit} gate={gate} />
 
             {/* Each seat's live bet, drawn as chips between the player and the middle. */}
             {layout.map(({ seat, player, betX, betY }) => (

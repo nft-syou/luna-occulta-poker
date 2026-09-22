@@ -18,7 +18,7 @@
 喰われた月の下、漆の卓で御霊たちと勾玉を賭けるノーリミット・テキサスホールデム。
 あなたは「あるじどの」として卓に着き、相手は公式設定から性格を写した 5 人の御霊
 — 咲耶・マミ・タルト・孫市・蛇ノ目。御霊たちの一手はすべて
-[TypeSafe Jev](https://typesafe.ai) が考え、席の顔と声、要所のお披露目動画で語ります。
+[TypeSafe Jev](https://typesafe.ai) が考え、席の顔と声、要所のカットインで語ります。
 全席御霊の見物モードもあります。プレイにはあなた自身の TypeSafe API キー、または
 Vercel AI Gateway / ロリポップ！AIゲートウェイ / Cloudflare AI Gateway の設定が必要です。
 
@@ -124,7 +124,7 @@ Node.js 24 と pnpm が必要です。
 
 ## 素材と声
 
-- 顔アイコン・立ち絵・お披露目動画は公式の二次創作資料と素材蔵から `public/kitan/` に取り込んだものです。
+- 顔アイコン・立ち絵・必殺カットインの決め絵は公式の二次創作資料と素材蔵から `public/kitan/` に取り込んだものです。カットインはアニメ webp から決め絵を 1 枚抜き、動きはこちらの演出で付けています。
   出典と加工は `scripts/kitan-assets.json`、再現は `pnpm assets:kitan`。権利は原作にあり、このリポジトリの
   MIT ライセンスの対象ではありません ([public/kitan/README.md](public/kitan/README.md))。
 - 声は公式の声見本に添えられた設計 (caption と seed) を

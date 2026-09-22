@@ -15,7 +15,12 @@
       "out": "icon/mami.webp",
       "transform": "chibiFace",
       "url": "https://kura.vibe.co.jp/canon/mami_chibi_sheet.png",
-      "crop": { "left": 785, "top": 50, "width": 225, "height": 224 },
+      "crop": {
+        "left": 785,
+        "top": 50,
+        "width": 225,
+        "height": 224
+      },
       "$comment": "マミには公式の顔アイコンが無いので、ちびシート右上の笑顔を切り出し、緑を透過にする"
     },
     {
@@ -33,7 +38,6 @@
       "transform": "icon256",
       "url": "https://vibe.co.jp/luna-occulta/media/img/canon/janome_icon.webp"
     },
-
     {
       "out": "canon/arujidono.webp",
       "transform": "canon",
@@ -64,32 +68,35 @@
       "transform": "canon",
       "url": "https://vibe.co.jp/luna-occulta/media/img/canon/janome_canon.webp"
     },
-
     {
-      "out": "showcase/sakuya.mp4",
-      "transform": "copy",
-      "url": "https://kura.vibe.co.jp/showcase/showcase_sakuya_v3.mp4",
-      "sha256": "5d6b7c2d5423af8ebe21c48d7920d566a05cd4d4ef520829a2d7cd028d697e9c"
+      "out": "cutin/sakuya.webp",
+      "transform": "cutinFrame",
+      "url": "https://kura.vibe.co.jp/ult/cutin_anim_sakuya_s5_v3.webp",
+      "$comment": "公式の必殺カットイン(アニメwebp)の決め絵を1枚だけ抜く。動きはこちらのCSS演出で付ける"
     },
     {
-      "out": "showcase/mami.mp4",
-      "transform": "copy",
-      "url": "https://kura.vibe.co.jp/showcase/showcase_mami_v3.mp4"
+      "out": "cutin/mami.webp",
+      "transform": "cutinFrame",
+      "url": "https://kura.vibe.co.jp/ult/cutin_anim_mami_s5_v2.webp",
+      "$comment": "公式の必殺カットイン(アニメwebp)の決め絵を1枚だけ抜く。動きはこちらのCSS演出で付ける"
     },
     {
-      "out": "showcase/tart.mp4",
-      "transform": "copy",
-      "url": "https://kura.vibe.co.jp/showcase/showcase_tart_v4.mp4"
+      "out": "cutin/tart.webp",
+      "transform": "cutinFrame",
+      "url": "https://kura.vibe.co.jp/ult/cutin_anim_tart_s5_v2.webp",
+      "$comment": "公式の必殺カットイン(アニメwebp)の決め絵を1枚だけ抜く。動きはこちらのCSS演出で付ける"
     },
     {
-      "out": "showcase/magoichi.mp4",
-      "transform": "copy",
-      "url": "https://kura.vibe.co.jp/showcase/showcase_magoichi_v5.mp4"
+      "out": "cutin/magoichi.webp",
+      "transform": "cutinFrame",
+      "url": "https://kura.vibe.co.jp/ult/cutin_anim_magoichi_s5_v2.webp",
+      "$comment": "公式の必殺カットイン(アニメwebp)の決め絵を1枚だけ抜く。動きはこちらのCSS演出で付ける"
     },
     {
-      "out": "showcase/janome.mp4",
-      "transform": "copy",
-      "url": "https://kura.vibe.co.jp/showcase/showcase_janome_v9.mp4"
+      "out": "cutin/janome.webp",
+      "transform": "cutinFrame",
+      "url": "https://kura.vibe.co.jp/ult/cutin_anim_janome_s5_v4.webp",
+      "$comment": "公式の必殺カットイン(アニメwebp)の決め絵を1枚だけ抜く。動きはこちらのCSS演出で付ける"
     }
   ]
 }

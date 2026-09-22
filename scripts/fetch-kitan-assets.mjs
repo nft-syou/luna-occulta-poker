@@ -39,11 +39,31 @@ async function transform(asset, bytes) {
         .toBuffer();
     case "copy":
       return bytes;
+    case "cutinFrame":
+      return cutinFrame(bytes, asset.framePosition ?? 0.5);
     case "chibiFace":
       return chibiFace(bytes, asset.crop, asset.key ?? [27, 119, 52]);
     default:
       throw new Error(`${asset.out}: unknown transform ${asset.transform}`);
   }
+}
+
+/**
+ * One frame of an official 必殺カットイン. The animation is a held pose with petals and
+ * sparks drifting, so a single frame keeps the drawing and loses almost nothing — and the
+ * cut-in's own staging supplies the motion for a fraction of the weight (1.5 MB of animated
+ * webp becomes about 120 KB).
+ */
+async function cutinFrame(bytes, position) {
+  const meta = await sharp(bytes, { animated: true }).metadata();
+  const page = Math.min(
+    (meta.pages ?? 1) - 1,
+    Math.max(0, Math.floor((meta.pages ?? 1) * position)),
+  );
+  return sharp(bytes, { page })
+    .resize({ width: 720, withoutEnlargement: true })
+    .webp({ quality: 88 })
+    .toBuffer();
 }
 
 /**

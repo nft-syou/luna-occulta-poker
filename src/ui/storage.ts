@@ -49,6 +49,19 @@ export const ALL_SITUATIONS_ON: VoiceSituations = Object.fromEntries(
   SITUATIONS.map((s) => [s, true]),
 ) as VoiceSituations;
 
+/**
+ * What the 御霊 say out loud before anyone changes it: the moments worth hearing — sitting
+ * down, a raise, a shove, a pot worth the words, a stack gone. Folds, checks and calls
+ * happen several times a hand; spoken every time they wear out their welcome, so their
+ * lines are shown in the bubble and left unsaid until the player asks for them.
+ */
+export const DEFAULT_VOICE_SITUATIONS: VoiceSituations = Object.fromEntries(
+  SITUATIONS.map((s) => [
+    s,
+    s === "greet" || s === "raise" || s === "allin" || s === "bigwin" || s === "bust",
+  ]),
+) as VoiceSituations;
+
 export const DEFAULT_SEATS: readonly SeatSetting[] = [
   { name: "あるじどの", kind: "human", spiritId: "arujidono" },
   { name: "咲耶", kind: "cpu", spiritId: "sakuya" },
@@ -69,7 +82,7 @@ export const DEFAULT_SETTINGS: Settings = {
   prefetchMaxInFlight: 6,
   voice: true,
   voiceVolume: 0.8,
-  voiceSituations: ALL_SITUATIONS_ON,
+  voiceSituations: DEFAULT_VOICE_SITUATIONS,
 };
 
 function read(key: string): string | null {
@@ -218,9 +231,9 @@ export function validateSettings(settings: Settings): SettingsProblem | null {
   return null;
 }
 
-/** A stored switch map, with any situation it does not name switched on. */
+/** A stored switch map, with any situation it does not name left at its default. */
 function readSituations(value: unknown): VoiceSituations {
-  const out = { ...ALL_SITUATIONS_ON };
+  const out = { ...DEFAULT_VOICE_SITUATIONS };
   if (typeof value !== "object" || value === null) return out;
   for (const situation of SITUATIONS) {
     const v = (value as Record<string, unknown>)[situation];

@@ -60,7 +60,7 @@ export const BIG_WIN_BB = 40;
 /** A pot this many blinds or more is worth a word at all; below it the 御霊 stay quiet. */
 export const WIN_BB = 8;
 /** How long a cut-in holds the middle; another one arriving inside this window is dropped. */
-export const CUT_IN_MS = 6000;
+export const CUT_IN_MS = 3200;
 
 /** Where a handful of chips is travelling: out to a bet, into the pot, or home to a winner. */
 export type ChipMoveKind = "toBet" | "toPot" | "toSeat";

@@ -20,7 +20,7 @@ No-Limit Texas Hold'em under an eclipsed moon. You sit down as あるじどの; 
 lacquer table are five 御霊 whose personalities are lifted from the official canon —
 咲耶, マミ, タルト, 孫市 and 蛇ノ目. Every one of their decisions is made by
 [TypeSafe Jev](https://typesafe.ai); they speak their lines aloud, wear their official
-faces at the seats, and get a showcase cut-in on all-ins, big pots and busts. Or let a
+faces at the seats, and get a cut-in on all-ins, big pots and busts. Or let a
 full table of spirits play while you watch. Bring your own credentials: a TypeSafe API
 key, or a Vercel, Lolipop or Cloudflare AI Gateway of your own.
 
@@ -132,8 +132,9 @@ work); anything else falls back to the default.
 
 ## Assets and voices
 
-- The faces, standing art and showcase videos under `public/kitan/` come from the official
-  fan-work materials and asset vault; sources and processing are in `scripts/kitan-assets.json`
+- The faces, standing art and cut-in drawings under `public/kitan/` come from the official
+  fan-work materials and asset vault (each cut-in is one frame lifted from the official
+  animation; the motion is staged here); sources and processing are in `scripts/kitan-assets.json`
   and `pnpm assets:kitan` rebuilds them. They belong to the original work and are not covered by
   this repository's MIT license ([public/kitan/README.md](public/kitan/README.md)).
 - The voices are mp3s generated with [Irodori-TTS](https://github.com/Aratako/Irodori-TTS)'s

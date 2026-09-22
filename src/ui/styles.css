@@ -692,75 +692,237 @@ a {
   }
 }
 /* --- Cut-in ---------------------------------------------------------------- */
-/* The showcase over the middle: a 羽二重 panel holding the video, the name in gold and the
-   line in 月白. It rises 8px as it fades in and sinks as it fades out. */
+/* The felt dims, a beat passes, a lacquer band cuts across the table, and her 必殺カットイン
+   drawing bursts out of it. One still frame; all of the motion is here. */
 .cutin {
   position: absolute;
   inset: 0;
   z-index: 7;
+  overflow: hidden;
+  pointer-events: none;
+  /* The drawing takes the room above, the words the room below: whatever the art's own
+     margins are, the two can never land on each other. */
+  display: grid;
+  grid-template-rows: 1fr auto;
+  --cutin-edge: var(--kitan-kindei);
+  --cutin-glow: rgba(240, 206, 126, 0.32);
+}
+.cutin[data-kind="allin"] {
+  --cutin-edge: var(--kitan-shokko);
+  --cutin-glow: rgba(201, 58, 46, 0.34);
+}
+.cutin[data-kind="bust"] {
+  --cutin-edge: var(--kitan-anshi-hi);
+  --cutin-glow: rgba(142, 107, 158, 0.3);
+}
+.cutin-veil {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    ellipse 60% 45% at 50% 46%,
+    rgba(11, 10, 20, 0.35),
+    rgba(11, 10, 20, 0.86) 75%
+  );
+  animation: cutin-veil-in 200ms var(--kitan-ease) both;
+}
+/* Wider than the felt, so the skew never shows a corner. */
+.cutin-band {
+  position: absolute;
+  left: -12%;
+  right: -12%;
+  top: 20%;
+  height: 44%;
+  overflow: hidden;
+  background: linear-gradient(180deg, #181430, #0e0c1a 55%, #16122b);
+  border-top: 1px solid var(--cutin-edge);
+  border-bottom: 1px solid var(--cutin-edge);
+  box-shadow: 0 0 34px 2px var(--cutin-glow);
+  animation: cutin-band-open 260ms var(--kitan-ease) var(--cutin-beat, 120ms) both;
+}
+/* Light drifting across the band: the grain that keeps a held pose alive. */
+.cutin-rays {
+  position: absolute;
+  inset: -40%;
+  background: repeating-linear-gradient(
+    108deg,
+    transparent 0 22px,
+    rgba(240, 206, 126, 0.05) 22px 24px,
+    transparent 24px 46px
+  );
+  animation: cutin-rays 5s linear infinite;
+}
+.cutin-art-slot {
+  grid-row: 1;
   display: grid;
   place-items: center;
-  pointer-events: none;
-  animation: habutae-in 280ms var(--kitan-ease);
+  min-height: 0;
+  padding: 3% 0 0;
+  animation: cutin-drift 2.9s linear var(--cutin-beat, 120ms) both;
 }
-.cutin.leaving {
-  animation: cutin-out 280ms var(--kitan-ease) forwards;
-}
-@keyframes cutin-out {
-  to {
-    opacity: 0;
-    transform: translateY(8px) scale(0.98);
-  }
-}
-.cutin-panel {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-  width: min(46%, 300px);
-  padding: 12px 12px 14px;
-  animation: none;
-}
-.cutin-video,
-.cutin-still {
+.cutin-art {
   display: block;
-  width: 100%;
-  max-height: 46vh;
+  width: auto;
+  height: auto;
+  max-width: min(62%, 460px);
+  max-height: 100%;
   object-fit: contain;
-  border-radius: var(--kitan-rounded-md);
-  background: var(--kitan-panel);
+  filter: drop-shadow(0 10px 26px rgba(0, 0, 0, 0.75));
+  animation: cutin-art-in 420ms var(--kitan-ease) calc(var(--cutin-beat, 120ms) + 60ms) both;
 }
 .cutin-caption {
+  grid-row: 2;
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 2px;
+  gap: 4px;
+  padding: 8px 16px 4%;
   text-align: center;
+  /* The words sit over the rail and the bottom seat; a scrim keeps them readable. */
+  background: linear-gradient(180deg, transparent, rgba(11, 10, 20, 0.82) 45%);
+  animation: cutin-caption-in 320ms var(--kitan-ease) calc(var(--cutin-beat, 120ms) + 160ms) both;
 }
 .cutin-name {
   font-weight: 800;
-  letter-spacing: 0.2em;
-  color: var(--kitan-kindei-hi);
+  font-size: 1.3rem;
+  letter-spacing: 0.4em;
+  text-indent: 0.4em;
+  background: linear-gradient(180deg, #fff9e6, #f2d88e, #cfa040, #96692a);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.8));
 }
 .cutin-line {
+  max-width: 90%;
   font-size: 0.95rem;
   line-height: 1.6;
   color: var(--kitan-geppaku);
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.9);
 }
-.cutin-allin .cutin-panel,
-.cutin-panel.cutin-allin {
-  box-shadow:
-    var(--kitan-shadow),
-    0 0 34px 2px rgba(201, 58, 46, 0.3);
+.cutin-flash {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 70% 50% at 50% 50%, var(--cutin-glow), transparent 70%);
+  animation: cutin-flash 320ms ease-out var(--cutin-beat, 120ms) both;
 }
-.cutin-panel.cutin-bigwin {
-  box-shadow:
-    var(--kitan-shadow),
-    0 0 34px 2px rgba(240, 206, 126, 0.3);
+.cutin.leaving .cutin-band {
+  animation: cutin-band-close 320ms var(--kitan-ease) both;
+}
+.cutin.leaving .cutin-art-slot,
+.cutin.leaving .cutin-caption,
+.cutin.leaving .cutin-veil {
+  animation: cutin-out 320ms var(--kitan-ease) both;
+}
+.cutin.leaving .cutin-flash {
+  animation: none;
+  opacity: 0;
+}
+@keyframes cutin-veil-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes cutin-band-open {
+  0% {
+    transform: skewY(-7deg) scaleY(0.04);
+    opacity: 0;
+  }
+  55% {
+    transform: skewY(-7deg) scaleY(1.06);
+    opacity: 1;
+  }
+  100% {
+    transform: skewY(-7deg) scaleY(1);
+    opacity: 1;
+  }
+}
+@keyframes cutin-band-close {
+  from {
+    transform: skewY(-7deg) scaleY(1);
+    opacity: 1;
+  }
+  to {
+    transform: skewY(-7deg) scaleY(0.03);
+    opacity: 0;
+  }
+}
+@keyframes cutin-art-in {
+  0% {
+    transform: translateX(22%) scale(1.16);
+    opacity: 0;
+  }
+  45% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(0) scale(1);
+    opacity: 1;
+  }
+}
+@keyframes cutin-drift {
+  from {
+    transform: translateX(1.4%);
+  }
+  to {
+    transform: translateX(-1.4%);
+  }
+}
+@keyframes cutin-caption-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes cutin-flash {
+  0% {
+    opacity: 0;
+  }
+  16% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+@keyframes cutin-rays {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-92px);
+  }
+}
+@keyframes cutin-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
 }
 @media (max-width: 720px) {
-  .cutin-panel {
-    width: min(70%, 260px);
+  /* The band only: a height on the art's slot would take it out of the grid row and strand
+     it at the top. */
+  .cutin-band {
+    top: 30%;
+    height: 34%;
+  }
+  .cutin-art {
+    max-width: 86%;
+  }
+  .cutin-name {
+    font-size: 1.1rem;
+  }
+  .cutin-line {
+    font-size: 0.88rem;
   }
 }
 
@@ -1804,6 +1966,32 @@ body.showcase .app {
 @media (prefers-reduced-motion: reduce) {
   .chip-fly {
     display: none;
+  }
+  /* The cut-in keeps its frame and its words; nothing sweeps, bursts or drifts. */
+  .cutin-band,
+  .cutin-art,
+  .cutin-art-slot,
+  .cutin-caption,
+  .cutin-rays {
+    animation: none;
+  }
+  .cutin-band {
+    transform: skewY(-7deg);
+  }
+  .cutin-flash {
+    animation: none;
+    opacity: 0;
+  }
+  .cutin-veil,
+  .cutin.leaving .cutin-band,
+  .cutin.leaving .cutin-art-slot,
+  .cutin.leaving .cutin-caption {
+    animation: cutin-out 320ms linear both;
+    animation-direction: reverse;
+  }
+  .cutin.leaving .cutin-band {
+    transform: skewY(-7deg);
+    animation-direction: normal;
   }
   .seat.acting::before,
   .seat-cards.flipping .card,

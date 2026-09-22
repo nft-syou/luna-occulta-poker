@@ -30,18 +30,18 @@ describe("spirits", () => {
   it("keeps あるじどの silent: no lines, no video, no voice", () => {
     const a = spirit("arujidono");
     expect(a.silent).toBe(true);
-    expect(a.showcase).toBeNull();
+    expect(a.cutin).toBeNull();
     expect(a.voice).toBeNull();
     expect(a.tell).toBe(false);
   });
 
-  it("gives every speaking spirit a face, a standing art, a video and a voice design", () => {
+  it("gives every speaking spirit a face, a standing art, cut-in art and a voice design", () => {
     for (const id of CPU_SPIRIT_IDS) {
       const s = spirit(id);
       expect(s.silent).toBe(false);
       expect(s.icon).toMatch(/^\/kitan\/icon\/.*\.webp$/);
       expect(s.canon).toMatch(/^\/kitan\/canon\/.*\.webp$/);
-      expect(s.showcase).toMatch(/^\/kitan\/showcase\/.*\.mp4$/);
+      expect(s.cutin).toMatch(/^\/kitan\/cutin\/.*\.webp$/);
       expect(s.voice?.caption.length).toBeGreaterThan(10);
       expect(Number.isInteger(s.voice?.seed)).toBe(true);
     }

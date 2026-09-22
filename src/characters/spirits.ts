@@ -42,10 +42,10 @@ export interface Spirit {
   readonly tell: boolean;
   /** Face icon at the seat (256px webp, transparent). */
   readonly icon: string;
-  /** Standing canon art; the cut-in's still under reduced motion. */
+  /** Standing canon art; what the cut-in falls back to if its own art will not load. */
   readonly canon: string;
-  /** The showcase video used as the cut-in; null for a silent spirit. */
-  readonly showcase: string | null;
+  /** The 必殺カットイン's key drawing; null for a silent spirit, who never cuts in. */
+  readonly cutin: string | null;
   readonly voice: SpiritVoice | null;
 }
 
@@ -88,7 +88,7 @@ export const SPIRITS: readonly Spirit[] = [
     tell: false,
     icon: `${ASSETS}/icon/arujidono.webp`,
     canon: `${ASSETS}/canon/arujidono.webp`,
-    showcase: null,
+    cutin: null,
     voice: null,
   },
   {
@@ -118,7 +118,7 @@ export const SPIRITS: readonly Spirit[] = [
     tell: true,
     icon: `${ASSETS}/icon/sakuya.webp`,
     canon: `${ASSETS}/canon/sakuya.webp`,
-    showcase: `${ASSETS}/showcase/sakuya.mp4`,
+    cutin: `${ASSETS}/cutin/sakuya.webp`,
     voice: {
       caption:
         "若い女性の澄んだ声。まっすぐで芯があり、明るく前向きなトーンでハキハキと話している。",
@@ -152,7 +152,7 @@ export const SPIRITS: readonly Spirit[] = [
     tell: false,
     icon: `${ASSETS}/icon/mami.webp`,
     canon: `${ASSETS}/canon/mami.webp`,
-    showcase: `${ASSETS}/showcase/mami.mp4`,
+    cutin: `${ASSETS}/cutin/mami.webp`,
     voice: {
       caption:
         "若い女性のゆったりした柔らかい声。のほほんとした余裕のある調子で、面白そうに話している。発音は明瞭で、クリアな音質。",
@@ -186,7 +186,7 @@ export const SPIRITS: readonly Spirit[] = [
     tell: false,
     icon: `${ASSETS}/icon/tart.webp`,
     canon: `${ASSETS}/canon/tart.webp`,
-    showcase: `${ASSETS}/showcase/tart.mp4`,
+    cutin: `${ASSETS}/cutin/tart.webp`,
     voice: {
       caption:
         "若い女性の落ち着いたあたたかい声。ふところ深く、微笑むようにゆっくり話している。発音は明瞭で、クリアな音質。",
@@ -220,7 +220,7 @@ export const SPIRITS: readonly Spirit[] = [
     tell: false,
     icon: `${ASSETS}/icon/magoichi.webp`,
     canon: `${ASSETS}/canon/magoichi.webp`,
-    showcase: `${ASSETS}/showcase/magoichi.mp4`,
+    cutin: `${ASSETS}/cutin/magoichi.webp`,
     voice: {
       caption:
         "伝法な口調の大人の女性の低めの声。歯切れよく、威勢のいい調子で話している。発音は明瞭で、クリアな音質。",
@@ -254,7 +254,7 @@ export const SPIRITS: readonly Spirit[] = [
     tell: false,
     icon: `${ASSETS}/icon/janome.webp`,
     canon: `${ASSETS}/canon/janome.webp`,
-    showcase: `${ASSETS}/showcase/janome.mp4`,
+    cutin: `${ASSETS}/cutin/janome.webp`,
     voice: {
       caption:
         "まったりした女の子ののどかな声。急がずゆったりと、うれしそうに話している。クリアで聞き取りやすい音質。",
