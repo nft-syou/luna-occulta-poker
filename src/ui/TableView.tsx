@@ -65,7 +65,7 @@ const REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
  * enough in to clear the seat box and the callout thrown the same way, and — at every seat
  * count the table allows — still well outside the board and the pot in the middle.
  */
-const BET_SPOT = 0.6;
+const BET_SPOT = 0.5;
 
 function mediaMatches(query: string): boolean {
   // jsdom (and any non-browser host) has no matchMedia; treat those as a wide, moving screen.
@@ -275,7 +275,9 @@ export function TableView({
   const revealAll = game.spectator || snapshot?.street === "showdown";
   // A taller felt needs a narrower, taller ellipse to keep the seats on the rail.
   const radiusX = phone ? 40 : 42;
-  const radiusY = phone ? 42 : 40;
+  // The desktop felt is taller than it was (7:6), and the seats are taller too: a smaller
+  // vertical radius keeps the top and bottom seats on the rail with their chips clear of them.
+  const radiusY = phone ? 42 : 34;
 
   // On a phone one panel shows at a time; on a wide screen the felt is always up and the
   // side column carries whichever of the two panels the tab switch selected. Recording mode
@@ -412,12 +414,7 @@ export function TableView({
         {showFelt && (
           <div ref={feltRef} className="felt" style={feltVars}>
             {layout.map(({ seat, player, x, y, inward }) => {
-              // Clamped so a seat on the top or bottom rail stays inside the felt whatever
-              // its box measures: the seat's own half-height is the margin.
-              const style = {
-                left: `${x}%`,
-                top: `clamp(var(--seat-half), ${y}%, calc(100% - var(--seat-half)))`,
-              };
+              const style = { left: `${x}%`, top: `${y}%` };
               const thinking = state.thinkingSeat === seat.id;
               // A seat is narrated while it thinks, and for a moment after it has decided.
               const decided = last !== null && last.seat === seat.id ? last : null;

@@ -394,8 +394,6 @@ a {
   --board-card-width: 32px;
   /* How far towards the middle a callout is thrown from its seat's centre. */
   --callout-reach: 34px;
-  /* Half a seat box, the margin that keeps the top and bottom seats inside the felt. */
-  --seat-half: 96px;
   display: grid;
   grid-template-columns: 1fr 320px;
   gap: 16px;
@@ -436,7 +434,8 @@ a {
    pooling at the top of it. */
 .felt {
   position: relative;
-  aspect-ratio: 16 / 10;
+  /* Taller than a cloth table: the seats carry a face now, and the rail needs the room. */
+  aspect-ratio: 7 / 6;
   background:
     radial-gradient(ellipse 70% 55% at 50% 0%, rgba(94, 82, 140, 0.32), transparent 70%),
     radial-gradient(ellipse at center, #17142a, var(--kitan-panel) 72%);
@@ -1342,7 +1341,6 @@ button.danger {
     --card-height: 34px;
     --board-card-width: 28px;
     --callout-reach: 26px;
-    --seat-half: 82px;
     gap: 8px;
     /* Room for the fixed tab bar and the action bar above it, plus the gesture area. */
     padding-bottom: calc(72px + var(--turn-bar-height, 0px) + env(safe-area-inset-bottom, 0px));
@@ -1661,10 +1659,10 @@ body.showcase .app {
 }
 .table-screen.showcase-mode .felt {
   margin: 12px 0;
-  max-height: 70vh;
-  aspect-ratio: 16 / 10;
+  max-height: 76vh;
+  aspect-ratio: 7 / 6;
   margin-inline: auto;
-  width: min(100%, calc(70vh * 1.6));
+  width: min(100%, calc(76vh * 7 / 6));
 }
 .table-screen.showcase-mode .table-header {
   justify-content: flex-end;
