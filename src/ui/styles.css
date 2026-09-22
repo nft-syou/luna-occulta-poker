@@ -453,6 +453,51 @@ a {
       calc(var(--in-y, -1) * var(--callout-reach, 34px))
     );
 }
+/* The 御霊's line in a small 羽二重: no edge, a shadow, a tail in the face's own colour, the
+   action shouted underneath as a quiet label. */
+.speech {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  width: max-content;
+  max-width: 220px;
+  padding: 8px 12px;
+  border-radius: var(--kitan-rounded-lg);
+  background: rgba(24, 22, 38, 0.96);
+  color: var(--kitan-geppaku);
+  box-shadow: var(--kitan-shadow-sm);
+  font-size: 0.88rem;
+  line-height: 1.6;
+  letter-spacing: 0.02em;
+  text-align: center;
+  animation: callout-flash var(--callout-ms, 900ms) var(--kitan-ease) forwards;
+}
+.speech::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  border: 6px solid transparent;
+  border-top-color: rgba(24, 22, 38, 0.96);
+  transform: translateX(-50%);
+}
+.speech-text {
+  display: block;
+  font-weight: 700;
+}
+.speech .callout {
+  padding: 1px 8px;
+  font-size: 11px;
+  animation: none;
+  box-shadow: none;
+}
+.speech.speech-allin {
+  box-shadow:
+    var(--kitan-shadow-sm),
+    0 0 18px 1px rgba(201, 58, 46, 0.35);
+}
 .callout {
   padding: 4px 12px;
   border-radius: var(--kitan-rounded-md);
@@ -1642,7 +1687,8 @@ body.showcase .app {
     transition: none;
   }
   .callout,
-  .callout-allin {
+  .callout-allin,
+  .speech {
     transform: none;
     animation: fade-out-hold var(--callout-ms, 900ms) linear forwards;
   }

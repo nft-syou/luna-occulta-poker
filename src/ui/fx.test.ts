@@ -1,6 +1,15 @@
 import type { Action, Card, GameEvent } from "@jev-poker/engine";
 import { describe, expect, it } from "vitest";
-import { EMPTY_FX, handsPerMinute, MAX_CHIP_MOVES, reduceFx, type TableFx } from "./fx";
+import {
+  BIG_WIN_BB,
+  CUT_IN_MS,
+  EMPTY_FX,
+  handsPerMinute,
+  MAX_CHIP_MOVES,
+  reduceFx,
+  type TableFx,
+  WIN_BB,
+} from "./fx";
 
 const CARD: Card = { rank: 14, suit: "s" };
 
@@ -222,5 +231,138 @@ describe("handsPerMinute", () => {
     expect(handsPerMinute([0, 1000, 2000, 602_000, 603_000])).toBe(60);
     // A single gap that could only have been a pause says nothing about the rate.
     expect(handsPerMinute([0, 600_000])).toBeNull();
+  });
+});
+
+describe("the 御霊 speak", () => {
+  const ctx = {
+    // Seat 1 is 咲耶, seat 2 is マミ, seat 0 is a human.
+    spiritOf: (seat: number) => (seat === 1 ? "sakuya" : seat === 2 ? "mami" : null),
+    bigBlind: 2,
+  } as const;
+  const award = (awards: { seat: number; amount: number }[]): GameEvent => ({
+    type: "PotAwarded",
+    pots: [
+      { amount: awards.reduce((s, a) => s + a.amount, 0), eligible: awards.map((a) => a.seat) },
+    ],
+    awards: awards.map((a) => ({ ...a, potIndex: 0 })),
+  });
+  const showdown: GameEvent = {
+    type: "Showdown",
+    hands: [1, 2].map((seat) => ({
+      seat,
+      cards: [CARD, CARD] as const,
+      value: { category: "pair", ranks: [14, 13, 12, 11] } as never,
+    })),
+  };
+
+  it("hangs a line on a 御霊's shout and none on a human's", () => {
+    const fx = reduceFx(
+      reduceFx(EMPTY_FX, took(1, "raise", 10, 12), 1, ctx),
+      took(0, "call", 10),
+      2,
+      ctx,
+    );
+    expect(fx.callouts[0]?.line?.id).toMatch(/^sakuya\.raise\./);
+    expect(fx.callouts[1]?.line).toBeNull();
+  });
+
+  it("stays silent without a context", () => {
+    const fx = reduceFx(EMPTY_FX, took(1, "raise", 10, 12), 1);
+    expect(fx.callouts[0]?.line).toBeNull();
+  });
+
+  it("gives a bluffing 咲耶 her tell, and only her", () => {
+    const bluffing = { ...ctx, bluff: true };
+    for (let i = 0; i < 6; i++) {
+      const fx = reduceFx({ ...EMPTY_FX, nextId: 1 + i * 7 }, took(1, "bet", 6, 6), 1, bluffing);
+      expect(fx.callouts[0]?.line?.bluff).toBe(true);
+      const honest = reduceFx({ ...EMPTY_FX, nextId: 1 + i * 7 }, took(1, "bet", 6, 6), 1, ctx);
+      expect(honest.callouts[0]?.line?.bluff).toBeUndefined();
+      const mami = reduceFx({ ...EMPTY_FX, nextId: 1 + i * 7 }, took(2, "bet", 6, 6), 1, bluffing);
+      expect(mami.callouts[0]?.line?.bluff).toBeUndefined();
+    }
+  });
+
+  it("cuts in on a 御霊's all-in, once at a time", () => {
+    const first = reduceFx(EMPTY_FX, took(1, "call", 80, 80, true), 100, ctx);
+    expect(first.cutIn).toMatchObject({ seat: 1, kind: "allin", at: 100 });
+    expect(first.cutIn?.line?.id).toMatch(/^sakuya\.allin\./);
+    expect(first.callouts[0]?.line).toBe(first.cutIn?.line);
+    // A second shove while the first is still on screen is not shown.
+    const second = reduceFx(first, took(2, "call", 80, 80, true), 100 + CUT_IN_MS - 1, ctx);
+    expect(second.cutIn).toBe(first.cutIn);
+    // Once the window has passed, the next one plays.
+    const third = reduceFx(first, took(2, "call", 80, 80, true), 100 + CUT_IN_MS, ctx);
+    expect(third.cutIn?.seat).toBe(2);
+    // A human's shove never cuts in.
+    expect(reduceFx(EMPTY_FX, took(0, "call", 80, 80, true), 5, ctx).cutIn).toBeNull();
+  });
+
+  it("speaks for a pot worth the words, shouts for a big one, and says nothing for crumbs", () => {
+    const crumbs = reduceFx(EMPTY_FX, award([{ seat: 1, amount: 6 }]), 1, ctx);
+    expect(crumbs.speech).toEqual([]);
+    const pot = reduceFx(EMPTY_FX, award([{ seat: 1, amount: WIN_BB * 2 }]), 1, ctx);
+    expect(pot.speech.map((s) => [s.seat, s.situation])).toEqual([[1, "win"]]);
+    expect(pot.cutIn).toBeNull();
+    const big = reduceFx(EMPTY_FX, award([{ seat: 2, amount: BIG_WIN_BB * 2 }]), 1, ctx);
+    expect(big.speech.map((s) => [s.seat, s.situation])).toEqual([[2, "bigwin"]]);
+    expect(big.cutIn).toMatchObject({ seat: 2, kind: "bigwin" });
+    expect(big.cutIn?.line).toBe(big.speech[0]?.line);
+    // Without a blind size nothing is worth anything.
+    expect(
+      reduceFx(EMPTY_FX, award([{ seat: 1, amount: 999 }]), 1, { spiritOf: ctx.spiritOf }).speech,
+    ).toEqual([]);
+  });
+
+  it("lets the 御霊 who showed and lost say so", () => {
+    const fx = play([
+      [showdown, 1],
+      [award([{ seat: 1, amount: 100 }]), 2],
+    ]);
+    expect(fx.speech).toEqual([]);
+    const spoken = reduceFx(
+      reduceFx(EMPTY_FX, showdown, 1, ctx),
+      award([{ seat: 1, amount: 100 }]),
+      2,
+      ctx,
+    );
+    expect(spoken.speech.map((s) => [s.seat, s.situation])).toEqual([
+      [1, "bigwin"],
+      [2, "lose"],
+    ]);
+    // The next hand forgets who showed.
+    const next = reduceFx(
+      spoken,
+      {
+        type: "HandStarted",
+        handNumber: 1,
+        button: 0,
+        blinds: { small: 1, big: 2, ante: 0 },
+        seats: [],
+      },
+      3,
+      ctx,
+    );
+    expect(next.showdownSeats).toEqual([]);
+  });
+
+  it("marks a bust when a 御霊's stack hits zero, with a cut-in", () => {
+    const fx = reduceFx(
+      EMPTY_FX,
+      {
+        type: "HandEnded",
+        handNumber: 3,
+        stacks: [
+          { id: 0, stack: 0 },
+          { id: 1, stack: 0 },
+          { id: 2, stack: 400 },
+        ],
+      },
+      9,
+      ctx,
+    );
+    expect(fx.speech.map((s) => [s.seat, s.situation])).toEqual([[1, "bust"]]);
+    expect(fx.cutIn).toMatchObject({ seat: 1, kind: "bust", at: 9 });
   });
 });

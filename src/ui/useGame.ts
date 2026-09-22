@@ -197,7 +197,15 @@ function reducer(state: GameState, msg: Msg): GameState {
         maxPot: Math.max(state.maxPot, awarded),
         // `msg.at` is the listener's clock reading: the effects layer needs timestamps, and
         // this reducer must stay a pure function of what it is handed.
-        fx: reduceFx(state.fx, msg.event, msg.at ?? 0),
+        fx: reduceFx(state.fx, msg.event, msg.at ?? 0, {
+          spiritOf: (seat) => {
+            const s = state.seats.find((x) => x.id === seat);
+            return s !== undefined && s.kind === "cpu" ? s.spiritId : null;
+          },
+          // Jev's `bluff_intent` is the yes-probability; past even odds it meant a bluff.
+          bluff: (msg.decision?.jev?.bluffIntent ?? 0) >= 0.5,
+          bigBlind: state.snapshot?.bigBlind ?? 0,
+        }),
       };
     }
     case "sync":
@@ -258,7 +266,8 @@ function toConfig(settings: Settings, seed: number): GameConfig {
     startingStack: settings.startingStack,
     seats: settings.seats.map((seat, id) => ({
       id,
-      name: seat.name,
+      // A 御霊's chair is named after her; a human keeps whatever they typed.
+      name: seat.kind === "cpu" ? spirit(seat.spiritId).name.ja : seat.name,
       kind: seat.kind,
       personaId: seat.spiritId,
     })),

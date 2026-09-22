@@ -30,7 +30,7 @@ const PLAYER: HandPlayerSnapshot = {
 };
 
 function callout(kind: CalloutKind, amount = 0): Callout {
-  return { id: 7, seat: 1, kind, amount, at: 1000 };
+  return { id: 7, seat: 1, kind, amount, at: 1000, line: null };
 }
 
 function renderSeat(props: Partial<Parameters<typeof SeatView>[0]> = {}) {
@@ -174,5 +174,45 @@ describe("SeatView callouts", () => {
     // The bet lives on the felt now, as chips between the seat and the middle.
     const { container } = renderSeat();
     expect(container.querySelector(".seat-bet")).toBeNull();
+  });
+});
+
+describe("SeatView speech", () => {
+  const line = { id: "mami.raise.1", text: "レイズ〜。数で勝ってんのよ、こっちは" };
+
+  it("puts the 御霊's line in a bubble with the shout underneath", () => {
+    const { container } = renderSeat({ callout: { ...callout("raise", 12), line } });
+    expect(screen.getByText(line.text)).toBeInTheDocument();
+    expect(container.querySelector(".speech .callout-raise")?.textContent).toBe("RAISE 6 BB");
+    expect(container.querySelector(".callout-spot")).toHaveAttribute("aria-hidden", "true");
+  });
+
+  it("shows a word after the hand on its own, without a shout", () => {
+    const { container } = renderSeat({
+      speech: {
+        id: 9,
+        seat: 1,
+        situation: "win",
+        line: { id: "mami.win.2", text: "はい、いただき〜" },
+        at: 2000,
+      },
+    });
+    expect(screen.getByText("はい、いただき〜")).toBeInTheDocument();
+    expect(container.querySelector(".callout")).toBeNull();
+  });
+
+  it("lets the newer of the shout and the word speak", () => {
+    const speech = {
+      id: 9,
+      seat: 1,
+      situation: "win" as const,
+      line: { id: "mami.win.1", text: "化かすのはね" },
+      at: 500,
+    };
+    const { container } = renderSeat({ callout: { ...callout("bet", 12), line }, speech });
+    // The callout is at 1000, the speech at 500: the shout wins.
+    expect(screen.getByText(line.text)).toBeInTheDocument();
+    expect(screen.queryByText("化かすのはね")).not.toBeInTheDocument();
+    expect(container.querySelector(".callout-bet")).not.toBeNull();
   });
 });

@@ -52,7 +52,7 @@ export function Setup({
       seats.push(
         kept !== undefined && !seats.some((s) => s.spiritId === kept.spiritId)
           ? kept
-          : { name: "", kind: "cpu", spiritId: freeSpirit(seats) },
+          : { name: spirit(freeSpirit(seats)).name.ja, kind: "cpu", spiritId: freeSpirit(seats) },
       );
     }
     onChange({ ...settings, seats });
@@ -190,7 +190,10 @@ export function Setup({
                     <select
                       aria-label={`${t("setup.persona")} ${index + 1}`}
                       value={seat.spiritId}
-                      onChange={(e) => updateSeat(index, { spiritId: e.target.value as SpiritId })}
+                      onChange={(e) => {
+                        const spiritId = e.target.value as SpiritId;
+                        updateSeat(index, { spiritId, name: spirit(spiritId).name.ja });
+                      }}
                     >
                       {SPIRITS.map((s) => (
                         <option key={s.id} value={s.id}>

@@ -1,6 +1,7 @@
 import type { TFunction } from "i18next";
 import type { CSSProperties } from "react";
 import { useTranslation } from "react-i18next";
+import type { SpeechLine } from "../characters/lines";
 import type { CalloutKind } from "./fx";
 import { showNumber, toBB } from "./showcase";
 
@@ -40,34 +41,47 @@ export interface Inward {
 export const INWARD_UP: Inward = { x: 0, y: -1 };
 
 interface Props {
-  kind: CalloutKind;
-  amount: number;
-  bigBlind: number;
+  /** The action shouted, or null for a line said outside an action. */
+  kind: CalloutKind | null;
+  amount?: number;
+  bigBlind?: number;
+  /** What the 御霊 said. Null for a seat that has no lines: the shout stands alone. */
+  line: SpeechLine | null;
   /** Which way the middle of the table is from this seat. */
   inward?: Inward;
 }
 
 /**
- * The big coloured label that flashes at a seat the moment it acts.
+ * The bubble at a seat the moment it acts or reacts: the 御霊's line in a 羽二重 bubble with
+ * the action underneath as a small label — or, for a seat with nothing to say, the label
+ * alone, as the table shouted before the 御霊 came.
  *
  * It is placed *inwards*, along the seat's own line to the middle, rather than below the
  * seat: a seat on the bottom rail has nothing below it but the felt's edge, the action feed
- * and — for a human — their own buttons, and a label there would cover all three. Inwards
+ * and — for a human — their own buttons, and a bubble there would cover all three. Inwards
  * there is always table. The offset is short enough to stay nearer the seat than its chip
  * stack and clear of the recording-mode bubble, which grows the other way.
  *
- * Decoration only: the action is in the feed, the log and the seat's own state, so the label
- * is hidden from the accessibility tree rather than read out on every single action.
+ * Decoration only: the action is in the feed, the log and the seat's own state, so the
+ * bubble is hidden from the accessibility tree rather than read out on every single action.
  */
-export function CalloutView({ kind, amount, bigBlind, inward = INWARD_UP }: Props) {
+export function SpeechView({ kind, amount = 0, bigBlind = 0, line, inward = INWARD_UP }: Props) {
   const { t } = useTranslation();
+  const label = kind === null ? null : calloutText(t, kind, amount, bigBlind);
   return (
     <div
       className="callout-spot"
       aria-hidden="true"
       style={{ "--in-x": inward.x, "--in-y": inward.y } as CSSProperties}
     >
-      <div className={`callout callout-${kind}`}>{calloutText(t, kind, amount, bigBlind)}</div>
+      {line === null ? (
+        label !== null && <div className={`callout callout-${kind}`}>{label}</div>
+      ) : (
+        <div className={`speech ${kind === null ? "" : `speech-${kind}`}`}>
+          <span className="speech-text">{line.text}</span>
+          {label !== null && <span className={`callout callout-${kind}`}>{label}</span>}
+        </div>
+      )}
     </div>
   );
 }

@@ -265,7 +265,7 @@ describe("TableView", () => {
       fx: {
         ...EMPTY_FX,
         chipMoves: [{ id: 1, seat: 1, kind: "toBet", amount: 6, at: 10 }],
-        callouts: [{ id: 2, seat: 1, kind: "raise", amount: 12, at: 10 }],
+        callouts: [{ id: 2, seat: 1, kind: "raise", amount: 12, at: 10, line: null }],
         winners: [0],
         winnersAt: 11,
       },
@@ -316,8 +316,8 @@ describe("TableView", () => {
       fx: {
         ...EMPTY_FX,
         callouts: [
-          { id: 1, seat: 0, kind: "check", amount: 0, at: 10 },
-          { id: 2, seat: 1, kind: "bet", amount: 12, at: 11 },
+          { id: 1, seat: 0, kind: "check", amount: 0, at: 10, line: null },
+          { id: 2, seat: 1, kind: "bet", amount: 12, at: 11, line: null },
         ],
       },
     });

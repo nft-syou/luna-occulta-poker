@@ -1,7 +1,7 @@
 import type { SeatId } from "@jev-poker/engine";
 import { useTranslation } from "react-i18next";
-import { calloutText } from "./CalloutView";
 import type { FeedEntry } from "./fx";
+import { calloutText } from "./SpeechView";
 
 /** How many entries the strip carries. Past this the oldest slide off the left. */
 export const FEED_SIZE = 8;

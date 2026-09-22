@@ -2,9 +2,9 @@ import type { HandPlayerSnapshot } from "@jev-poker/engine";
 import type { CSSProperties, ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { spirit } from "../characters/spirits";
-import { CalloutView, INWARD_UP, type Inward } from "./CalloutView";
 import { CardView } from "./CardView";
-import type { Callout } from "./fx";
+import type { Callout, Speech } from "./fx";
+import { INWARD_UP, type Inward, SpeechView } from "./SpeechView";
 import type { GameSeat } from "./useGame";
 
 interface Props {
@@ -19,6 +19,8 @@ interface Props {
   overlay?: ReactNode;
   /** The seat's most recent shout, if it still has one. */
   callout?: Callout | null;
+  /** The seat's most recent line outside an action (a pot won or lost, a bust). */
+  speech?: Speech | null;
   bigBlind?: number;
   /** When this seat last won a pot; a new value restarts its glow. Zero for never. */
   winnerAt?: number;
@@ -38,6 +40,7 @@ export function SeatView({
   style,
   overlay,
   callout = null,
+  speech = null,
   bigBlind = 0,
   winnerAt = 0,
   flipAt = 0,
@@ -72,7 +75,7 @@ export function SeatView({
       </div>
       <div className="seat-name">
         {isButton && <span className="dealer-button">{t("table.dealer")}</span>}
-        {seat.name}
+        {seat.kind === "cpu" ? who.name[lang] : seat.name}
       </div>
       <div className="seat-tagline">{who.tagline[lang]}</div>
       <div className="seat-stack">{player?.stack ?? seat.stack}</div>
@@ -81,14 +84,20 @@ export function SeatView({
         {player?.allIn && t("table.allIn")}
         {folded && t("table.folded")}
       </div>
-      {callout !== null && (
-        <CalloutView
-          key={callout.id}
-          kind={callout.kind}
-          amount={callout.amount}
-          bigBlind={bigBlind}
-          inward={inward}
-        />
+      {/* Whichever is newer speaks: the shout that came with an action, or the word after. */}
+      {speech !== null && (callout === null || speech.at >= callout.at) ? (
+        <SpeechView key={`s${speech.id}`} kind={null} line={speech.line} inward={inward} />
+      ) : (
+        callout !== null && (
+          <SpeechView
+            key={callout.id}
+            kind={callout.kind}
+            amount={callout.amount}
+            bigBlind={bigBlind}
+            line={callout.line}
+            inward={inward}
+          />
+        )
       )}
       {overlay}
     </div>

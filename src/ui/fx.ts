@@ -1,4 +1,6 @@
 import type { GameEvent, SeatId, Street } from "@jev-poker/engine";
+import { pickLine, rollFrom, type SpeechLine } from "../characters/lines";
+import type { SpiritId } from "../characters/spirits";
 
 /** The shout that flashes at a seat the moment it acts. */
 export type CalloutKind = "fold" | "check" | "call" | "bet" | "raise" | "allin";
@@ -11,7 +13,54 @@ export interface Callout {
   /** Chips called, or the total bet/raise. Zero where the callout carries no number. */
   readonly amount: number;
   readonly at: number;
+  /** What the 御霊 said as she did it; null for a human seat and for あるじどの. */
+  readonly line: SpeechLine | null;
 }
+
+/** A line spoken outside an action: a pot won or lost, a stack gone. */
+export type SpeechSituation = "win" | "bigwin" | "lose" | "bust";
+
+export interface Speech {
+  readonly id: number;
+  readonly seat: SeatId;
+  readonly situation: SpeechSituation;
+  readonly line: SpeechLine;
+  readonly at: number;
+}
+
+/** The three moments worth a cut-in: an all-in, a big pot, a bust. */
+export type CutInKind = "allin" | "bigwin" | "bust";
+
+export interface CutIn {
+  readonly id: number;
+  readonly seat: SeatId;
+  readonly kind: CutInKind;
+  readonly line: SpeechLine | null;
+  readonly at: number;
+}
+
+/**
+ * What the reducer needs to know about the table that the event does not say: who sits
+ * where, whether the acting seat was bluffing, how big a blind is. All optional, so the
+ * effects still reduce without it — they just stay silent.
+ */
+export interface FxContext {
+  /** The 御霊 in a seat, or null for a human's. */
+  readonly spiritOf: (seat: SeatId) => SpiritId | null;
+  /** For an `ActionTaken`: Jev meant it as a bluff. Drives 咲耶's tell. */
+  readonly bluff?: boolean;
+  /** For sizing a pot in blinds; zero or absent means no win lines. */
+  readonly bigBlind?: number;
+}
+
+const NO_CONTEXT: FxContext = { spiritOf: () => null };
+
+/** A pot this many blinds or more is a big win: a cut-in and the loud line. */
+export const BIG_WIN_BB = 40;
+/** A pot this many blinds or more is worth a word at all; below it the 御霊 stay quiet. */
+export const WIN_BB = 8;
+/** How long a cut-in holds the middle; another one arriving inside this window is dropped. */
+export const CUT_IN_MS = 6000;
 
 /** Where a handful of chips is travelling: out to a bet, into the pot, or home to a winner. */
 export type ChipMoveKind = "toBet" | "toPot" | "toSeat";
@@ -67,6 +116,12 @@ export interface TableFx {
   readonly handTimes: readonly number[];
   /** Chips currently in front of each seat, so a new street knows what to sweep in. */
   readonly streetBets: Readonly<Record<SeatId, number>>;
+  /** Lines said outside an action. Capped by count like the callouts. */
+  readonly speech: readonly Speech[];
+  /** The cut-in on screen, or the last one; `at` says whether it is still playing. */
+  readonly cutIn: CutIn | null;
+  /** Who turned their cards over at the last showdown, so the losers can be named. */
+  readonly showdownSeats: readonly SeatId[];
 }
 
 /** At most one callout per seat is ever visible; the rest are kept only so keys stay stable. */
@@ -77,6 +132,8 @@ export const MAX_CHIP_MOVES = 12;
 const MAX_FEED = 24;
 /** Hand timestamps kept, which is the window the hands/minute figure is measured over. */
 const MAX_HAND_TIMES = 24;
+/** Speech entries kept; one per seat is ever visible. */
+const MAX_SPEECH = 12;
 
 export const EMPTY_FX: TableFx = {
   nextId: 1,
@@ -89,6 +146,9 @@ export const EMPTY_FX: TableFx = {
   feed: [],
   handTimes: [],
   streetBets: {},
+  speech: [],
+  cutIn: null,
+  showdownSeats: [],
 };
 
 /** The last `max` entries of a list, as a new array. */
@@ -120,9 +180,18 @@ function calloutKind(action: GameEvent & { type: "ActionTaken" }): CalloutKind {
  * Folds one engine event into the effects layer. Pure: `at` is the clock reading the caller
  * took when the event arrived, and nothing in here reads a clock or a random number.
  */
-export function reduceFx(fx: TableFx, event: GameEvent, at: number): TableFx {
+export function reduceFx(
+  fx: TableFx,
+  event: GameEvent,
+  at: number,
+  ctx: FxContext = NO_CONTEXT,
+): TableFx {
   let nextId = fx.nextId;
   const id = () => nextId++;
+  /** A cut-in only starts when the middle is free; a second big moment is simply not shown. */
+  const cutInFree = fx.cutIn === null || at - fx.cutIn.at >= CUT_IN_MS;
+  const cutIn = (seat: SeatId, kind: CutInKind, line: SpeechLine | null): CutIn | null =>
+    cutInFree ? { id: id(), seat, kind, line, at } : fx.cutIn;
   /** The chips sitting in front of the seats, on their way into the middle. */
   const sweep = (): ChipMove[] =>
     Object.entries(fx.streetBets)
@@ -142,6 +211,7 @@ export function reduceFx(fx: TableFx, event: GameEvent, at: number): TableFx {
         nextId: nextId + 1,
         streetBets: {},
         potPaid: false,
+        showdownSeats: [],
         feed: tail(fx.feed, [{ id: nextId, type: "street", street: "preflop", at }], MAX_FEED),
       };
 
@@ -173,7 +243,10 @@ export function reduceFx(fx: TableFx, event: GameEvent, at: number): TableFx {
       const kind = calloutKind(event);
       const total = event.action.type === "bet" || event.action.type === "raise";
       const amount = total ? event.action.amount : event.amount;
-      const callout: Callout = { id: id(), seat: event.seat, kind, amount, at };
+      const calloutId = id();
+      // The roll is a hash of the callout's own id: pure, and different for every shout.
+      const line = pickLine(ctx.spiritOf(event.seat), kind, rollFrom(calloutId), ctx.bluff);
+      const callout: Callout = { id: calloutId, seat: event.seat, kind, amount, at, line };
       const feed: FeedEntry = {
         id: id(),
         type: "action",
@@ -189,6 +262,8 @@ export function reduceFx(fx: TableFx, event: GameEvent, at: number): TableFx {
       const moves: ChipMove[] = moved
         ? [{ id: id(), seat: event.seat, kind: "toBet", amount: event.amount, at }]
         : [];
+      // An all-in by a 御霊 is a cut-in; the shout and the cut-in share the one line.
+      const shove = kind === "allin" && ctx.spiritOf(event.seat) !== null;
       return {
         ...fx,
         nextId,
@@ -196,6 +271,7 @@ export function reduceFx(fx: TableFx, event: GameEvent, at: number): TableFx {
         callouts: tail(fx.callouts, [callout], MAX_CALLOUTS),
         chipMoves: tail(fx.chipMoves, moves, MAX_CHIP_MOVES),
         feed: tail(fx.feed, [feed], MAX_FEED),
+        cutIn: shove ? cutIn(event.seat, "allin", line) : fx.cutIn,
       };
     }
 
@@ -212,7 +288,7 @@ export function reduceFx(fx: TableFx, event: GameEvent, at: number): TableFx {
     }
 
     case "Showdown":
-      return { ...fx, flipAt: at };
+      return { ...fx, flipAt: at, showdownSeats: event.hands.map((h) => h.seat) };
 
     case "PotAwarded": {
       // Whatever was still in front of the seats goes in first, then the middle pays out.
@@ -229,6 +305,33 @@ export function reduceFx(fx: TableFx, event: GameEvent, at: number): TableFx {
           })),
       ];
       const winners = [...new Set(event.awards.filter((a) => a.amount > 0).map((a) => a.seat))];
+      // What each winner took home, in blinds, decides whether — and how loudly — she speaks.
+      const bb = ctx.bigBlind ?? 0;
+      const speech: Speech[] = [];
+      let nextCutIn = fx.cutIn;
+      for (const seat of winners) {
+        const spiritId = ctx.spiritOf(seat);
+        if (spiritId === null || bb <= 0) continue;
+        const won = event.awards
+          .filter((a) => a.seat === seat)
+          .reduce((sum, a) => sum + a.amount, 0);
+        const situation: SpeechSituation | null =
+          won >= BIG_WIN_BB * bb ? "bigwin" : won >= WIN_BB * bb ? "win" : null;
+        if (situation === null) continue;
+        const speechId = id();
+        const line = pickLine(spiritId, situation, rollFrom(speechId));
+        if (line === null) continue;
+        speech.push({ id: speechId, seat, situation, line, at });
+        if (situation === "bigwin" && nextCutIn === fx.cutIn)
+          nextCutIn = cutIn(seat, "bigwin", line);
+      }
+      // Whoever showed a hand and took nothing lost it in front of everyone.
+      for (const seat of fx.showdownSeats) {
+        if (winners.includes(seat)) continue;
+        const speechId = id();
+        const line = pickLine(ctx.spiritOf(seat), "lose", rollFrom(speechId));
+        if (line !== null) speech.push({ id: speechId, seat, situation: "lose", line, at });
+      }
       return {
         ...fx,
         nextId,
@@ -237,11 +340,32 @@ export function reduceFx(fx: TableFx, event: GameEvent, at: number): TableFx {
         chipMoves: tail(fx.chipMoves, moves, MAX_CHIP_MOVES),
         winners: winners.length === 0 ? fx.winners : winners,
         winnersAt: winners.length === 0 ? fx.winnersAt : at,
+        speech: tail(fx.speech, speech, MAX_SPEECH),
+        cutIn: nextCutIn,
       };
     }
 
-    case "HandEnded":
-      return { ...fx, streetBets: {}, handTimes: tail(fx.handTimes, [at], MAX_HAND_TIMES) };
+    case "HandEnded": {
+      // A 御霊 whose stack is gone says so; the first of them gets the cut-in.
+      const speech: Speech[] = [];
+      let nextCutIn = fx.cutIn;
+      for (const { id: seat, stack } of event.stacks) {
+        if (stack > 0) continue;
+        const speechId = id();
+        const line = pickLine(ctx.spiritOf(seat), "bust", rollFrom(speechId));
+        if (line === null) continue;
+        speech.push({ id: speechId, seat, situation: "bust", line, at });
+        if (nextCutIn === fx.cutIn) nextCutIn = cutIn(seat, "bust", line);
+      }
+      return {
+        ...fx,
+        nextId,
+        streetBets: {},
+        handTimes: tail(fx.handTimes, [at], MAX_HAND_TIMES),
+        speech: tail(fx.speech, speech, MAX_SPEECH),
+        cutIn: nextCutIn,
+      };
+    }
 
     default:
       return fx;

@@ -209,6 +209,8 @@ export function TableView({
   const fx = state.fx;
   const calloutBySeat = new Map<SeatId, (typeof fx.callouts)[number]>();
   for (const callout of fx.callouts) calloutBySeat.set(callout.seat, callout);
+  const speechBySeat = new Map<SeatId, (typeof fx.speech)[number]>();
+  for (const speech of fx.speech) speechBySeat.set(speech.seat, speech);
   const rate = handsPerMinute(fx.handTimes);
   // The engine keeps `contributed` — and so `snapshot.pot` — until the next hand starts, but
   // the chips have visibly flown to the winner by then. Once the pot is paid the middle is
@@ -325,6 +327,7 @@ export function TableView({
                   style={style}
                   overlay={bubble}
                   callout={calloutBySeat.get(seat.id) ?? null}
+                  speech={speechBySeat.get(seat.id) ?? null}
                   bigBlind={bigBlind}
                   winnerAt={fx.winners.includes(seat.id) ? fx.winnersAt : 0}
                   flipAt={revealAll ? fx.flipAt : 0}
