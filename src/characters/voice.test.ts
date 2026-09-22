@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import { createGate } from "./gate";
 import type { SpeechLine } from "./lines";
 import { type AudioLike, createVoicePlayer } from "./voice";
 
@@ -128,5 +129,84 @@ describe("createVoicePlayer", () => {
     p.play("mami", LINE_M);
     expect(spy).toHaveBeenCalledTimes(1);
     expect(made).toHaveLength(1);
+  });
+});
+
+describe("createVoicePlayer at the gate", () => {
+  class GatedAudio extends FakeAudio {
+    listeners = new Map<string, () => void>();
+    duration = 2;
+    addEventListener(type: string, listener: () => void) {
+      this.listeners.set(type, listener);
+    }
+    fire(type: string) {
+      this.listeners.get(type)?.();
+    }
+  }
+
+  function gated() {
+    const made: GatedAudio[] = [];
+    const gate = createGate();
+    const p = createVoicePlayer({
+      enabled: true,
+      volume: 1,
+      gate,
+      audio: (src) => {
+        const a = new GatedAudio(src);
+        made.push(a);
+        return a;
+      },
+    });
+    return { p, made, gate };
+  }
+
+  it("holds the table while a line plays and lets go when it ends", () => {
+    const { p, made, gate } = gated();
+    p.play("sakuya", LINE_A);
+    expect(gate.busy()).toBe(true);
+    made[0]?.fire("ended");
+    expect(gate.busy()).toBe(false);
+  });
+
+  it("lets go when the line is cut off by another, and when play() is refused", async () => {
+    const { p, made, gate } = gated();
+    p.play("sakuya", LINE_A);
+    p.play("sakuya", LINE_B);
+    // The first clip was paused (released); the second holds.
+    expect(gate.busy()).toBe(true);
+    made[1]?.fire("ended");
+    expect(gate.busy()).toBe(false);
+
+    const refusing = createGate();
+    const r = createVoicePlayer({
+      enabled: true,
+      volume: 1,
+      gate: refusing,
+      audio: (src) => ({
+        src,
+        volume: 1,
+        currentTime: 0,
+        preload: "",
+        play: () => Promise.reject(new Error("NotAllowedError")),
+        pause: () => {},
+      }),
+    });
+    r.play("mami", LINE_M);
+    expect(refusing.busy()).toBe(true);
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(refusing.busy()).toBe(false);
+  });
+
+  it("never holds longer than the clip plus a breath", () => {
+    vi.useFakeTimers();
+    try {
+      const { p, gate } = gated();
+      p.play("sakuya", LINE_A);
+      vi.advanceTimersByTime(2400);
+      expect(gate.busy()).toBe(false);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

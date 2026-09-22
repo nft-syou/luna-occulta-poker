@@ -2,8 +2,9 @@
 import "@testing-library/jest-dom/vitest";
 import { act, cleanup, fireEvent, render } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { createGate } from "../characters/gate";
 import { spirit } from "../characters/spirits";
-import { CUT_IN_HOLD_MS, CUT_IN_LEAVE_MS, CutInLayer } from "./CutInLayer";
+import { CUT_IN_HOLD_MS, CUT_IN_LEAVE_MS, CUT_IN_STILL_MS, CutInLayer } from "./CutInLayer";
 import type { CutIn } from "./fx";
 
 // @testing-library/react only auto-registers its afterEach(cleanup) hook when a global
@@ -75,5 +76,29 @@ describe("CutInLayer", () => {
     silent.unmount();
     const none = render(<CutInLayer cutIn={null} spirit={null} />);
     expect(none.container.querySelector(".cutin")).toBeNull();
+  });
+});
+
+describe("CutInLayer at the gate", () => {
+  it("holds the table while it is up and lets go as it leaves", () => {
+    const gate = createGate();
+    const { container } = render(
+      <CutInLayer cutIn={SHOVE} spirit={spirit("sakuya")} gate={gate} />,
+    );
+    expect(gate.busy()).toBe(true);
+    const video = container.querySelector("video");
+    if (video === null) throw new Error("no video");
+    fireEvent(video, new Event("ended"));
+    expect(gate.busy()).toBe(false);
+  });
+
+  it("holds a still only briefly", () => {
+    const gate = createGate();
+    render(<CutInLayer cutIn={SHOVE} spirit={spirit("tart")} reducedMotion={true} gate={gate} />);
+    expect(gate.busy()).toBe(true);
+    act(() => {
+      vi.advanceTimersByTime(CUT_IN_STILL_MS);
+    });
+    expect(gate.busy()).toBe(false);
   });
 });

@@ -143,6 +143,11 @@ export interface UseGameOptions {
   onAuthFailed: () => void;
   onBillingFailed: () => void;
   seed?: number;
+  /**
+   * Waited on before every CPU turn and before the next hand is dealt: the table's chance
+   * to finish a line or a cut-in before the game moves on. Absent, nothing waits.
+   */
+  gate?: () => Promise<void>;
 }
 
 type Msg =
@@ -277,6 +282,8 @@ function toConfig(settings: Settings, seed: number): GameConfig {
 
 export function useGame(options: UseGameOptions): GameController {
   const { settings, personas, backend, onAuthFailed, onBillingFailed } = options;
+  const gateRef = useRef(options.gate);
+  gateRef.current = options.gate;
   const model = options.model ?? settings.model;
   const [state, dispatch] = useReducer(reducer, {
     snapshot: null,
@@ -464,6 +471,9 @@ export function useGame(options: UseGameOptions): GameController {
             if (hand !== null) {
               await sleep(BETWEEN_HANDS_MS[speedRef.current]);
               if (!run.alive || pausedRef.current) return;
+              // The words after the hand — and a bust's cut-in — finish before the next deal.
+              await gateRef.current?.();
+              if (!run.alive || pausedRef.current) return;
             }
             table.startHand();
             sync();
@@ -484,6 +494,9 @@ export function useGame(options: UseGameOptions): GameController {
             dispatch({ type: "gameOver", error: NO_BACKEND_ERROR });
             return;
           }
+          // The last line said, the cut-in still up: seen out before the next 御霊 thinks.
+          await gateRef.current?.();
+          if (!run.alive || pausedRef.current) return;
           dispatch({ type: "thinking", seat });
           const snapshot = hand.snapshot();
           const legal = hand.legalActions(seat);

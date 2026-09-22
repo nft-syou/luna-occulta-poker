@@ -473,7 +473,7 @@ a {
   line-height: 1.6;
   letter-spacing: 0.02em;
   text-align: center;
-  animation: callout-flash var(--callout-ms, 900ms) var(--kitan-ease) forwards;
+  animation: callout-flash var(--speech-ms, 4200ms) var(--kitan-ease) forwards;
 }
 .speech::after {
   content: "";
@@ -1764,10 +1764,13 @@ body.showcase .app {
     transition: none;
   }
   .callout,
-  .callout-allin,
-  .speech {
+  .callout-allin {
     transform: none;
     animation: fade-out-hold var(--callout-ms, 900ms) linear forwards;
+  }
+  .speech {
+    transform: none;
+    animation: fade-out-hold var(--speech-ms, 4200ms) linear forwards;
   }
   .seat-flash {
     animation: fade-out-hold var(--callout-ms, 900ms) linear forwards;

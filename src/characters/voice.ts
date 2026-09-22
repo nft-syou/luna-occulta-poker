@@ -1,3 +1,4 @@
+import type { Gate } from "./gate";
 import { audioPath, type SpeechLine } from "./lines";
 import type { SpiritId } from "./spirits";
 
@@ -9,6 +10,9 @@ export interface AudioLike {
   preload: string;
   play(): Promise<void> | void;
   pause(): void;
+  /** Seconds, once known; NaN before the metadata loads. */
+  duration?: number;
+  addEventListener?(type: string, listener: () => void): void;
 }
 
 export interface VoicePlayer {
@@ -27,7 +31,12 @@ export interface VoicePlayerInit {
   volume: number;
   /** How to make an audio element; defaults to `new Audio(src)`. */
   audio?: (src: string) => AudioLike;
+  /** Held while a clip plays, so the table waits for the line to end. */
+  gate?: Gate;
 }
+
+/** A clip that never reports its end holds the table this long at most. */
+const CLIP_MAX_MS = 9000;
 
 function defaultAudio(src: string): AudioLike {
   return new Audio(src);
@@ -46,6 +55,8 @@ export function createVoicePlayer(init: VoicePlayerInit): VoicePlayer {
   let volume = clamp(init.volume);
   const clips = new Map<string, AudioLike>();
   const speaking = new Map<SpiritId, AudioLike>();
+  const gate = init.gate;
+  const holdKey = (audio: AudioLike) => `voice:${audio.src}`;
 
   const clip = (spiritId: SpiritId, line: SpeechLine): AudioLike | null => {
     const src = audioPath(spiritId, line);
@@ -54,6 +65,12 @@ export function createVoicePlayer(init: VoicePlayerInit): VoicePlayer {
     try {
       const audio = make(src);
       audio.preload = "auto";
+      // The gate is released when the clip ends or stops, however that happens.
+      if (gate !== undefined && typeof audio.addEventListener === "function") {
+        for (const type of ["ended", "pause", "error"]) {
+          audio.addEventListener(type, () => gate.release(holdKey(audio)));
+        }
+      }
       clips.set(src, audio);
       return audio;
     } catch {
@@ -68,6 +85,7 @@ export function createVoicePlayer(init: VoicePlayerInit): VoicePlayer {
     } catch {
       // A detached or never-loaded element: nothing to stop.
     }
+    gate?.release(holdKey(audio));
   };
 
   return {
@@ -85,11 +103,20 @@ export function createVoicePlayer(init: VoicePlayerInit): VoicePlayer {
       audio.volume = volume;
       audio.currentTime = 0;
       speaking.set(spiritId, audio);
+      // Hold the table for the clip: its own length plus a breath when known, a ceiling
+      // when not. A refused play() lets go at once.
+      const seconds = audio.duration;
+      const maxMs =
+        typeof seconds === "number" && Number.isFinite(seconds) && seconds > 0
+          ? Math.min(CLIP_MAX_MS, seconds * 1000 + 400)
+          : CLIP_MAX_MS;
+      gate?.hold(holdKey(audio), maxMs);
       try {
         const result = audio.play();
-        if (result !== undefined) result.catch(() => {});
+        if (result !== undefined) result.catch(() => gate?.release(holdKey(audio)));
       } catch {
         // Autoplay refused or no audio device: the words are on screen anyway.
+        gate?.release(holdKey(audio));
       }
     },
     preload(spiritId, line) {

@@ -1,9 +1,13 @@
 import { useEffect, useRef, useState } from "react";
+import type { Gate } from "../characters/gate";
 import type { Spirit } from "../characters/spirits";
 import type { CutIn } from "./fx";
 
-/** How long a cut-in stays if its video never says it ended (a still, a stalled load). */
-export const CUT_IN_HOLD_MS = 5000;
+/** How long a cut-in stays if its video never says it ended (a still, a stalled load). The
+ * longest showcase runs ten seconds; a still gets the shorter of the two holds below. */
+export const CUT_IN_HOLD_MS = 10_500;
+/** A still (reduced motion, or a video that fails) does not need the full ten seconds. */
+export const CUT_IN_STILL_MS = 4000;
 /** The 羽二重 fade on the way out; the dialog's own duration from the tone sheet. */
 export const CUT_IN_LEAVE_MS = 280;
 
@@ -14,6 +18,8 @@ interface Props {
   spirit: Spirit | null;
   /** Under reduced motion the standing art takes the video's place. */
   reducedMotion?: boolean;
+  /** Held while the cut-in is up, so the hand does not move on underneath it. */
+  gate?: Gate;
 }
 
 /**
@@ -24,7 +30,7 @@ interface Props {
  * and it owns its own lifetime: the state keeps the last cut-in around for the voice and
  * the log, and this layer decides when it has been seen.
  */
-export function CutInLayer({ cutIn, spirit, reducedMotion = false }: Props) {
+export function CutInLayer({ cutIn, spirit, reducedMotion = false, gate }: Props) {
   const [active, setActive] = useState<{ cutIn: CutIn; spirit: Spirit } | null>(null);
   const [leaving, setLeaving] = useState(false);
   const shownRef = useRef<number | null>(null);
@@ -37,21 +43,26 @@ export function CutInLayer({ cutIn, spirit, reducedMotion = false }: Props) {
     setLeaving(false);
   }, [cutIn, spirit]);
 
-  // The hold is the ceiling; a video that ends sooner takes the panel down with it.
+  // The hold is the ceiling; a video that ends sooner takes the panel down with it. The
+  // table waits at the gate for as long as the panel is up.
   useEffect(() => {
     if (active === null || leaving) return;
-    const timer = setTimeout(() => setLeaving(true), CUT_IN_HOLD_MS);
+    const still = reducedMotion || active.spirit.showcase === null;
+    const holdMs = still ? CUT_IN_STILL_MS : CUT_IN_HOLD_MS;
+    gate?.hold("cutin", holdMs + CUT_IN_LEAVE_MS);
+    const timer = setTimeout(() => setLeaving(true), holdMs);
     return () => clearTimeout(timer);
-  }, [active, leaving]);
+  }, [active, leaving, reducedMotion, gate]);
 
   useEffect(() => {
     if (!leaving) return;
+    gate?.release("cutin");
     const timer = setTimeout(() => {
       setActive(null);
       setLeaving(false);
     }, CUT_IN_LEAVE_MS);
     return () => clearTimeout(timer);
-  }, [leaving]);
+  }, [leaving, gate]);
 
   if (active === null) return null;
   const { spirit: who, cutIn: shown } = active;

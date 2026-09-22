@@ -556,3 +556,50 @@ describe("useGame", () => {
     unmount();
   });
 });
+
+describe("useGame at the gate", () => {
+  it("waits at the gate before every CPU turn and before each new hand", async () => {
+    let waits = 0;
+    let open = true;
+    let release: () => void = () => {};
+    const gate = () => {
+      waits += 1;
+      if (open) return Promise.resolve();
+      return new Promise<void>((resolve) => {
+        release = resolve;
+      });
+    };
+    const { result, unmount } = renderHook(() =>
+      useGame({
+        settings: cpuOnly,
+        personas: spiritPersonas(),
+        backend: createMockBackend(),
+        onAuthFailed: () => {},
+        onBillingFailed: () => {},
+        seed: 5,
+        gate,
+      }),
+    );
+    await waitFor(() => expect(result.current.state.handsPlayed).toBeGreaterThanOrEqual(1), {
+      timeout: 5000,
+    });
+    const decisions = result.current.state.log.filter((e) => e.decision !== undefined).length;
+    // One wait per decision, plus one per hand boundary.
+    expect(waits).toBeGreaterThanOrEqual(decisions);
+
+    // Close the gate: the table stops at the next wait and moves again once it opens.
+    open = false;
+    const before = result.current.state.log.length;
+    await waitFor(() => expect(waits).toBeGreaterThan(decisions), { timeout: 5000 });
+    const stalled = result.current.state.log.length;
+    await new Promise((r) => setTimeout(r, 150));
+    expect(result.current.state.log.length).toBe(stalled);
+    expect(stalled).toBeGreaterThanOrEqual(before);
+    open = true;
+    release();
+    await waitFor(() => expect(result.current.state.log.length).toBeGreaterThan(stalled), {
+      timeout: 5000,
+    });
+    unmount();
+  });
+});

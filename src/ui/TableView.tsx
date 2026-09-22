@@ -1,6 +1,7 @@
 import type { SeatId } from "@jev-poker/engine";
 import { type CSSProperties, useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import type { Gate } from "../characters/gate";
 import { pickLine, rollFrom } from "../characters/lines";
 import { CPU_SPIRIT_IDS, spirit } from "../characters/spirits";
 import type { VoicePlayer } from "../characters/voice";
@@ -41,7 +42,12 @@ interface Props {
   onPrefetchChange?: (prefetch: boolean) => void;
   /** Says the 御霊's lines aloud. Absent, the table is silent and the bubbles still show. */
   voice?: VoicePlayer;
+  /** Held by the cut-in while it is up. */
+  gate?: Gate;
 }
+
+/** How long a bubble with a spoken line stays: long enough to read and to hear it out. */
+const SPEECH_MS = 4200;
 
 /** The gap between one 御霊's greeting and the next as the table opens. */
 const GREET_GAP_MS = 600;
@@ -123,6 +129,7 @@ export function TableView({
   prefetch,
   onPrefetchChange,
   voice,
+  gate,
 }: Props) {
   const { t } = useTranslation();
   const speedId = useId();
@@ -322,6 +329,8 @@ export function TableView({
     "--chip-ms": `${timings.chipMoveMs}ms`,
     "--glow-ms": `${timings.winnerGlowMs}ms`,
     "--flip-ms": `${timings.cardFlipMs}ms`,
+    // A spoken line outlasts the plain shout: the loop waits for the voice, so can the bubble.
+    "--speech-ms": `${Math.max(timings.calloutMs, SPEECH_MS)}ms`,
   } as CSSProperties;
 
   return (
@@ -436,7 +445,12 @@ export function TableView({
             <TableFxLayer moves={fx.chipMoves} spots={spots} bigBlind={bigBlind} />
 
             {/* A 御霊's all-in, big pot or bust, over the middle. */}
-            <CutInLayer cutIn={fx.cutIn} spirit={cutInSpirit} reducedMotion={reducedMotion} />
+            <CutInLayer
+              cutIn={fx.cutIn}
+              spirit={cutInSpirit}
+              reducedMotion={reducedMotion}
+              gate={gate}
+            />
 
             {/* Each seat's live bet, drawn as chips between the player and the middle. */}
             {layout.map(({ seat, player, betX, betY }) => (

@@ -1,6 +1,7 @@
 import type { JevBackend } from "@jev-poker/agent";
 import type { SeatId } from "@jev-poker/engine";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { createGate } from "../characters/gate";
 import { spirit, spiritPersonas } from "../characters/spirits";
 import { createVoicePlayer } from "../characters/voice";
 import type { Language } from "../i18n";
@@ -45,9 +46,12 @@ export function GameScreen({
   // The Vercel gateway answers as `typesafe-ai/jev`, so that is what the table should say.
   const model = connection === null ? settings.model : modelFor(connection, settings.model);
   // One player per sitting; the settings' switch and slider reach it through effects.
+  // The gate the loop waits at: held by a line being said and by a cut-in on screen.
+  const [gate] = useState(() => createGate());
   const [voice] = useState(() =>
-    createVoicePlayer({ enabled: settings.voice, volume: settings.voiceVolume }),
+    createVoicePlayer({ enabled: settings.voice, volume: settings.voiceVolume, gate }),
   );
+  const waitForTable = useCallback(() => gate.wait(), [gate]);
   useEffect(() => voice.setEnabled(settings.voice), [voice, settings.voice]);
   useEffect(() => voice.setVolume(settings.voiceVolume), [voice, settings.voiceVolume]);
   useEffect(() => () => voice.stopAll(), [voice]);
@@ -60,6 +64,7 @@ export function GameScreen({
     model,
     onAuthFailed,
     onBillingFailed,
+    gate: waitForTable,
   });
   // A 御霊's seat is named after her in the current language; a human keeps their own name.
   const personaNames = useMemo(() => {
@@ -81,6 +86,7 @@ export function GameScreen({
         model={model}
         prefetch={settings.prefetch}
         voice={voice}
+        gate={gate}
         onSpeedChange={(speed) => onSettingsChange({ ...settings, speed })}
         onPrefetchChange={(prefetch) => onSettingsChange({ ...settings, prefetch })}
         onLeave={onLeave}
