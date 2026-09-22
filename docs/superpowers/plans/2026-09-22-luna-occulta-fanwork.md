@@ -49,7 +49,7 @@
 ### Task 2: Spirit data and asset intake
 
 **Files:**
-- Create: `src/characters/spirits.ts`, `src/characters/spirits.test.ts`, `scripts/kitan-assets.json`, `scripts/fetch-kitan-assets.mjs`, `scripts/kitan-assets/face_mami_loop_v2.webp`, `public/kitan/{icon,canon,showcase}/*`, `public/kitan/README.md`
+- Create: `src/characters/spirits.ts`, `src/characters/spirits.test.ts`, `scripts/kitan-assets.json`, `scripts/fetch-kitan-assets.mjs`, `public/kitan/{icon,canon,showcase}/*`, `public/kitan/README.md`
 - Modify: `package.json` (`assets:kitan` script, `sharp` devDependency)
 
 **Interfaces (produces):**

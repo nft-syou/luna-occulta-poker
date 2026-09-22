@@ -13,8 +13,10 @@
     },
     {
       "out": "icon/mami.webp",
-      "transform": "copy",
-      "file": "scripts/kitan-assets/face_mami_loop_v2.webp"
+      "transform": "chibiFace",
+      "url": "https://kura.vibe.co.jp/canon/mami_chibi_sheet.png",
+      "crop": { "left": 785, "top": 50, "width": 225, "height": 224 },
+      "$comment": "マミには公式の顔アイコンが無いので、ちびシート右上の笑顔を切り出し、緑を透過にする"
     },
     {
       "out": "icon/tart.webp",

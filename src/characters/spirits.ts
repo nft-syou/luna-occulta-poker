@@ -40,7 +40,7 @@ export interface Spirit {
   readonly silent: boolean;
   /** True for 咲耶: her lines give her bluffs away, because canon says her face does. */
   readonly tell: boolean;
-  /** Face icon at the seat (256px webp, transparent or looped). */
+  /** Face icon at the seat (256px webp, transparent). */
   readonly icon: string;
   /** Standing canon art; the cut-in's still under reduced motion. */
   readonly canon: string;

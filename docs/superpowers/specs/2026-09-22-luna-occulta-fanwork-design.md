@@ -33,7 +33,7 @@ jev-poker を『月蝕綺譚 -Luna Occulta-』の非公式二次創作ポーカ�
 | 題名 | 「宵闇の賭場」 / 英 "Yoiyami Poker"。副題「月蝕綺譚 二次創作ポーカー」 |
 | 非公式表記 | ヘッダ副題・フッター・README・`index.html` の description に明記。fanworks と CryptoNinja ガイドラインへリンク。`#月蝕綺譚` |
 | 素材 | 公式素材を `public/kitan/` にコピーして同梱 (取り込みスクリプトで再現可能にする)。素材集に見えないよう、ゲームが使う分だけ |
-| 席の絵 | 顔アイコン (公式透過 webp を 256px に縮小。マミは手元の瞬きループ webp)。動画は席に置かない |
+| 席の絵 | 顔アイコン (公式透過 webp を 256px に縮小。マミは公式アイコンが無いので、ちびシートの笑顔を切り出して緑を透過にする)。動画は席に置かない |
 | 動画 | お披露目 (素の版) を大きな局面のカットインにだけ使う |
 | 声 | Irodori-TTS VoiceDesign をローカル (RTX 2080 Ti) で回し、公式の caption + seed で生成。mp3 を同梱 |
 | 台本 | `src/characters/lines.ts` が正。id 安定。生成前にユーザーがレビュー |
@@ -102,7 +102,7 @@ export interface Spirit {
 - 台帳 `scripts/kitan-assets.json`: `{ id, url, sha256?, out, transform }`。
   transform は `icon256` (webp 256px)、`copy` のどちらか。
 - 実行: `pnpm assets:kitan`。`sharp` (devDependency) で縮小。出力先 `public/kitan/{icon,canon,showcase}/<spiritId>.*`。
-- マミの顔は台帳外。`scripts/kitan-assets/face_mami_loop_v2.webp` をリポジトリに置き、スクリプトが `public/kitan/icon/mami.webp` へコピーする (アニメ webp なので縮小しない)。
+- マミには公式の顔アイコンが無い。台帳の `chibiFace` 変換で、ちびシート右上の笑顔を切り出し、緑背景を距離キーで透過にして 256px に収める。
 - 生成物 (`public/kitan/**`) はコミットする。README に出典と掟を書く。
 
 素材の対応:
@@ -111,7 +111,7 @@ export interface Spirit {
 | --- | --- | --- | --- |
 | あるじどの | `arujidono_icon.webp` | `arujidono_canon.webp` | なし |
 | 咲耶 | `sakuya_icon.webp` | `sakuya_canon.webp` | `showcase_sakuya_v3.mp4` |
-| マミ | 手元の `face_mami_loop_v2.webp` | `mami_canon.webp` | `showcase_mami_v3.mp4` |
+| マミ | `mami_chibi_sheet.png` の笑顔を切り出し | `mami_canon.webp` | `showcase_mami_v3.mp4` |
 | タルト | `tart_icon.webp` | `tart_canon.webp` | `showcase_tart_v4.mp4` |
 | 孫市 | `magoichi_icon.webp` | `magoichi_canon.webp` | `showcase_magoichi_v5.mp4` |
 | 蛇ノ目 | `janome_icon.webp` | `janome_canon.webp` | `showcase_janome_v9.mp4` |

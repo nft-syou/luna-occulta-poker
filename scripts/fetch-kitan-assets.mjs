@@ -39,9 +39,41 @@ async function transform(asset, bytes) {
         .toBuffer();
     case "copy":
       return bytes;
+    case "chibiFace":
+      return chibiFace(bytes, asset.crop, asset.key ?? [27, 119, 52]);
     default:
       throw new Error(`${asset.out}: unknown transform ${asset.transform}`);
   }
+}
+
+/**
+ * A face cut from a chibi sheet: the sheet is drawn on flat green, so the crop is keyed to
+ * transparency by distance from the green, with a soft edge and the green spill pulled out
+ * of the fringe, then framed on 256px like the official face icons.
+ */
+async function chibiFace(bytes, crop, key) {
+  const { data, info } = await sharp(bytes)
+    .extract(crop)
+    .ensureAlpha()
+    .raw()
+    .toBuffer({ resolveWithObject: true });
+  const [kr, kg, kb] = key;
+  const soft = 40;
+  const solid = 120;
+  for (let i = 0; i < data.length; i += 4) {
+    const r = data[i];
+    const g = data[i + 1];
+    const b = data[i + 2];
+    const d = Math.abs(r - kr) + Math.abs(g - kg) + Math.abs(b - kb);
+    const alpha = Math.max(0, Math.min(1, (d - soft) / (solid - soft)));
+    data[i + 3] = Math.round(alpha * 255);
+    // Despill: a fringe pixel keeps no more green than its other channels justify.
+    if (alpha < 1 && g > Math.max(r, b)) data[i + 1] = Math.max(r, b);
+  }
+  return sharp(data, { raw: { width: info.width, height: info.height, channels: 4 } })
+    .resize(256, 256, { fit: "contain", background: { r: 0, g: 0, b: 0, alpha: 0 } })
+    .webp({ quality: 90 })
+    .toBuffer();
 }
 
 let written = 0;
