@@ -1,0 +1,93 @@
+{
+  "$comment": "Official 月蝕綺譚 assets this game uses, and where they come from. Run `pnpm assets:kitan` to (re)build public/kitan/. Sources: vibe.co.jp/luna-occulta (canon sheets, icons) and kura.vibe.co.jp (showcase videos), both published for fan works under https://vibe.co.jp/luna-occulta/fanworks.",
+  "assets": [
+    {
+      "out": "icon/arujidono.webp",
+      "transform": "icon256",
+      "url": "https://vibe.co.jp/luna-occulta/media/img/canon/arujidono_icon.webp"
+    },
+    {
+      "out": "icon/sakuya.webp",
+      "transform": "icon256",
+      "url": "https://vibe.co.jp/luna-occulta/media/img/canon/sakuya_icon.webp"
+    },
+    {
+      "out": "icon/mami.webp",
+      "transform": "copy",
+      "file": "scripts/kitan-assets/face_mami_loop_v2.webp"
+    },
+    {
+      "out": "icon/tart.webp",
+      "transform": "icon256",
+      "url": "https://vibe.co.jp/luna-occulta/media/img/canon/tart_icon.webp"
+    },
+    {
+      "out": "icon/magoichi.webp",
+      "transform": "icon256",
+      "url": "https://vibe.co.jp/luna-occulta/media/img/canon/magoichi_icon.webp"
+    },
+    {
+      "out": "icon/janome.webp",
+      "transform": "icon256",
+      "url": "https://vibe.co.jp/luna-occulta/media/img/canon/janome_icon.webp"
+    },
+
+    {
+      "out": "canon/arujidono.webp",
+      "transform": "canon",
+      "url": "https://vibe.co.jp/luna-occulta/media/img/canon/arujidono_canon.webp"
+    },
+    {
+      "out": "canon/sakuya.webp",
+      "transform": "canon",
+      "url": "https://vibe.co.jp/luna-occulta/media/img/canon/sakuya_canon.webp"
+    },
+    {
+      "out": "canon/mami.webp",
+      "transform": "canon",
+      "url": "https://vibe.co.jp/luna-occulta/media/img/canon/mami_canon.webp"
+    },
+    {
+      "out": "canon/tart.webp",
+      "transform": "canon",
+      "url": "https://vibe.co.jp/luna-occulta/media/img/canon/tart_canon.webp"
+    },
+    {
+      "out": "canon/magoichi.webp",
+      "transform": "canon",
+      "url": "https://vibe.co.jp/luna-occulta/media/img/canon/magoichi_canon.webp"
+    },
+    {
+      "out": "canon/janome.webp",
+      "transform": "canon",
+      "url": "https://vibe.co.jp/luna-occulta/media/img/canon/janome_canon.webp"
+    },
+
+    {
+      "out": "showcase/sakuya.mp4",
+      "transform": "copy",
+      "url": "https://kura.vibe.co.jp/showcase/showcase_sakuya_v3.mp4",
+      "sha256": "5d6b7c2d5423af8ebe21c48d7920d566a05cd4d4ef520829a2d7cd028d697e9c"
+    },
+    {
+      "out": "showcase/mami.mp4",
+      "transform": "copy",
+      "url": "https://kura.vibe.co.jp/showcase/showcase_mami_v3.mp4"
+    },
+    {
+      "out": "showcase/tart.mp4",
+      "transform": "copy",
+      "url": "https://kura.vibe.co.jp/showcase/showcase_tart_v4.mp4"
+    },
+    {
+      "out": "showcase/magoichi.mp4",
+      "transform": "copy",
+      "url": "https://kura.vibe.co.jp/showcase/showcase_magoichi_v5.mp4"
+    },
+    {
+      "out": "showcase/janome.mp4",
+      "transform": "copy",
+      "url": "https://kura.vibe.co.jp/showcase/showcase_janome_v9.mp4"
+    }
+  ]
+}
