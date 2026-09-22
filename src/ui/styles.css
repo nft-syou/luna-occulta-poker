@@ -632,6 +632,79 @@ a {
     opacity: 0;
   }
 }
+/* --- Cut-in ---------------------------------------------------------------- */
+/* The showcase over the middle: a 羽二重 panel holding the video, the name in gold and the
+   line in 月白. It rises 8px as it fades in and sinks as it fades out. */
+.cutin {
+  position: absolute;
+  inset: 0;
+  z-index: 7;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+  animation: habutae-in 280ms var(--kitan-ease);
+}
+.cutin.leaving {
+  animation: cutin-out 280ms var(--kitan-ease) forwards;
+}
+@keyframes cutin-out {
+  to {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+}
+.cutin-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  width: min(46%, 300px);
+  padding: 12px 12px 14px;
+  animation: none;
+}
+.cutin-video,
+.cutin-still {
+  display: block;
+  width: 100%;
+  max-height: 46vh;
+  object-fit: contain;
+  border-radius: var(--kitan-rounded-md);
+  background: var(--kitan-panel);
+}
+.cutin-caption {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  text-align: center;
+}
+.cutin-name {
+  font-weight: 800;
+  letter-spacing: 0.2em;
+  color: var(--kitan-kindei-hi);
+}
+.cutin-line {
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: var(--kitan-geppaku);
+}
+.cutin-allin .cutin-panel,
+.cutin-panel.cutin-allin {
+  box-shadow:
+    var(--kitan-shadow),
+    0 0 34px 2px rgba(201, 58, 46, 0.3);
+}
+.cutin-panel.cutin-bigwin {
+  box-shadow:
+    var(--kitan-shadow),
+    0 0 34px 2px rgba(240, 206, 126, 0.3);
+}
+@media (max-width: 720px) {
+  .cutin-panel {
+    width: min(70%, 260px);
+  }
+}
+
 /* --- Chips in flight ------------------------------------------------------ */
 /* One felt-sized layer that clips every flight. Each `.chip-fly` box is as big as the felt and
    is translated by tens of percent, so unclipped it reached past the page, grew the scrollable

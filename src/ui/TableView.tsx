@@ -1,11 +1,13 @@
 import type { SeatId } from "@jev-poker/engine";
 import { type CSSProperties, useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { CPU_SPIRIT_IDS, spirit } from "../characters/spirits";
 import type { Language } from "../i18n";
 import { ActionBar } from "./ActionBar";
 import { ActionFeed } from "./ActionFeed";
 import { CardView } from "./CardView";
 import { ChipStack } from "./ChipStack";
+import { CutInLayer } from "./CutInLayer";
 import { DecisionBubble } from "./DecisionBubble";
 import { cardText } from "./format";
 import { handsPerMinute } from "./fx";
@@ -163,6 +165,23 @@ export function TableView({
     felt.scrollIntoView({ block: "end" });
   }, [phone, legalForHuman]);
   const names = new Map(state.seats.map((s) => [s.id, s.name]));
+  // Warm the showcase videos while the first hand is dealt, so a cut-in never buffers. Done
+  // with detached <video preload> elements, not fetch: the app's fetch is Jev's.
+  useEffect(() => {
+    const warm: HTMLVideoElement[] = [];
+    for (const id of CPU_SPIRIT_IDS) {
+      const url = spirit(id).showcase;
+      if (url === null) continue;
+      const video = document.createElement("video");
+      video.preload = "auto";
+      video.muted = true;
+      video.src = url;
+      warm.push(video);
+    }
+    return () => {
+      for (const video of warm) video.removeAttribute("src");
+    };
+  }, []);
   const count = state.seats.length;
   // Put the first human seat (or seat 0) at the bottom of the table.
   const anchor = game.humanSeats[0] ?? 0;
@@ -211,6 +230,9 @@ export function TableView({
   for (const callout of fx.callouts) calloutBySeat.set(callout.seat, callout);
   const speechBySeat = new Map<SeatId, (typeof fx.speech)[number]>();
   for (const speech of fx.speech) speechBySeat.set(speech.seat, speech);
+  const cutInSeat = fx.cutIn === null ? null : state.seats.find((s) => s.id === fx.cutIn?.seat);
+  const cutInSpirit =
+    cutInSeat === null || cutInSeat === undefined ? null : spirit(cutInSeat.spiritId);
   const rate = handsPerMinute(fx.handTimes);
   // The engine keeps `contributed` — and so `snapshot.pot` — until the next hand starts, but
   // the chips have visibly flown to the winner by then. Once the pot is paid the middle is
@@ -338,6 +360,9 @@ export function TableView({
 
             {/* Chips on their way out to a bet, into the pot, or home to a winner. */}
             <TableFxLayer moves={fx.chipMoves} spots={spots} bigBlind={bigBlind} />
+
+            {/* A 御霊's all-in, big pot or bust, over the middle. */}
+            <CutInLayer cutIn={fx.cutIn} spirit={cutInSpirit} reducedMotion={reducedMotion} />
 
             {/* Each seat's live bet, drawn as chips between the player and the middle. */}
             {layout.map(({ seat, player, betX, betY }) => (
