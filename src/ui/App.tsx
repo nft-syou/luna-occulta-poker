@@ -88,7 +88,7 @@ export function App() {
             {connection === null ? t("app.connection") : t(`connection.route_${connection.route}`)}
           </button>
           <LanguageSwitch language={language} onChange={changeLanguage} />
-          <a href="https://github.com/nft-syou/jev-poker" target="_blank" rel="noreferrer">
+          <a href="https://github.com/nft-syou/luna-occulta-poker" target="_blank" rel="noreferrer">
             {t("app.source")}
           </a>
         </nav>
@@ -127,6 +127,22 @@ export function App() {
           />
         )}
       </main>
+
+      <footer className="footer">
+        <p>
+          {t("app.fanworkNotice")}{" "}
+          <a href="https://vibe.co.jp/luna-occulta/fanworks" target="_blank" rel="noreferrer">
+            {t("app.fanworksLink")}
+          </a>
+          {" · "}
+          <a href="https://www.ninja-dao.com/guidelines" target="_blank" rel="noreferrer">
+            {t("app.guidelineLink")}
+          </a>
+          {" · "}
+          {t("app.hashtag")}
+        </p>
+        <p>{t("app.poweredBy")}</p>
+      </footer>
 
       <ConnectionModal
         open={keyModalOpen}

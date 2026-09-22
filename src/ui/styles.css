@@ -1,14 +1,54 @@
+/* --- 宵闇に金 — the tone of 月蝕綺譚 ------------------------------------------
+   Tokens from the official UI kit (kitan-lore `get_ui_kit("tokens")`). The ground is always
+   the indigo dark, gold is drawn as lines and grains never as slabs, the eclipse red is kept
+   for warnings and all-ins only, and nothing glows in a ring. */
 :root {
+  --kitan-yoiyami: #131320;
+  --kitan-yoiyami-hi: #1b1b2e;
+  --kitan-kindei: #d9a94c;
+  --kitan-kindei-hi: #f0ce7e;
+  --kitan-shokko: #c93a2e;
+  --kitan-geppaku: #e8e4d8;
+  --kitan-anshi: #5c4470;
+  --kitan-anshi-hi: #8e6b9e;
+  --kitan-panel: #100e1c;
+  --kitan-bubble: #181626;
+  --kitan-sublabel: #9d93b5;
+  --kitan-ink: #1a1622;
+  --kitan-font: "Shippori Mincho B1", "Hiragino Mincho ProN", "Yu Mincho", serif;
+  --kitan-num: "M PLUS Rounded 1c", "Hiragino Sans", system-ui, sans-serif;
+  --kitan-rounded-sm: 4px;
+  --kitan-rounded-md: 5px;
+  --kitan-rounded-lg: 10px;
+  --kitan-line: rgba(217, 169, 76, 0.38);
+  --kitan-line-quiet: rgba(232, 228, 216, 0.14);
+  --kitan-gold-edge: linear-gradient(180deg, #e2c176, #95713a, #6a4e22);
+  --kitan-quiet-edge: linear-gradient(180deg, #565064, #2c2838);
+  --kitan-lacquer: linear-gradient(180deg, #232033, #161320);
+  --kitan-lacquer-pressed: linear-gradient(180deg, #16131f, #1c1929);
+  --kitan-habutae: radial-gradient(
+    ellipse 220% 220% at 50% -30%,
+    rgba(36, 32, 62, 0.96),
+    rgba(24, 20, 50, 0.96) 42%,
+    rgba(17, 15, 30, 0.96)
+  );
+  --kitan-shadow: 0 18px 44px rgba(0, 0, 0, 0.7), 0 4px 14px rgba(0, 0, 0, 0.5);
+  --kitan-shadow-sm: 0 6px 18px rgba(0, 0, 0, 0.55);
+  --kitan-ease: cubic-bezier(0.215, 0.61, 0.355, 1);
   color-scheme: dark;
-  font-family: system-ui, sans-serif;
-  background: #0f1a14;
-  color: #e8efe9;
+  font-family: var(--kitan-font);
+  font-weight: 500;
+  background: var(--kitan-yoiyami);
+  color: var(--kitan-geppaku);
   /* Keep the scrollbar's width reserved: the centred layout must not jump sideways when a
      vertical scrollbar comes and goes (the action bar mounting, the history growing). */
   scrollbar-gutter: stable;
 }
 body {
   margin: 0;
+  min-height: 100vh;
+  background: linear-gradient(180deg, var(--kitan-yoiyami), var(--kitan-yoiyami-hi));
+  background-attachment: fixed;
 }
 .app {
   max-width: 1100px;
@@ -22,16 +62,32 @@ body {
   gap: 16px;
   flex-wrap: wrap;
 }
+/* Headings are gold: weight 800, wide tracking, the gradient clipped to the glyphs. */
+h1,
+h2,
+h3,
+.kitan-heading {
+  font-family: var(--kitan-font);
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  line-height: 1.3;
+  background: linear-gradient(180deg, #fff9e6, #f2d88e, #cfa040, #96692a);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: var(--kitan-kindei-hi);
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.6));
+}
 .topbar h1 {
   margin: 0;
-  font-size: 1.5rem;
+  font-size: 1.6rem;
 }
 .muted {
-  color: #9fb3a6;
+  color: var(--kitan-sublabel);
   margin: 4px 0;
 }
 .error {
-  color: #ff8a80;
+  color: #e0785f;
 }
 .row {
   display: flex;
@@ -51,50 +107,154 @@ body {
   gap: 4px;
   font-size: 0.9rem;
 }
+/* Numbers are rounded gothic, so a stack and a pot read at a glance among the mincho. */
+.num,
+.seat-stack,
+.chip-stack-amount,
+.pot,
+.pot-total,
+.ticker-value,
+.showcase-bar-value,
+.showcase-facts dd,
+.stats table td,
+.sizing-info,
+.sizing-fine input[type="number"],
+.action-main .act-amount {
+  font-family: var(--kitan-num);
+  font-variant-numeric: tabular-nums;
+}
 button,
 select,
-input {
+input,
+textarea {
   font: inherit;
   padding: 8px 12px;
-  border-radius: 8px;
-  border: 1px solid #2f4a3b;
-  background: #16261d;
-  color: inherit;
+  border-radius: var(--kitan-rounded-sm);
+  border: 1px solid var(--kitan-line-quiet);
+  background: var(--kitan-panel);
+  color: var(--kitan-geppaku);
 }
+select:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+button:focus-visible {
+  outline: 1px solid var(--kitan-kindei);
+  outline-offset: 1px;
+}
+/* KitanButton: a dark lacquer face inside a thin forged-gold edge, gold lettering, and a
+   90 ms sink on press. The edge is a gradient border drawn with two background layers. */
 button {
-  background: #2e8b57;
-  border-color: #2e8b57;
+  position: relative;
+  min-height: 38px;
+  padding: 6px 14px;
+  border: 1px solid transparent;
+  border-radius: var(--kitan-rounded-md);
+  background:
+    var(--kitan-lacquer) padding-box,
+    var(--kitan-gold-edge) border-box;
+  color: var(--kitan-kindei-hi);
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  line-height: 1.15;
+  text-shadow:
+    0 0 8px rgba(240, 214, 150, 0.35),
+    0 1px 2px rgba(0, 0, 0, 0.87);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.55);
   cursor: pointer;
+  transition:
+    transform 90ms ease-out,
+    opacity 200ms ease-out;
+  -webkit-tap-highlight-color: transparent;
+}
+button:active {
+  transform: scale(0.965);
+  background:
+    var(--kitan-lacquer-pressed) padding-box,
+    var(--kitan-gold-edge) border-box;
 }
 button:disabled {
-  opacity: 0.5;
+  opacity: 0.4;
   cursor: not-allowed;
+  transform: none;
 }
 button.secondary {
-  background: transparent;
+  background:
+    var(--kitan-lacquer) padding-box,
+    var(--kitan-quiet-edge) border-box;
+  color: var(--kitan-geppaku);
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.87);
+}
+button.secondary:active {
+  background:
+    var(--kitan-lacquer-pressed) padding-box,
+    var(--kitan-quiet-edge) border-box;
 }
 button.link {
+  min-height: 0;
   background: none;
   border: none;
   padding: 0;
-  color: #7fd1a0;
+  box-shadow: none;
+  color: var(--kitan-kindei);
+  text-shadow: none;
+  letter-spacing: 0.04em;
+  font-weight: 700;
   text-decoration: underline;
+  text-underline-offset: 3px;
 }
+/* 羽二重: a dialog has no gold frame. It floats on its shadow and on the lift of its face,
+   brightest where the moon would be, sinking inward at the foot. */
 .modal-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.6);
+  background: rgba(8, 7, 16, 0.72);
   display: grid;
   place-items: center;
   padding: 16px;
 }
+.modal,
+.habutae {
+  position: relative;
+  border: none;
+  border-radius: 18px;
+  padding: 24px 22px 22px;
+  background: var(--kitan-habutae);
+  box-shadow:
+    var(--kitan-shadow),
+    inset 0 -12px 18px -12px rgba(0, 0, 0, 0.4);
+  animation: habutae-in 280ms var(--kitan-ease);
+}
+.modal::before,
+.habutae::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  border-radius: 18px 18px 0 0;
+  background: linear-gradient(
+    90deg,
+    transparent 14%,
+    rgba(232, 228, 216, 0.14) 50%,
+    transparent 86%
+  );
+  pointer-events: none;
+}
+@keyframes habutae-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
 .modal {
-  background: #16261d;
-  border: 1px solid #2f4a3b;
-  border-radius: 12px;
-  padding: 20px;
   max-width: 480px;
   width: 100%;
+  box-sizing: border-box;
 }
 .modal input,
 .modal select {
@@ -125,9 +285,16 @@ table.seats td {
   padding: 6px;
   text-align: left;
 }
+table.seats th {
+  color: var(--kitan-sublabel);
+  font-weight: 700;
+  font-size: 0.8rem;
+  letter-spacing: 0.08em;
+}
 table.seats input,
 table.seats select {
   width: 100%;
+  box-sizing: border-box;
 }
 .visually-hidden {
   position: absolute;
@@ -137,7 +304,26 @@ table.seats select {
   clip: rect(0 0 0 0);
 }
 a {
-  color: #7fd1a0;
+  color: var(--kitan-kindei);
+  text-underline-offset: 3px;
+}
+.setup {
+  padding: 20px 22px 22px;
+}
+/* The fanwork notice: every screen says what this is and whose world it borrows. */
+.footer {
+  margin-top: 28px;
+  padding-top: 12px;
+  border-top: 1px solid var(--kitan-line-quiet);
+  color: var(--kitan-sublabel);
+  font-size: 0.8rem;
+  line-height: 1.7;
+}
+.footer p {
+  margin: 0 0 4px;
+}
+.footer a {
+  color: var(--kitan-kindei);
 }
 .table-screen {
   /* One set of knobs for the felt: the media query below shrinks them for phones. */
@@ -177,63 +363,65 @@ a {
   justify-content: space-between;
 }
 .badge {
-  background: #2f4a3b;
-  padding: 2px 8px;
-  border-radius: 999px;
+  padding: 2px 10px;
+  border: 1px solid var(--kitan-line);
+  border-radius: var(--kitan-rounded-sm);
+  color: var(--kitan-kindei);
   font-size: 0.8rem;
+  letter-spacing: 0.08em;
 }
+/* The table is lacquer, not cloth: a dark oval lifted by one thin gold line, the moon's light
+   pooling at the top of it. */
 .felt {
   position: relative;
   aspect-ratio: 16 / 10;
   background:
-    radial-gradient(ellipse at center, #26805260, transparent 68%),
-    radial-gradient(ellipse at center, #1f6b45, #123d28 70%);
+    radial-gradient(ellipse 70% 55% at 50% 0%, rgba(94, 82, 140, 0.32), transparent 70%),
+    radial-gradient(ellipse at center, #17142a, var(--kitan-panel) 72%);
   border-radius: 50% / 45%;
-  border: 8px solid #3a2a1a;
+  border: 1px solid var(--kitan-line);
   margin: 24px 0;
-  /* A rail highlight outside, a cloth shadow inside: the felt reads as a real table. */
   box-shadow:
-    inset 0 0 0 2px rgba(255, 255, 255, 0.07),
-    inset 0 14px 40px rgba(0, 0, 0, 0.45),
-    inset 0 -14px 40px rgba(0, 0, 0, 0.35),
-    0 10px 30px rgba(0, 0, 0, 0.5);
+    inset 0 0 0 1px rgba(0, 0, 0, 0.6),
+    inset 0 18px 48px rgba(0, 0, 0, 0.5),
+    inset 0 -18px 48px rgba(0, 0, 0, 0.45),
+    0 16px 40px rgba(0, 0, 0, 0.6);
 }
+/* A seat is a 式札 on the rail: a small dark tablet with a thin gold edge. */
 .seat {
   position: absolute;
   transform: translate(-50%, -50%);
   width: var(--seat-width);
   text-align: center;
-  background: rgba(0, 0, 0, 0.45);
-  border-radius: 10px;
+  background: rgba(16, 14, 28, 0.88);
+  border-radius: var(--kitan-rounded-md);
   padding: 6px;
-  border: 2px solid transparent;
+  border: 1px solid var(--kitan-line);
+  box-shadow: var(--kitan-shadow-sm);
   font-size: var(--seat-font);
+  transition: border-color 200ms ease-out;
 }
 .seat.acting {
-  border-color: #ffd54f;
+  border-color: var(--kitan-kindei-hi);
 }
-/* A ring that breathes around whoever is on the clock. Transform and opacity only. */
+/* The lantern: whoever is on the clock has a soft gold light breathing around them.
+   A glow on the tablet's own edge, not a ring. */
 .seat.acting::before {
   content: "";
   position: absolute;
-  inset: -4px;
-  border-radius: 13px;
-  border: 2px solid #ffd54f;
+  inset: -1px;
+  border-radius: var(--kitan-rounded-md);
+  box-shadow: 0 0 14px 2px rgba(240, 206, 126, 0.4);
   pointer-events: none;
-  animation: seat-pulse 1.3s ease-out infinite;
+  animation: andon 2.4s ease-in-out infinite;
 }
-@keyframes seat-pulse {
-  0% {
-    opacity: 0.75;
-    transform: scale(1);
-  }
-  70% {
-    opacity: 0;
-    transform: scale(1.09);
-  }
+@keyframes andon {
+  0%,
   100% {
-    opacity: 0;
-    transform: scale(1.09);
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 1;
   }
 }
 .seat.folded {
@@ -260,80 +448,68 @@ a {
     );
 }
 .callout {
-  padding: 3px 10px;
-  border-radius: 8px;
+  padding: 4px 12px;
+  border-radius: var(--kitan-rounded-md);
+  border: 1px solid var(--kitan-line);
+  background: rgba(24, 22, 38, 0.96);
+  color: var(--kitan-geppaku);
   font-weight: 800;
-  font-size: 1rem;
-  letter-spacing: 0.06em;
+  font-size: 0.95rem;
+  letter-spacing: 0.1em;
   white-space: nowrap;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
-  animation: callout-flash var(--callout-ms, 900ms) ease-out forwards;
+  box-shadow: var(--kitan-shadow-sm);
+  animation: callout-flash var(--callout-ms, 900ms) var(--kitan-ease) forwards;
 }
 @keyframes callout-flash {
   0% {
     opacity: 0;
-    transform: scale(0.7);
+    transform: translateY(4px) scale(0.96);
   }
   18% {
     opacity: 1;
-    transform: scale(1.1);
-  }
-  34% {
-    opacity: 1;
-    transform: scale(1);
+    transform: none;
   }
   78% {
     opacity: 1;
-    transform: scale(1);
+    transform: none;
   }
   100% {
     opacity: 0;
-    transform: scale(1);
+    transform: none;
   }
 }
 .callout-fold {
-  background: #7d8a84;
-  color: #0e1a14;
+  color: var(--kitan-sublabel);
+  border-color: var(--kitan-line-quiet);
 }
 .callout-check {
-  background: #26a69a;
-  color: #03201c;
+  color: var(--kitan-geppaku);
 }
 .callout-call {
-  background: #4285f4;
-  color: #fff;
+  color: var(--kitan-anshi-hi);
+  border-color: rgba(142, 107, 158, 0.5);
 }
 .callout-bet,
 .callout-raise {
-  background: #f59426;
-  color: #291500;
+  color: var(--kitan-kindei-hi);
 }
+/* The eclipse red is spent here and almost nowhere else. */
 .callout-allin {
-  background: #d63a30;
-  color: #fff;
-  font-size: 1.25rem;
-  animation: callout-allin var(--callout-ms, 900ms) ease-out forwards;
+  color: #e0562f;
+  border-color: var(--kitan-shokko);
+  font-size: 1.1rem;
+  animation: callout-allin var(--callout-ms, 900ms) var(--kitan-ease) forwards;
 }
 @keyframes callout-allin {
   0% {
     opacity: 0;
-    transform: scale(0.6);
+    transform: scale(0.9);
   }
   16% {
     opacity: 1;
-    transform: scale(1.22);
+    transform: scale(1.06);
   }
-  26% {
-    transform: translateX(-4px) scale(1.08) rotate(-2deg);
-  }
-  36% {
-    transform: translateX(4px) scale(1.08) rotate(2deg);
-  }
-  46% {
-    transform: translateX(-3px) scale(1.04) rotate(-1deg);
-  }
-  56% {
-    opacity: 1;
+  40% {
     transform: scale(1);
   }
   80% {
@@ -346,9 +522,9 @@ a {
 }
 .seat-flash {
   position: absolute;
-  inset: -2px;
-  border-radius: 12px;
-  border: 2px solid currentColor;
+  inset: -1px;
+  border-radius: var(--kitan-rounded-md);
+  border: 1px solid currentColor;
   pointer-events: none;
   animation: seat-flash var(--callout-ms, 900ms) ease-out forwards;
 }
@@ -364,51 +540,45 @@ a {
   }
 }
 .flash-fold {
-  color: #7d8a84;
+  color: var(--kitan-sublabel);
 }
 .flash-check {
-  color: #26a69a;
+  color: var(--kitan-geppaku);
 }
 .flash-call {
-  color: #4285f4;
+  color: var(--kitan-anshi-hi);
 }
 .flash-bet,
 .flash-raise {
-  color: #f59426;
+  color: var(--kitan-kindei-hi);
 }
 .flash-allin {
-  color: #d63a30;
+  color: var(--kitan-shokko);
 }
+/* The one moment gold is allowed to spill: a pot coming home. */
 .winner-glow {
   position: absolute;
-  inset: -7px;
-  border-radius: 15px;
-  border: 2px solid #ffd54f;
+  inset: -1px;
+  border-radius: var(--kitan-rounded-md);
   box-shadow:
-    0 0 24px 6px rgba(255, 213, 79, 0.5),
-    inset 0 0 16px rgba(255, 213, 79, 0.35);
+    0 0 34px 2px rgba(240, 206, 126, 0.42),
+    inset 0 0 16px rgba(240, 206, 126, 0.25);
   pointer-events: none;
   z-index: 4;
-  animation: winner-glow var(--glow-ms, 1200ms) ease-out forwards;
+  animation: winner-glow var(--glow-ms, 1200ms) var(--kitan-ease) forwards;
 }
 @keyframes winner-glow {
   0% {
     opacity: 0;
-    transform: scale(0.9);
   }
   14% {
     opacity: 1;
-    transform: scale(1.03);
-  }
-  30% {
-    transform: scale(1);
   }
   70% {
     opacity: 1;
   }
   100% {
     opacity: 0;
-    transform: scale(1);
   }
 }
 /* --- Chips in flight ------------------------------------------------------ */
@@ -429,7 +599,7 @@ a {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  animation: chip-fly var(--chip-ms, 450ms) ease-out forwards;
+  animation: chip-fly var(--chip-ms, 450ms) var(--kitan-ease) forwards;
 }
 /* The layer is felt-sized, so a percentage here is a percentage of the felt. */
 @keyframes chip-fly {
@@ -456,9 +626,16 @@ a {
   min-height: calc(var(--card-height) + 2px);
 }
 .seat-name {
-  font-weight: 600;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: var(--kitan-kindei-hi);
+}
+.seat-stack {
+  font-weight: 800;
+  font-size: 1.05em;
 }
 /* --- Chips ---------------------------------------------------------------- */
+/* 勾玉: dark discs drawn with a gold rim, each tier its own thin line. No solid colour. */
 .chip-stack {
   --chip-width: 26px;
   --chip-height: 9px;
@@ -483,31 +660,34 @@ a {
   width: var(--chip-width);
   height: var(--chip-height);
   border-radius: 50%;
-  border: 1px solid rgba(0, 0, 0, 0.35);
+  border: 1px solid var(--kitan-kindei);
+  background: linear-gradient(#26223a, #14121f);
   box-sizing: border-box;
   transform: translateY(calc(var(--lift, 0) * var(--chip-lift) * -1));
-  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.4);
+  box-shadow:
+    inset 0 0 0 2px rgba(16, 14, 28, 0.9),
+    inset 0 0 0 3px rgba(217, 169, 76, 0.35),
+    0 1px 0 rgba(0, 0, 0, 0.6);
 }
 .chip-white {
-  background: linear-gradient(#fdfdfd, #d7dcd8);
+  border-color: var(--kitan-geppaku);
 }
 .chip-red {
-  background: linear-gradient(#e2574c, #a5312a);
+  border-color: var(--kitan-shokko);
 }
 .chip-green {
-  background: linear-gradient(#3fa46a, #1d6b43);
+  border-color: var(--kitan-anshi-hi);
 }
 .chip-black {
-  background: linear-gradient(#3b4450, #161b22);
+  border-color: var(--kitan-sublabel);
 }
 .chip-purple {
-  background: linear-gradient(#9b6ede, #5c3899);
+  border-color: var(--kitan-kindei-hi);
 }
 .chip-stack-amount {
   font-size: 0.75rem;
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-  color: #fff6d5;
+  font-weight: 800;
+  color: var(--kitan-kindei-hi);
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
   white-space: nowrap;
 }
@@ -519,22 +699,25 @@ a {
 }
 .seat-status {
   min-height: 1.2em;
-  color: #ffd54f;
+  color: var(--kitan-kindei);
+  font-size: 0.85em;
+  letter-spacing: 0.06em;
 }
 .dealer-button {
   display: inline-block;
   width: 18px;
   height: 18px;
   border-radius: 50%;
-  background: radial-gradient(circle at 35% 30%, #fff, #c9cfca);
-  border: 1px solid rgba(0, 0, 0, 0.35);
+  background: var(--kitan-panel);
+  border: 1px solid var(--kitan-kindei);
   box-sizing: border-box;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.55);
-  color: #111;
+  color: var(--kitan-kindei-hi);
   font-weight: 800;
   font-size: 0.7rem;
   line-height: 16px;
   margin-right: 4px;
+  vertical-align: middle;
 }
 .board {
   position: absolute;
@@ -550,14 +733,14 @@ a {
 }
 .pot {
   margin-top: 8px;
-  font-weight: 600;
+  font-weight: 800;
+  color: var(--kitan-kindei-hi);
 }
 /* Bets still in front of their seats, added to the pot: the number pot odds come from. */
 .pot-total {
   margin-top: 2px;
   font-size: 0.78rem;
   opacity: 0.75;
-  font-variant-numeric: tabular-nums;
 }
 .chip-stack.pot {
   --chip-width: 34px;
@@ -567,38 +750,62 @@ a {
 .chip-stack.pot .chip-stack-amount {
   font-size: 0.95rem;
 }
+/* Cards keep a pale face — they have to be read — but pale as moonlit paper, not white,
+   with ink and eclipse red for the suits. The back is lacquer with a fine gold lattice. */
 .card {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   width: var(--card-width);
   height: var(--card-height);
-  border-radius: 4px;
-  background: #fff;
-  color: #000;
-  font-weight: 700;
+  border-radius: var(--kitan-rounded-sm);
+  background: linear-gradient(180deg, #f1ede2, var(--kitan-geppaku));
+  color: var(--kitan-ink);
+  font-family: var(--kitan-num);
+  font-weight: 800;
   font-size: 0.95rem;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
 }
 .card.red {
-  color: #c62828;
+  color: var(--kitan-shokko);
 }
 .card.back {
-  background: repeating-linear-gradient(45deg, #345, #345 4px, #123 4px, #123 8px);
+  background:
+    repeating-linear-gradient(
+      45deg,
+      transparent 0,
+      transparent 5px,
+      rgba(217, 169, 76, 0.28) 5px,
+      rgba(217, 169, 76, 0.28) 6px
+    ),
+    repeating-linear-gradient(
+      -45deg,
+      transparent 0,
+      transparent 5px,
+      rgba(217, 169, 76, 0.28) 5px,
+      rgba(217, 169, 76, 0.28) 6px
+    ),
+    linear-gradient(#221f33, #14121f);
+  border: 1px solid var(--kitan-line);
+  box-sizing: border-box;
 }
 .card.empty {
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(232, 228, 216, 0.05);
+  border: 1px dashed var(--kitan-line-quiet);
+  box-sizing: border-box;
+  box-shadow: none;
 }
 .board-cards .card {
   width: var(--board-card-width);
 }
 /* A board card is only ever mounted when it is dealt, so it pops in on arrival. */
 .board-cards .card:not(.empty) {
-  animation: board-pop var(--flip-ms, 400ms) ease-out;
+  animation: board-pop var(--flip-ms, 400ms) var(--kitan-ease);
 }
 @keyframes board-pop {
   from {
     opacity: 0;
-    transform: scale(0.6) rotateY(60deg);
+    transform: scale(0.8) rotateY(60deg);
   }
   to {
     opacity: 1;
@@ -607,7 +814,7 @@ a {
 }
 /* Showdown remounts the revealed hole cards, which is what makes them turn over. */
 .seat-cards.flipping .card {
-  animation: card-flip var(--flip-ms, 400ms) ease-out;
+  animation: card-flip var(--flip-ms, 400ms) var(--kitan-ease);
 }
 @keyframes card-flip {
   from {
@@ -620,8 +827,13 @@ a {
 .your-turn {
   margin: 12px 0;
   padding: 12px;
-  border: 1px solid #ffd54f;
-  border-radius: 10px;
+  border: 1px solid var(--kitan-line);
+  border-radius: var(--kitan-rounded-lg);
+  background: rgba(16, 14, 28, 0.6);
+}
+.your-turn > strong {
+  color: var(--kitan-kindei-hi);
+  letter-spacing: 0.12em;
 }
 /*
  * Two rows: choose a size, then commit. Both rows are grids of equal columns, so no button
@@ -645,10 +857,10 @@ a {
 .sizing-presets .preset {
   flex: 1 1 0;
   min-width: 0;
+  min-height: 34px;
   padding: 6px 2px;
-  background: transparent;
-  border-color: #2f4a3b;
   font-size: 0.85rem;
+  letter-spacing: 0.02em;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -658,8 +870,10 @@ a {
   flex-grow: 1.6;
 }
 .sizing-presets .preset.active {
-  border-color: #ffd54f;
-  color: #ffd54f;
+  background:
+    var(--kitan-lacquer-pressed) padding-box,
+    var(--kitan-gold-edge) border-box;
+  color: var(--kitan-kindei-hi);
 }
 .sizing-fine {
   display: grid;
@@ -670,7 +884,7 @@ a {
 .sizing-fine .stepper {
   min-width: 40px;
   padding: 6px 0;
-  font-weight: 700;
+  font-weight: 800;
 }
 .sizing-fine input[type="number"] {
   /* `width: 100%` has to mean the grid cell, padding and border included. */
@@ -678,7 +892,6 @@ a {
   width: 100%;
   min-width: 0;
   text-align: right;
-  font-variant-numeric: tabular-nums;
 }
 .sizing-fine input[type="range"] {
   /* `width: 100%` has to mean the grid cell, padding and border included. */
@@ -686,13 +899,15 @@ a {
   width: 100%;
   min-width: 0;
   padding: 0;
-  accent-color: #ffd54f;
+  border: none;
+  background: transparent;
+  accent-color: var(--kitan-kindei);
 }
 .sizing-info {
   margin: 0;
   font-size: 0.78rem;
   text-align: right;
-  font-variant-numeric: tabular-nums;
+  color: var(--kitan-sublabel);
 }
 /* Three fixed slots — give up, stay in, put more in — so a button that is not on offer
  * leaves a gap instead of handing its place to the next one. */
@@ -712,11 +927,9 @@ a {
 }
 .action-main button {
   min-height: 44px;
-  font-weight: 600;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  font-variant-numeric: tabular-nums;
 }
 .action-main .act-name,
 .action-main .act-amount {
@@ -727,29 +940,38 @@ a {
 }
 .action-main .act-name {
   font-size: 0.8em;
-  font-weight: 500;
+  font-weight: 700;
   opacity: 0.9;
 }
 .action-main .act-amount {
   font-size: 1.1em;
 }
 .action-main .fold {
-  border-color: #8a5a55;
-  color: #ffb4ab;
-}
-.action-main .aggressive {
-  background: #c9842b;
-  border-color: #c9842b;
+  background:
+    var(--kitan-lacquer) padding-box,
+    var(--kitan-quiet-edge) border-box;
+  color: var(--kitan-sublabel);
+  text-shadow: none;
 }
 .action-main .aggressive.shove {
-  background: #c0392b;
-  border-color: #c0392b;
+  background:
+    var(--kitan-lacquer) padding-box,
+    linear-gradient(180deg, #e0562f, var(--kitan-shokko), #7a2119) border-box;
+  color: #f0a08a;
+}
+/* Panels beside the table are 羽二重 too: no frame, a shadow and a lifted face. */
+.history,
+.stats,
+.showcase-panel,
+.ticker {
+  position: relative;
+  border: none;
+  border-radius: var(--kitan-rounded-lg);
+  background: var(--kitan-habutae);
+  box-shadow: var(--kitan-shadow-sm);
 }
 .history {
-  background: #10201a;
-  border: 1px solid #2f4a3b;
-  border-radius: 12px;
-  padding: 12px;
+  padding: 12px 14px;
   max-height: 80vh;
   overflow: auto;
   font-size: 0.85rem;
@@ -760,18 +982,19 @@ a {
 }
 .history li.hand-start {
   margin-top: 10px;
-  font-weight: 600;
+  font-weight: 800;
+  color: var(--kitan-kindei);
 }
 .decision summary {
   cursor: pointer;
-  color: #7fd1a0;
+  color: var(--kitan-kindei);
 }
 .decision summary .prefetched {
   margin-left: 6px;
   padding: 0 5px;
-  border-radius: 6px;
-  background: #23402f;
-  color: #ffd54f;
+  border-radius: var(--kitan-rounded-sm);
+  border: 1px solid var(--kitan-line);
+  color: var(--kitan-kindei-hi);
   font-size: 0.75rem;
   white-space: nowrap;
 }
@@ -783,30 +1006,32 @@ a {
 }
 .prob-row .bar {
   display: block;
-  height: 8px;
-  background: #2e8b57;
-  border-radius: 4px;
+  height: 6px;
+  background: var(--kitan-kindei);
+  border-radius: 3px;
 }
 .prob-row .chosen {
-  font-weight: 700;
-  color: #ffd54f;
+  font-weight: 800;
+  color: var(--kitan-kindei-hi);
 }
 .stats {
-  background: #10201a;
-  border: 1px solid #2f4a3b;
-  border-radius: 12px;
-  padding: 12px;
+  padding: 12px 14px;
   font-size: 0.85rem;
   max-height: 80vh;
   overflow: auto;
 }
 .stats h3 {
   margin: 0 0 8px;
+  font-size: 1.05rem;
 }
 .stats h4 {
   margin: 12px 0 6px;
   font-size: 0.85rem;
-  color: #9fb3a6;
+  background: none;
+  -webkit-text-fill-color: currentcolor;
+  color: var(--kitan-sublabel);
+  filter: none;
+  letter-spacing: 0.08em;
 }
 .table-scroll {
   overflow-x: auto;
@@ -823,69 +1048,55 @@ a {
   font-weight: 400;
 }
 .stats table th {
-  color: #9fb3a6;
+  color: var(--kitan-sublabel);
   font-size: 0.75rem;
+  letter-spacing: 0.06em;
 }
 .stats .name {
   text-align: left;
-  font-weight: 600;
+  font-weight: 800;
+  font-family: var(--kitan-font);
 }
 .stats .read-as {
   display: inline-block;
   margin-left: 0.4rem;
   padding: 0.05rem 0.4rem;
-  border-radius: 999px;
-  background: rgba(255, 196, 0, 0.18);
-  color: #ffd966;
+  border-radius: var(--kitan-rounded-sm);
+  border: 1px solid var(--kitan-line);
+  color: var(--kitan-kindei-hi);
   font-size: 0.7rem;
-  font-weight: 500;
+  font-weight: 700;
   white-space: nowrap;
 }
 .stats tbody tr:nth-child(even) {
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(232, 228, 216, 0.035);
 }
 .stats .pos {
-  color: #7fd1a0;
+  color: var(--kitan-kindei-hi);
 }
 .stats .neg {
-  color: #ff8a80;
+  color: #e0785f;
 }
 .stack-bar {
   display: block;
-  height: 3px;
+  height: 2px;
   margin-top: 2px;
   margin-left: auto;
-  background: #2e8b57;
-  border-radius: 2px;
+  background: var(--kitan-kindei);
+  border-radius: 1px;
 }
 .stats-views {
   margin-top: 12px;
 }
-.persona-list {
-  list-style: none;
-  padding: 0;
-  display: grid;
-  gap: 12px;
-}
-.persona {
-  border: 1px solid #2f4a3b;
-  border-radius: 12px;
-  padding: 12px;
-}
 .field.wide {
   grid-column: 1 / -1;
 }
-textarea {
-  font: inherit;
-  padding: 8px;
-  border-radius: 8px;
-  border: 1px solid #2f4a3b;
-  background: #16261d;
-  color: inherit;
-}
 button.danger {
-  border-color: #ff8a80;
-  color: #ff8a80;
+  background:
+    var(--kitan-lacquer) padding-box,
+    linear-gradient(180deg, #e0562f, var(--kitan-shokko), #7a2119) border-box;
+  color: #f0a08a;
+  text-shadow: none;
 }
 
 .tab-bar {
@@ -898,8 +1109,8 @@ button.danger {
   gap: 6px;
   padding: 6px 8px;
   padding-bottom: calc(6px + env(safe-area-inset-bottom, 0px));
-  background: #0f1a14;
-  border-top: 1px solid #2f4a3b;
+  background: var(--kitan-yoiyami);
+  border-top: 1px solid var(--kitan-line-quiet);
 }
 .tab-bar button {
   flex: 1;
@@ -920,7 +1131,6 @@ button.danger {
   .felt {
     aspect-ratio: 3 / 4;
     margin: 12px 0;
-    border-width: 5px;
     /* Where a turn scrolls the felt to: its bottom edge resting on top of the action bar. */
     scroll-margin-bottom: calc(
       72px +
@@ -947,7 +1157,7 @@ button.danger {
     max-height: 45vh;
     overflow: auto;
     border-radius: 0;
-    background: #10201a;
+    background: var(--kitan-yoiyami);
     padding: 8px 10px;
     border-width: 1px 0 0;
   }
@@ -999,40 +1209,39 @@ button.danger {
   gap: 6px;
   align-items: center;
   font-size: 0.8em;
-  color: #9fb3a6;
+  color: var(--kitan-sublabel);
 }
 .showcase-bar.chosen {
-  color: #ffd54f;
-  font-weight: 700;
+  color: var(--kitan-kindei-hi);
+  font-weight: 800;
 }
 .showcase-bar-track {
   display: block;
-  height: 8px;
-  border-radius: 4px;
-  background: rgba(255, 255, 255, 0.1);
+  height: 6px;
+  border-radius: 3px;
+  background: rgba(232, 228, 216, 0.1);
   overflow: hidden;
 }
 .showcase-bar-fill {
   display: block;
   height: 100%;
-  border-radius: 4px;
-  background: #2e8b57;
+  border-radius: 3px;
+  background: var(--kitan-anshi-hi);
   /* The width comes from Jev's probability; animate it as the next decision lands. */
-  transition: width 400ms ease-out;
+  transition: width 400ms var(--kitan-ease);
 }
 .showcase-bar.chosen .showcase-bar-fill {
-  background: #ffd54f;
-}
-.showcase-bar-value {
-  font-variant-numeric: tabular-nums;
+  background: var(--kitan-kindei);
 }
 .showcase-persona {
-  font-weight: 700;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: var(--kitan-kindei-hi);
 }
 .showcase-action {
   font-size: 1.1em;
-  letter-spacing: 0.04em;
-  color: #ffd54f;
+  letter-spacing: 0.08em;
+  color: var(--kitan-kindei-hi);
 }
 .showcase-meta {
   display: flex;
@@ -1040,13 +1249,14 @@ button.danger {
   align-items: center;
   flex-wrap: wrap;
   font-size: 0.8em;
-  color: #9fb3a6;
+  color: var(--kitan-sublabel);
 }
 .showcase-unavailable {
-  color: #ff8a80;
+  color: #e0785f;
   font-size: 0.85em;
 }
 
+/* The narration bubble is 羽二重 in small: no edge, a shadow, a tail in the face's colour. */
 .showcase-bubble {
   position: absolute;
   bottom: calc(100% + 8px);
@@ -1059,12 +1269,12 @@ button.danger {
   flex-direction: column;
   align-items: center;
   gap: 4px;
-  padding: 8px 10px;
-  border-radius: 12px;
-  border: 1px solid #2f4a3b;
-  background: rgba(8, 18, 13, 0.94);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45);
-  animation: showcase-in 180ms ease-out;
+  padding: 8px 12px;
+  border-radius: var(--kitan-rounded-lg);
+  border: none;
+  background: rgba(24, 22, 38, 0.96);
+  box-shadow: var(--kitan-shadow-sm);
+  animation: showcase-in 200ms var(--kitan-ease);
 }
 .showcase-bubble::after {
   content: "";
@@ -1072,15 +1282,15 @@ button.danger {
   top: 100%;
   left: 50%;
   border: 6px solid transparent;
-  border-top-color: #2f4a3b;
+  border-top-color: rgba(24, 22, 38, 0.96);
   transform: translateX(-50%);
 }
 .showcase-bubble .showcase-bars {
   min-width: 180px;
 }
 .showcase-thinking {
-  color: #7fd1a0;
-  animation: showcase-pulse 1s ease-in-out infinite;
+  color: var(--kitan-kindei);
+  animation: showcase-pulse 2.4s ease-in-out infinite;
 }
 .showcase-bolt {
   font-size: 1.4rem;
@@ -1113,9 +1323,7 @@ button.danger {
   height: 100%;
   box-sizing: border-box;
   padding: 16px;
-  border: 1px solid #2f4a3b;
   border-radius: 14px;
-  background: #10201a;
 }
 .showcase-panel .showcase-action {
   font-size: 2rem;
@@ -1135,12 +1343,13 @@ button.danger {
   font-size: 1.2rem;
 }
 .showcase-where {
-  color: #9fb3a6;
+  color: var(--kitan-sublabel);
   font-size: 0.85rem;
 }
 .showcase-summary {
   margin: 0;
-  color: #e8efe9;
+  color: var(--kitan-geppaku);
+  line-height: 1.7;
 }
 .showcase-facts {
   display: flex;
@@ -1154,27 +1363,26 @@ button.danger {
   gap: 2px;
 }
 .showcase-facts dt {
-  color: #9fb3a6;
+  color: var(--kitan-sublabel);
   font-size: 0.75rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.08em;
 }
 .showcase-facts dd {
   margin: 0;
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
+  font-weight: 800;
 }
 .showcase-waiting {
-  color: #9fb3a6;
+  color: var(--kitan-sublabel);
   margin: auto 0;
   text-align: center;
 }
 .showcase-footer {
   margin-top: auto;
   padding-top: 8px;
-  border-top: 1px solid #2f4a3b;
-  color: #7fd1a0;
+  border-top: 1px solid var(--kitan-line-quiet);
+  color: var(--kitan-kindei);
   font-size: 0.8rem;
+  letter-spacing: 0.06em;
 }
 
 .ticker {
@@ -1183,9 +1391,7 @@ button.danger {
   gap: 8px;
   flex-wrap: wrap;
   padding: 10px 16px;
-  border: 1px solid #2f4a3b;
   border-radius: 14px;
-  background: #10201a;
 }
 .ticker-item {
   display: flex;
@@ -1196,19 +1402,17 @@ button.danger {
 }
 .ticker-value {
   font-size: 1.4rem;
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-  animation: ticker-pop 320ms ease-out;
+  font-weight: 800;
+  animation: ticker-pop 320ms var(--kitan-ease);
 }
 .ticker-label {
-  color: #9fb3a6;
+  color: var(--kitan-sublabel);
   font-size: 0.7rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.08em;
 }
 @keyframes ticker-pop {
   from {
-    color: #ffd54f;
+    color: var(--kitan-kindei-hi);
     transform: translateY(-2px);
   }
   to {
@@ -1220,9 +1424,10 @@ button.danger {
 /* Recording mode: the table alone, sized for a 16:9 capture. The body class lets the
    chrome around this component (the app's top bar) step out of the shot. */
 body.showcase {
-  background: #0b140f;
+  background: var(--kitan-yoiyami);
 }
-body.showcase .topbar {
+body.showcase .topbar,
+body.showcase .footer {
   display: none;
 }
 body.showcase .app {
@@ -1270,10 +1475,10 @@ body.showcase .app {
 }
 .showcase-corner {
   margin: 0;
-  color: #7fd1a0;
+  color: var(--kitan-kindei);
   font-size: 0.75rem;
   white-space: nowrap;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.08em;
 }
 @media (max-width: 900px) {
   .table-screen.showcase-mode {
@@ -1297,14 +1502,17 @@ body.showcase .app {
 }
 .action-feed-entry {
   flex: 0 0 auto;
-  padding: 4px 10px;
-  border-radius: 999px;
+  padding: 3px 10px;
+  border-radius: var(--kitan-rounded-sm);
+  border: 1px solid var(--kitan-line-quiet);
+  background: rgba(16, 14, 28, 0.7);
+  color: var(--kitan-geppaku);
   font-size: 0.78rem;
   font-weight: 700;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.04em;
   white-space: nowrap;
   /* Each entry is mounted once, keyed by its effect id, so this runs on arrival only. */
-  animation: feed-in 260ms ease-out;
+  animation: feed-in 260ms var(--kitan-ease);
 }
 /* The strip reads right to left: the newest is loudest, the oldest is nearly gone. */
 .action-feed-entry:nth-last-child(n + 4) {
@@ -1328,34 +1536,33 @@ body.showcase .app {
 }
 .feed-name {
   font-weight: 800;
+  color: var(--kitan-kindei-hi);
 }
 .feed-street {
   background: transparent;
-  border: 1px dashed #4b6c5a;
-  color: #9fb3a6;
-  text-transform: uppercase;
+  border: 1px dashed var(--kitan-line-quiet);
+  color: var(--kitan-sublabel);
   font-size: 0.7rem;
+  letter-spacing: 0.08em;
 }
 .feed-fold {
-  background: #4a544f;
-  color: #cdd6d1;
+  color: var(--kitan-sublabel);
 }
 .feed-check {
-  background: #1d6b64;
-  color: #d6fbf6;
+  color: var(--kitan-geppaku);
 }
 .feed-call {
-  background: #2b57a8;
-  color: #e6efff;
+  color: var(--kitan-anshi-hi);
+  border-color: rgba(142, 107, 158, 0.5);
 }
 .feed-bet,
 .feed-raise {
-  background: #b96c14;
-  color: #fff3e0;
+  color: var(--kitan-kindei-hi);
+  border-color: var(--kitan-line);
 }
 .feed-allin {
-  background: #b32c23;
-  color: #fff;
+  color: #e0562f;
+  border-color: var(--kitan-shokko);
 }
 @media (max-width: 720px) {
   .action-feed {
@@ -1386,7 +1593,9 @@ body.showcase .app {
   .showcase-thinking,
   .showcase-bolt,
   .ticker-value,
-  .action-feed-entry {
+  .action-feed-entry,
+  .modal,
+  .habutae {
     animation: none;
   }
   .showcase-bar-fill {

@@ -64,3 +64,41 @@ describe("action bar guards", () => {
     expect(rule('.sizing-fine input[type="number"]')).toMatch(/box-sizing:\s*border-box/);
   });
 });
+
+// 宵闇に金: the official tone (kitan-lore `get_design_tone`) as far as a stylesheet can promise it.
+describe("tone guards", () => {
+  it("declares the official palette tokens on :root", () => {
+    const root = rule(":root");
+    for (const [name, hex] of [
+      ["--kitan-yoiyami", "#131320"],
+      ["--kitan-yoiyami-hi", "#1b1b2e"],
+      ["--kitan-kindei", "#d9a94c"],
+      ["--kitan-kindei-hi", "#f0ce7e"],
+      ["--kitan-shokko", "#c93a2e"],
+      ["--kitan-geppaku", "#e8e4d8"],
+      ["--kitan-anshi", "#5c4470"],
+      ["--kitan-panel", "#100e1c"],
+      ["--kitan-bubble", "#181626"],
+      ["--kitan-sublabel", "#9d93b5"],
+    ]) {
+      expect(root, name).toContain(`${name}: ${hex}`);
+    }
+  });
+
+  it("has no green felt, pure black or white ground left", () => {
+    expect(css).not.toMatch(/#0f1a14|#2e8b57|#123d28|#16261d|#2f4a3b/i);
+    expect(css).not.toMatch(/background:\s*(#000|black|#fff|white)\b/i);
+  });
+
+  it("never sets a font size under 11px", () => {
+    for (const match of css.matchAll(/font-size:\s*([\d.]+)(px|rem)/g)) {
+      const px = match[2] === "px" ? Number(match[1]) : Number(match[1]) * 16;
+      expect(px, match[0]).toBeGreaterThanOrEqual(11);
+    }
+  });
+
+  it("uses the mincho for text and the rounded gothic for numbers", () => {
+    expect(rule(":root")).toMatch(/--kitan-font:\s*"Shippori Mincho B1"/);
+    expect(rule(":root")).toMatch(/--kitan-num:\s*"M PLUS Rounded 1c"/);
+  });
+});

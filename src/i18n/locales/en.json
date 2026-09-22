@@ -1,12 +1,17 @@
 {
   "app": {
-    "title": "jev-poker",
-    "subtitle": "No-Limit Hold'em where the CPUs think with TypeSafe Jev",
+    "title": "Yoiyami Poker",
+    "subtitle": "An unofficial Luna Occulta fan poker — the spirits think with TypeSafe Jev",
     "language": "Language",
     "connection": "Connection",
     "personas": "Personas",
     "back": "Back",
-    "source": "Source (MIT)"
+    "source": "Source (MIT)",
+    "fanworkNotice": "An unofficial fan work based on “月蝕綺譚 -Luna Occulta-”. Not affiliated with the official game.",
+    "fanworksLink": "Luna Occulta fan-work guidelines",
+    "guidelineLink": "CryptoNinja guidelines",
+    "hashtag": "#月蝕綺譚",
+    "poweredBy": "The spirits think with TypeSafe Jev. Bring your own API key; nothing is stored server-side."
   },
   "connection": {
     "title": "How this browser reaches Jev",
@@ -66,9 +71,9 @@
     "seats": "Seats",
     "seatName": "Name",
     "seatKind": "Player",
-    "human": "Human",
-    "cpu": "CPU",
-    "persona": "Persona",
+    "human": "Arujidono (you)",
+    "cpu": "Spirit",
+    "persona": "Spirit",
     "startingStack": "Starting stack",
     "smallBlind": "Small blind",
     "bigBlind": "Big blind",

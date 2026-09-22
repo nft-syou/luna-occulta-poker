@@ -19,15 +19,17 @@ function tag(attr: "property" | "name" | "rel", key: string): string | null {
 describe("site metadata", () => {
   it("describes the page for crawlers", () => {
     expect(html).toMatch(/<html lang="ja">/);
-    expect(html).toMatch(/<title>jev-poker/);
+    expect(html).toMatch(/<title>宵闇の賭場/);
     expect(tag("name", "description")).toMatch(/TypeSafe Jev/);
+    // A fan work says so where the crawlers read it.
+    expect(tag("name", "description")).toMatch(/非公式二次創作/);
     expect(tag("rel", "canonical")).toBe("https://jev-poker.syou.io/");
   });
 
   it("has an Open Graph card with an absolute 1200x630 image", () => {
     expect(tag("property", "og:type")).toBe("website");
     expect(tag("property", "og:url")).toBe("https://jev-poker.syou.io/");
-    expect(tag("property", "og:title")).toMatch(/jev-poker/);
+    expect(tag("property", "og:title")).toMatch(/宵闇の賭場/);
     expect(tag("property", "og:description")).not.toBeNull();
     expect(tag("property", "og:image")).toBe("https://jev-poker.syou.io/og.png");
     expect(tag("property", "og:image:width")).toBe("1200");

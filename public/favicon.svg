@@ -1,8 +1,10 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <title>jev-poker</title>
-  <!-- A red chip with a gold J on green felt; scripts/make-icons.py renders the same design to PNG/ICO. -->
-  <circle cx="32" cy="32" r="30" fill="#b8382c"/>
-  <circle cx="32" cy="32" r="25.8" fill="none" stroke="#f4efe6" stroke-width="4.8" stroke-dasharray="8.1 12.16" stroke-dashoffset="4" transform="rotate(-9 32 32)"/>
-  <circle cx="32" cy="32" r="19.8" fill="#123d28"/>
-  <text x="32" y="43.5" text-anchor="middle" font-family="'Segoe UI', Arial, Helvetica, sans-serif" font-weight="700" font-size="32" fill="#ffd54f">J</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="t">
+  <title id="t">宵闇の賭場</title>
+  <!-- 式札: a tall tablet drawn in gold lines on the indigo dark. No ring, no seal. -->
+  <rect width="64" height="64" rx="12" fill="#131320"/>
+  <path d="M22 10h20l4 6v38H18V16z" fill="#100e1c" stroke="#d9a94c" stroke-width="2" stroke-linejoin="round"/>
+  <path d="M24 14h16" stroke="#d9a94c" stroke-width="1.5" stroke-linecap="round"/>
+  <path d="M32 22v24" stroke="#f0ce7e" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M26 30h12M26 38h12" stroke="#d9a94c" stroke-width="1.5" stroke-linecap="round"/>
+  <circle cx="32" cy="19" r="1.4" fill="#f0ce7e"/>
 </svg>
