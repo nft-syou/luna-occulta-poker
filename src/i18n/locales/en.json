@@ -280,5 +280,27 @@
     "nit": "nit",
     "maniac": "maniac",
     "regular": "regular"
+  },
+  "voice": {
+    "title": "Spirit voices",
+    "button": "Voices",
+    "close": "Close",
+    "situations": "Spoken situations",
+    "allOn": "All on",
+    "allOff": "All off",
+    "group_table": "At the table",
+    "group_actions": "Actions",
+    "group_results": "Results",
+    "situation_greet": "Greeting",
+    "situation_fold": "Fold",
+    "situation_check": "Check",
+    "situation_call": "Call",
+    "situation_bet": "Bet",
+    "situation_raise": "Raise",
+    "situation_allin": "All in",
+    "situation_win": "Win",
+    "situation_bigwin": "Big win",
+    "situation_lose": "Loss",
+    "situation_bust": "Bust"
   }
 }

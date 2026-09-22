@@ -448,6 +448,7 @@ describe("TableView voices", () => {
       preload: () => {},
       setEnabled: () => {},
       setVolume: () => {},
+      setSituations: () => {},
       stopAll: () => {},
     };
     return { voice, calls };

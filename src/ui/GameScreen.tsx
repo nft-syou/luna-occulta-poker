@@ -1,6 +1,7 @@
 import type { JevBackend } from "@jev-poker/agent";
 import type { SeatId } from "@jev-poker/engine";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { createGate } from "../characters/gate";
 import { spirit, spiritPersonas } from "../characters/spirits";
 import { createVoicePlayer } from "../characters/voice";
@@ -11,6 +12,7 @@ import { BillingModal } from "./BillingModal";
 import type { Settings } from "./storage";
 import { TableView } from "./TableView";
 import { useGame } from "./useGame";
+import { VoiceSettings } from "./VoiceSettings";
 
 interface Props {
   settings: Settings;
@@ -32,6 +34,7 @@ export function GameScreen({
   onLeave,
   onAuthFailed,
 }: Props) {
+  const { t } = useTranslation();
   const backend: JevBackend | null = useMemo(
     () =>
       connection === null
@@ -49,8 +52,15 @@ export function GameScreen({
   // The gate the loop waits at: held by a line being said and by a cut-in on screen.
   const [gate] = useState(() => createGate());
   const [voice] = useState(() =>
-    createVoicePlayer({ enabled: settings.voice, volume: settings.voiceVolume, gate }),
+    createVoicePlayer({
+      enabled: settings.voice,
+      volume: settings.voiceVolume,
+      gate,
+      situations: settings.voiceSituations,
+    }),
   );
+  useEffect(() => voice.setSituations(settings.voiceSituations), [voice, settings.voiceSituations]);
+  const [voiceModalOpen, setVoiceModalOpen] = useState(false);
   const waitForTable = useCallback(() => gate.wait(), [gate]);
   useEffect(() => voice.setEnabled(settings.voice), [voice, settings.voice]);
   useEffect(() => voice.setVolume(settings.voiceVolume), [voice, settings.voiceVolume]);
@@ -87,10 +97,29 @@ export function GameScreen({
         prefetch={settings.prefetch}
         voice={voice}
         gate={gate}
+        onOpenVoice={() => setVoiceModalOpen(true)}
         onSpeedChange={(speed) => onSettingsChange({ ...settings, speed })}
         onPrefetchChange={(prefetch) => onSettingsChange({ ...settings, prefetch })}
         onLeave={onLeave}
       />
+      {voiceModalOpen && (
+        <div className="modal-backdrop" role="presentation">
+          <div
+            className="modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="voice-modal-title"
+          >
+            <h2 id="voice-modal-title">{t("voice.title")}</h2>
+            <VoiceSettings settings={settings} onChange={onSettingsChange} />
+            <div className="row">
+              <button type="button" className="secondary" onClick={() => setVoiceModalOpen(false)}>
+                {t("voice.close")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       <BillingModal
         open={billingModalOpen}
         route={connection?.route ?? "typesafe"}

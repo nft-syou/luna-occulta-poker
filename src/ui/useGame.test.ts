@@ -591,8 +591,10 @@ describe("useGame at the gate", () => {
     open = false;
     const before = result.current.state.log.length;
     await waitFor(() => expect(waits).toBeGreaterThan(decisions), { timeout: 5000 });
+    // Events already fired by the engine still land; then nothing moves until the gate opens.
+    await new Promise((r) => setTimeout(r, 300));
     const stalled = result.current.state.log.length;
-    await new Promise((r) => setTimeout(r, 150));
+    await new Promise((r) => setTimeout(r, 300));
     expect(result.current.state.log.length).toBe(stalled);
     expect(stalled).toBeGreaterThanOrEqual(before);
     open = true;

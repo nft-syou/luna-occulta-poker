@@ -44,6 +44,8 @@ interface Props {
   voice?: VoicePlayer;
   /** Held by the cut-in while it is up. */
   gate?: Gate;
+  /** Opens the voice settings; the header shows the button only when given. */
+  onOpenVoice?: () => void;
 }
 
 /** How long a bubble with a spoken line stays: long enough to read and to hear it out. */
@@ -130,6 +132,7 @@ export function TableView({
   onPrefetchChange,
   voice,
   gate,
+  onOpenVoice,
 }: Props) {
   const { t } = useTranslation();
   const speedId = useId();
@@ -200,7 +203,7 @@ export function TableView({
             setGreetings((prev) =>
               new Map(prev).set(seat.id, { id: -1 - i, seat: seat.id, situation: "win", line, at }),
             );
-            voice?.play(seat.spiritId, line);
+            voice?.play(seat.spiritId, line, { situation: "greet" });
           },
           GREET_GAP_MS * (i + 1),
         ),
@@ -228,22 +231,24 @@ export function TableView({
       spokenRef.current.callout = last.id;
       const who = spiritOf(last.seat);
       // An all-in's line belongs to the cut-in, which says it with priority below.
-      if (last.line !== null && who !== undefined && last.kind !== "allin")
-        voice.play(who, last.line);
+      if (last.line !== null && who !== undefined && last.kind !== "allin") {
+        voice.play(who, last.line, { situation: last.kind });
+      }
     }
     const word = fxSpeech[fxSpeech.length - 1];
     if (word !== undefined && word.id > spokenRef.current.speech) {
       spokenRef.current.speech = word.id;
       const who = spiritOf(word.seat);
       if (who !== undefined && word.situation !== "bigwin" && word.situation !== "bust") {
-        voice.play(who, word.line);
+        voice.play(who, word.line, { situation: word.situation });
       }
     }
     if (fxCutIn !== null && fxCutIn.id > spokenRef.current.cutIn) {
       spokenRef.current.cutIn = fxCutIn.id;
       const who = spiritOf(fxCutIn.seat);
-      if (fxCutIn.line !== null && who !== undefined)
-        voice.play(who, fxCutIn.line, { priority: true });
+      if (fxCutIn.line !== null && who !== undefined) {
+        voice.play(who, fxCutIn.line, { priority: true, situation: fxCutIn.kind });
+      }
     }
   }, [voice, fxCallouts, fxSpeech, fxCutIn]);
   // Warm the showcase videos while the first hand is dealt, so a cut-in never buffers. Done
@@ -389,6 +394,11 @@ export function TableView({
                   {(prefetch ?? true) ? t("table.prefetchOn") : t("table.prefetchOff")}
                 </button>
               )}
+              {onOpenVoice !== undefined && (
+                <button type="button" className="secondary" onClick={onOpenVoice}>
+                  {t("voice.button")}
+                </button>
+              )}
               <button type="button" className="secondary" onClick={() => setShowcase(true)}>
                 {t("showcase.toggle")}
               </button>
@@ -402,7 +412,12 @@ export function TableView({
         {showFelt && (
           <div ref={feltRef} className="felt" style={feltVars}>
             {layout.map(({ seat, player, x, y, inward }) => {
-              const style = { left: `${x}%`, top: `${y}%` };
+              // Clamped so a seat on the top or bottom rail stays inside the felt whatever
+              // its box measures: the seat's own half-height is the margin.
+              const style = {
+                left: `${x}%`,
+                top: `clamp(var(--seat-half), ${y}%, calc(100% - var(--seat-half)))`,
+              };
               const thinking = state.thinkingSeat === seat.id;
               // A seat is narrated while it thinks, and for a moment after it has decided.
               const decided = last !== null && last.seat === seat.id ? last : null;

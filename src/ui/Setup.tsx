@@ -10,6 +10,7 @@ import {
   SPEEDS,
   validateSettings,
 } from "./storage";
+import { VoiceSettings } from "./VoiceSettings";
 
 interface Props {
   settings: Settings;
@@ -131,30 +132,9 @@ export function Setup({
             </select>
           </label>
         )}
-        <label className="field">
-          <span>
-            <input
-              type="checkbox"
-              checked={settings.voice}
-              onChange={(e) => onChange({ ...settings, voice: e.target.checked })}
-            />{" "}
-            {t("setup.voice")}
-          </span>
-        </label>
-        {settings.voice && (
-          <label className="field">
-            <span>{t("setup.voiceVolume")}</span>
-            <input
-              type="range"
-              min={0}
-              max={1}
-              step={0.05}
-              value={settings.voiceVolume}
-              onChange={(e) => onChange({ ...settings, voiceVolume: Number(e.target.value) })}
-            />
-          </label>
-        )}
       </div>
+
+      <VoiceSettings settings={settings} onChange={onChange} />
 
       <table className="seats">
         <thead>

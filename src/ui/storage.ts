@@ -1,4 +1,5 @@
 import type { SeatKind } from "@jev-poker/engine";
+import { SITUATIONS, type Situation } from "../characters/lines";
 import { isSpiritId, type SpiritId } from "../characters/spirits";
 import { LANGUAGE_STORAGE_KEY, type Language } from "../i18n";
 import { type Connection, validateConnection } from "../jev/connection";
@@ -38,7 +39,15 @@ export interface Settings {
   voice: boolean;
   /** Voice volume, 0–1. */
   voiceVolume: number;
+  /** Which situations are spoken; a line for a situation switched off is shown, not said. */
+  voiceSituations: VoiceSituations;
 }
+
+export type VoiceSituations = Record<Situation, boolean>;
+
+export const ALL_SITUATIONS_ON: VoiceSituations = Object.fromEntries(
+  SITUATIONS.map((s) => [s, true]),
+) as VoiceSituations;
 
 export const DEFAULT_SEATS: readonly SeatSetting[] = [
   { name: "あるじどの", kind: "human", spiritId: "arujidono" },
@@ -60,6 +69,7 @@ export const DEFAULT_SETTINGS: Settings = {
   prefetchMaxInFlight: 6,
   voice: true,
   voiceVolume: 0.8,
+  voiceSituations: ALL_SITUATIONS_ON,
 };
 
 function read(key: string): string | null {
@@ -142,6 +152,7 @@ export function loadSettings(): Settings {
         : DEFAULT_SETTINGS.prefetchMaxInFlight,
       voice: typeof parsed.voice === "boolean" ? parsed.voice : DEFAULT_SETTINGS.voice,
       voiceVolume: clampVolume(numberOr(parsed.voiceVolume, DEFAULT_SETTINGS.voiceVolume)),
+      voiceSituations: readSituations(parsed.voiceSituations),
     };
   } catch {
     return { ...DEFAULT_SETTINGS, seats: [...DEFAULT_SEATS] };
@@ -205,6 +216,17 @@ export function validateSettings(settings: Settings): SettingsProblem | null {
   // One 式札 per 御霊: the same spirit cannot sit in two chairs.
   if (new Set(seats.map((s) => s.spiritId)).size !== seats.length) return "duplicateSpirit";
   return null;
+}
+
+/** A stored switch map, with any situation it does not name switched on. */
+function readSituations(value: unknown): VoiceSituations {
+  const out = { ...ALL_SITUATIONS_ON };
+  if (typeof value !== "object" || value === null) return out;
+  for (const situation of SITUATIONS) {
+    const v = (value as Record<string, unknown>)[situation];
+    if (typeof v === "boolean") out[situation] = v;
+  }
+  return out;
 }
 
 export function clampVolume(value: number): number {

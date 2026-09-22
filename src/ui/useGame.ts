@@ -472,8 +472,10 @@ export function useGame(options: UseGameOptions): GameController {
               await sleep(BETWEEN_HANDS_MS[speedRef.current]);
               if (!run.alive || pausedRef.current) return;
               // The words after the hand — and a bust's cut-in — finish before the next deal.
-              await gateRef.current?.();
-              if (!run.alive || pausedRef.current) return;
+              if (gateRef.current !== undefined) {
+                await gateRef.current();
+                if (!run.alive || pausedRef.current) return;
+              }
             }
             table.startHand();
             sync();
@@ -495,8 +497,11 @@ export function useGame(options: UseGameOptions): GameController {
             return;
           }
           // The last line said, the cut-in still up: seen out before the next 御霊 thinks.
-          await gateRef.current?.();
-          if (!run.alive || pausedRef.current) return;
+          // Without a gate nothing is awaited, so the loop's timing is exactly as it was.
+          if (gateRef.current !== undefined) {
+            await gateRef.current();
+            if (!run.alive || pausedRef.current) return;
+          }
           dispatch({ type: "thinking", seat });
           const snapshot = hand.snapshot();
           const legal = hand.legalActions(seat);

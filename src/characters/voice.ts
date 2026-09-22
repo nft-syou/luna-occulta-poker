@@ -1,5 +1,5 @@
 import type { Gate } from "./gate";
-import { audioPath, type SpeechLine } from "./lines";
+import { audioPath, type Situation, type SpeechLine } from "./lines";
 import type { SpiritId } from "./spirits";
 
 /** The slice of `HTMLAudioElement` the player uses, so a test can hand in a fake. */
@@ -16,12 +16,21 @@ export interface AudioLike {
 }
 
 export interface VoicePlayer {
-  /** Says a line. A spirit already speaking stops; with `priority` everyone else does too. */
-  play(spiritId: SpiritId, line: SpeechLine, opts?: { priority?: boolean }): void;
+  /**
+   * Says a line. A spirit already speaking stops; with `priority` everyone else does too.
+   * A `situation` the player has switched off is not said at all.
+   */
+  play(
+    spiritId: SpiritId,
+    line: SpeechLine,
+    opts?: { priority?: boolean; situation?: Situation },
+  ): void;
   /** Asks the browser to fetch a clip ahead of time. */
   preload(spiritId: SpiritId, line: SpeechLine): void;
   setEnabled(enabled: boolean): void;
   setVolume(volume: number): void;
+  /** Which situations are spoken; absent situations stay as they were. */
+  setSituations(situations: Partial<Record<Situation, boolean>>): void;
   stopAll(): void;
 }
 
@@ -33,6 +42,8 @@ export interface VoicePlayerInit {
   audio?: (src: string) => AudioLike;
   /** Held while a clip plays, so the table waits for the line to end. */
   gate?: Gate;
+  /** Situations to keep quiet from the start; everything is spoken by default. */
+  situations?: Partial<Record<Situation, boolean>>;
 }
 
 /** A clip that never reports its end holds the table this long at most. */
@@ -53,6 +64,7 @@ export function createVoicePlayer(init: VoicePlayerInit): VoicePlayer {
   const make = init.audio ?? defaultAudio;
   let enabled = init.enabled;
   let volume = clamp(init.volume);
+  const situations: Partial<Record<Situation, boolean>> = { ...init.situations };
   const clips = new Map<string, AudioLike>();
   const speaking = new Map<SpiritId, AudioLike>();
   const gate = init.gate;
@@ -91,6 +103,7 @@ export function createVoicePlayer(init: VoicePlayerInit): VoicePlayer {
   return {
     play(spiritId, line, opts) {
       if (!enabled) return;
+      if (opts?.situation !== undefined && situations[opts.situation] === false) return;
       if (opts?.priority === true) {
         for (const audio of speaking.values()) stop(audio);
         speaking.clear();
@@ -129,6 +142,9 @@ export function createVoicePlayer(init: VoicePlayerInit): VoicePlayer {
     setVolume(next) {
       volume = clamp(next);
       for (const audio of speaking.values()) audio.volume = volume;
+    },
+    setSituations(next) {
+      Object.assign(situations, next);
     },
     stopAll() {
       for (const audio of speaking.values()) stop(audio);

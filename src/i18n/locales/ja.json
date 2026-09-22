@@ -280,5 +280,27 @@
     "nit": "ニット",
     "maniac": "マニアック",
     "regular": "標準"
+  },
+  "voice": {
+    "title": "御霊の声",
+    "button": "声",
+    "close": "閉じる",
+    "situations": "局面ごとに鳴らす声",
+    "allOn": "すべて鳴らす",
+    "allOff": "すべて止める",
+    "group_table": "着席",
+    "group_actions": "行動",
+    "group_results": "結果",
+    "situation_greet": "挨拶",
+    "situation_fold": "フォールド",
+    "situation_check": "チェック",
+    "situation_call": "コール",
+    "situation_bet": "ベット",
+    "situation_raise": "レイズ",
+    "situation_allin": "オールイン",
+    "situation_win": "勝ち",
+    "situation_bigwin": "大勝ち",
+    "situation_lose": "負け",
+    "situation_bust": "バースト"
   }
 }
