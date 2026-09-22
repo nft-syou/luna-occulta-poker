@@ -102,3 +102,20 @@ describe("tone guards", () => {
     expect(rule(":root")).toMatch(/--kitan-num:\s*"M PLUS Rounded 1c"/);
   });
 });
+
+describe("dialog stacking", () => {
+  it("keeps a dialog above the chips, bubbles and cut-in on the felt and above the bars", () => {
+    const z = (selector: string) => Number(/z-index:\s*(\d+)/.exec(rule(selector))?.[1] ?? 0);
+    const dialog = z(".modal-backdrop");
+    for (const selector of [
+      ".bet-stack",
+      ".fx-layer",
+      ".callout-spot",
+      ".cutin",
+      ".tab-bar",
+      ".your-turn",
+    ]) {
+      expect(dialog, selector).toBeGreaterThan(z(selector));
+    }
+  });
+});

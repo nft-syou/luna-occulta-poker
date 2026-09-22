@@ -207,6 +207,8 @@ button.link {
 .modal-backdrop {
   position: fixed;
   inset: 0;
+  /* Above everything on the felt (chips 3, flights 5, bubbles 6, cut-in 7) and the bars (20). */
+  z-index: 30;
   background: rgba(8, 7, 16, 0.72);
   display: grid;
   place-items: center;
