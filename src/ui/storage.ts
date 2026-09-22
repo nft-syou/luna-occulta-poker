@@ -92,7 +92,8 @@ export const DEFAULT_SETTINGS: Settings = {
   voiceVolume: 0.8,
   voiceSituations: DEFAULT_VOICE_SITUATIONS,
   bgm: true,
-  bgmVolume: 0.35,
+  // Under the table, not on it: the loop should sit well below the voices and the felt.
+  bgmVolume: 0.12,
   se: true,
   seVolume: 0.55,
 };
