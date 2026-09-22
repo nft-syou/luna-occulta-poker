@@ -1,4 +1,4 @@
-# jev-poker
+# Yoiyami Poker (宵闇の賭場) — a Luna Occulta fan poker
 
 [![CI](https://github.com/nft-syou/jev-poker/actions/workflows/ci.yml/badge.svg)](https://github.com/nft-syou/jev-poker/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
@@ -11,10 +11,35 @@
 
 **日本語版は [README.ja.md](README.ja.md) にあります。**
 
-No-Limit Texas Hold'em in the browser where every CPU player thinks with
-[TypeSafe Jev](https://typesafe.ai). Play against them, or let a full table of
-CPUs play each other while you watch. Bring your own credentials: a TypeSafe API
+> An **unofficial fan work** based on 月蝕綺譚 -Luna Occulta- (a CryptoNinja side story). Not
+> affiliated with the official game. Made within the
+> [fan-work guidelines](https://vibe.co.jp/luna-occulta/fanworks) and the
+> [CryptoNinja guidelines](https://www.ninja-dao.com/guidelines). #月蝕綺譚
+
+No-Limit Texas Hold'em under an eclipsed moon. You sit down as あるじどの; across the
+lacquer table are five 御霊 whose personalities are lifted from the official canon —
+咲耶, マミ, タルト, 孫市 and 蛇ノ目. Every one of their decisions is made by
+[TypeSafe Jev](https://typesafe.ai); they speak their lines aloud, wear their official
+faces at the seats, and get a showcase cut-in on all-ins, big pots and busts. Or let a
+full table of spirits play while you watch. Bring your own credentials: a TypeSafe API
 key, or a Vercel, Lolipop or Cloudflare AI Gateway of your own.
+
+Built on [jev-poker](https://github.com/nft-syou/jev-poker): the engine and the CPU are
+unchanged (`@jev-poker/engine`, `@jev-poker/agent`); the look, the characters and the
+voices are the fan work.
+
+## The spirits
+
+| Spirit | Clan | Canon | At the table |
+| --- | --- | --- | --- |
+| 咲耶 Sakuya | Koga · Fire | Bright and confident; cannot lie, and it shows on her face | Plays strong hands head-on, almost never bluffs. **Her lines change when she bluffs** — a tell |
+| マミ Mami | Saika · Wood | Shape-shifter who wins by showing people a dream | Bluffs and semi-bluffs often, wins on numbers |
+| タルト Tart | Koga · Water | "The long way round is the quick way" | Enters few pots, calls, raises only with the goods |
+| 孫市 Magoichi | Saika · Fire | "Never missed a shot" | Selective, then aggressive for value; takes the whole pot |
+| 蛇ノ目 Janome | Fuma · Wood | Easygoing and fatally off-beat | Loose, unreadable; shoves with the unexpected |
+| あるじどの | — | Speaks no word | Your seat; in spectator mode, a silent CPU |
+
+The personality texts are in `src/characters/spirits.ts` and the script in `src/characters/lines.ts`.
 
 ## How it works
 
@@ -31,7 +56,7 @@ Your credentials never leave your browser except inside requests to this site's
 
 1. Open the deployed site (or run it locally, below).
 2. Pick a route and enter its credentials when asked (see below). They are stored in your browser only.
-3. Choose seats (2–6), who is human, a persona for each CPU, blinds and stack. With no human seat you get spectator mode.
+3. Choose seats (2–6), which seat is あるじどの, a spirit for each seat, blinds, stack and whether the spirits speak. With no human seat you get spectator mode.
 4. Open "Jev" in the hand history to see the probabilities behind each CPU action.
 
 ## Routes
@@ -105,11 +130,17 @@ Optional variable `TYPESAFE_BASE_URL` overrides the upstream API root of the
 used only when it looks like `https://…` (or `http://localhost…` for local
 work); anything else falls back to the default.
 
-## Personas
+## Assets and voices
 
-Five presets (Rock, TAG, LAG, Maniac, Calling Station). Duplicate one to edit
-the description Jev receives and the variance. Custom personas live in your
-browser's localStorage.
+- The faces, standing art and showcase videos under `public/kitan/` come from the official
+  fan-work materials and asset vault; sources and processing are in `scripts/kitan-assets.json`
+  and `pnpm assets:kitan` rebuilds them. They belong to the original work and are not covered by
+  this repository's MIT license ([public/kitan/README.md](public/kitan/README.md)).
+- The voices are mp3s generated with [Irodori-TTS](https://github.com/Aratako/Irodori-TTS)'s
+  VoiceDesign model from the caption and seed published with each spirit's official voice sample.
+  Edit a line and regenerate only that clip: see [scripts/voice/README.md](scripts/voice/README.md).
+- The design follows the official tone, 宵闇に金: an indigo ground, gold as lines and grains,
+  eclipse red only for warnings and all-ins.
 
 ## Benchmark
 
@@ -152,13 +183,16 @@ Details: [`bench/README.md`](bench/README.md) (CLI, result format),
 
     packages/engine/  @jev-poker/engine — pure TypeScript poker engine (tested with seeded random play)
     packages/agent/   @jev-poker/agent — features, questions, personas, decision policy, JevAgent, baselines, playHand
+    src/characters/   the spirits' data, script and voice player
     src/jev/          app-only: proxy routes (connection) and the speculative prefetch cache
-    src/ui/        React UI, game loop, history with Jev probabilities
+    src/ui/        React UI, game loop, history with Jev probabilities, speech bubbles and cut-ins
     src/i18n/      en / ja dictionaries
     src/proxy/     the proxy handler and its dev-server adapter (unit-tested)
     functions/     Cloudflare Pages Function entry
     bench/         benchmark runner, statistics, Slumbot client, saved results
-    docs/superpowers/specs/  design spec
+    public/kitan/  official assets (images, videos) and the generated voices
+    scripts/       asset intake and voice generation
+    docs/superpowers/specs/  design specs
 
 ## Roadmap
 
@@ -184,4 +218,6 @@ listed in [CHANGELOG.md](CHANGELOG.md).
 
 ## License
 
-MIT — see [`LICENSE`](LICENSE).
+The code is MIT — see [`LICENSE`](LICENSE). The images, videos and voices under `public/kitan/`
+are 月蝕綺譚 fan-work materials bundled for this game under its guidelines; do not redistribute
+them as an asset collection.

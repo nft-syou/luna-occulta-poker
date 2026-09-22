@@ -1,4 +1,4 @@
-# jev-poker
+# 宵闇の賭場 — 月蝕綺譚 二次創作ポーカー
 
 [![CI](https://github.com/nft-syou/jev-poker/actions/workflows/ci.yml/badge.svg)](https://github.com/nft-syou/jev-poker/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
@@ -11,10 +11,32 @@
 
 **English version: [README.md](README.md)**
 
-ブラウザで遊べるノーリミット・テキサスホールデム。CPU プレイヤーは全員
-[TypeSafe Jev](https://typesafe.ai) で考えます。人間 1 人 + CPU、または全席 CPU の
-観戦モード。プレイにはあなた自身の TypeSafe API キー、または Vercel AI Gateway /
-ロリポップ！AIゲートウェイ / Cloudflare AI Gateway の設定が必要です。
+> 本作は『月蝕綺譚 -Luna Occulta-』(CryptoNinja 外伝) の**非公式二次創作**です。公式とは関係ありません。
+> [二次創作の掟](https://vibe.co.jp/luna-occulta/fanworks) と
+> [CryptoNinja 利用ガイドライン](https://www.ninja-dao.com/guidelines) の範囲で作っています。 #月蝕綺譚
+
+喰われた月の下、漆の卓で御霊たちと勾玉を賭けるノーリミット・テキサスホールデム。
+あなたは「あるじどの」として卓に着き、相手は公式設定から性格を写した 5 人の御霊
+— 咲耶・マミ・タルト・孫市・蛇ノ目。御霊たちの一手はすべて
+[TypeSafe Jev](https://typesafe.ai) が考え、席の顔と声、要所のお披露目動画で語ります。
+全席御霊の見物モードもあります。プレイにはあなた自身の TypeSafe API キー、または
+Vercel AI Gateway / ロリポップ！AIゲートウェイ / Cloudflare AI Gateway の設定が必要です。
+
+[jev-poker](https://github.com/nft-syou/jev-poker) を土台に、見た目・キャラクター・声を
+月蝕綺譚の世界に合わせたものです。エンジンと CPU は元のまま (`@jev-poker/engine`、`@jev-poker/agent`)。
+
+## 御霊たち
+
+| 御霊 | 所属 | 公式の芯 | 卓での打ち方 |
+| --- | --- | --- | --- |
+| 咲耶 | 甲賀・火 | 快活な姉御。嘘がつけず顔に出る | 強い手は正面から。ブラフはほぼしない。**ブラフの時だけセリフが変わる** (テル) |
+| マミ | 雑賀・木 | 化かすのは嘘でなく夢を見せる | ブラフとセミブラフが多く、数で押す |
+| タルト | 甲賀・水 | 急がば、まわれ〜 | 参加は少なく待つ。コール中心、大きい手だけレイズ |
+| 孫市 | 雑賀・火 | 外したことは一度もねぇ | 入ったらバリューで大きく打ち、取り切る |
+| 蛇ノ目 | 風魔・木 | のんびりで致命的にズレる | ルースで読めない。時々とんでもない手で突っ込む |
+| あるじどの | — | 語らず、名乗らず | あなたの席。見物モードでは語らない CPU として座る |
+
+性格の文章は `src/characters/spirits.ts`、セリフは `src/characters/lines.ts` にあります。
 
 ## 仕組み
 
@@ -31,7 +53,7 @@
 
 1. デプロイ済みのサイトを開く (または下記の手順でローカルで起動する)。
 2. 求められたら経路を選び、その認証情報を入力する (後述)。ブラウザにのみ保存されます。
-3. 席数 (2〜6)、人間の席、各 CPU の人格、ブラインド、スタックを決める。人間の席が無ければ観戦モードになります。
+3. 席数 (2〜6)、あるじどのの席、各席の御霊、ブラインド、スタック、御霊の声のオン/オフを決める。あるじどのの席が無ければ見物モードになります。
 4. ハンド履歴の「Jev」を開くと、各 CPU のアクションの裏にある確率が見られます。
 
 ## 経路
@@ -100,10 +122,15 @@ Node.js 24 と pnpm が必要です。
 (ゲートウェイのホストはコード内の定数です)。`https://…` (ローカル作業なら `http://localhost…`)
 の形のときだけ使われ、それ以外は既定値に戻ります。
 
-## 人格
+## 素材と声
 
-5 つのプリセット (ロック、TAG、LAG、マニアック、コーリングステーション) があります。
-複製して、Jev に渡す説明文と「ぶれ」を編集できます。カスタム人格はブラウザの localStorage に保存されます。
+- 顔アイコン・立ち絵・お披露目動画は公式の二次創作資料と素材蔵から `public/kitan/` に取り込んだものです。
+  出典と加工は `scripts/kitan-assets.json`、再現は `pnpm assets:kitan`。権利は原作にあり、このリポジトリの
+  MIT ライセンスの対象ではありません ([public/kitan/README.md](public/kitan/README.md))。
+- 声は公式の声見本に添えられた設計 (caption と seed) を
+  [Irodori-TTS](https://github.com/Aratako/Irodori-TTS) の VoiceDesign モデルに渡して生成した mp3 です。
+  台本を直したら [scripts/voice/README.md](scripts/voice/README.md) の手順で該当行だけ作り直せます。
+- デザインは公式のトンマナ「宵闇に金」に揃えています (宵闇藍の地、金は線と粒、蝕紅は警告と高揚だけ)。
 
 ## ベンチマーク
 
@@ -144,12 +171,15 @@ Node.js 24 と pnpm が必要です。
 
     packages/engine/  @jev-poker/engine — 依存ゼロの TypeScript ポーカーエンジン (シード付きランダムプレイでテスト)
     packages/agent/   @jev-poker/agent — 特徴量、質問、人格、判断方針、JevAgent、ベースライン、playHand
+    src/characters/   御霊のデータ、台本、声の再生
     src/jev/          アプリ専用: プロキシの経路 (connection) と先読みキャッシュ
-    src/ui/        React UI、ゲームループ、Jev の確率付き履歴
+    src/ui/        React UI、ゲームループ、Jev の確率付き履歴、吹き出しとカットイン
     src/i18n/      en / ja 辞書
     src/proxy/     プロキシハンドラと開発サーバー用アダプタ (ユニットテスト済み)
     functions/     Cloudflare Pages Function のエントリ
     bench/         ベンチマークランナー、統計、Slumbot クライアント、保存済み結果
+    public/kitan/  公式素材 (画像・動画) と生成した声
+    scripts/       素材の取り込みと声の生成
     docs/superpowers/specs/  設計書
 
 ## 今後
@@ -175,4 +205,5 @@ Node.js 24 と pnpm が必要です。
 
 ## ライセンス
 
-MIT — [`LICENSE`](LICENSE) を参照。
+コードは MIT — [`LICENSE`](LICENSE) を参照。`public/kitan/` の画像・動画・声は『月蝕綺譚』の
+二次創作素材で、掟の範囲でこのゲームが使うために同梱しています。素材集として転載・再配布しないでください。

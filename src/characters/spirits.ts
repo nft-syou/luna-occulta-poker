@@ -65,7 +65,7 @@ export const SPIRITS: readonly Spirit[] = [
     id: "arujidono",
     name: { ja: "あるじどの", en: "Arujidono" },
     kana: "あるじどの",
-    tagline: { ja: "境を守った一族の、生き残り", en: "Last of the line that kept the border" },
+    tagline: { ja: "境を守った一族", en: "Of the line that kept the border" },
     copy: {
       ja: "語らず、名乗らず、笠の下の顔は誰も知らない。御霊を式札に宿し、鬼を討つ。",
       en: "Speaks no word, gives no name; no one has seen the face under the hat. Binds spirits to cards and hunts demons.",

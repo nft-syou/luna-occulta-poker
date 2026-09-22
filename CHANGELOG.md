@@ -6,6 +6,15 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Changed
+
+- The game is now 宵闇の賭場, an unofficial 月蝕綺譚 -Luna Occulta- fan work: the CPUs are five
+  official 御霊 (咲耶・マミ・タルト・孫市・蛇ノ目) with personalities derived from the public canon,
+  their faces at the seats, spoken lines generated with Irodori-TTS from the official voice designs
+  (咲耶's lines give her bluffs away), showcase cut-ins on all-ins, big pots and busts, and the whole
+  UI in the official 宵闇に金 tone. The persona editor is retired; every screen carries the fan-work
+  notice.
+
 ### Added
 
 - Link previews and app icons: Open Graph / Twitter card metadata, a 1200x630 card image, SVG/ICO/PNG favicons, an Apple touch icon, a web manifest and robots.txt.
