@@ -68,7 +68,7 @@ const REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
  */
 const BET_SPOT = 0.6;
 /** The same for a seat on the top or bottom rail, whose tall box the chips must clear. */
-const BET_SPOT_VERTICAL = 0.38;
+const BET_SPOT_VERTICAL = 0.41;
 
 function mediaMatches(query: string): boolean {
   // jsdom (and any non-browser host) has no matchMedia; treat those as a wide, moving screen.
