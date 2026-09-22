@@ -61,11 +61,14 @@ const REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
 
 /**
  * How far from the rail a seat's chips sit, as a fraction of the seat's own distance from
- * the middle: the bet lands two fifths of the way in, between the player and the pot. Far
- * enough in to clear the seat box and the callout thrown the same way, and — at every seat
- * count the table allows — still well outside the board and the pot in the middle.
+ * the middle: the bet lands well inside, between the player and the pot. The seats carry a
+ * face now and lean out over the rail, so the chips of a seat on the top or bottom rail
+ * have to come this far in to clear its box — and they are still outside the board and
+ * the pot in the middle at every seat count the table allows.
  */
-const BET_SPOT = 0.5;
+const BET_SPOT = 0.6;
+/** The same for a seat on the top or bottom rail, whose tall box the chips must clear. */
+const BET_SPOT_VERTICAL = 0.38;
 
 function mediaMatches(query: string): boolean {
   // jsdom (and any non-browser host) has no matchMedia; treat those as a wide, moving screen.
@@ -275,9 +278,7 @@ export function TableView({
   const revealAll = game.spectator || snapshot?.street === "showdown";
   // A taller felt needs a narrower, taller ellipse to keep the seats on the rail.
   const radiusX = phone ? 40 : 42;
-  // The desktop felt is taller than it was (7:6), and the seats are taller too: a smaller
-  // vertical radius keeps the top and bottom seats on the rail with their chips clear of them.
-  const radiusY = phone ? 42 : 34;
+  const radiusY = phone ? 42 : 40;
 
   // On a phone one panel shows at a time; on a wide screen the felt is always up and the
   // side column carries whichever of the two panels the tab switch selected. Recording mode
@@ -296,13 +297,16 @@ export function TableView({
     const angle = ((index - anchorIndex) / count) * 2 * Math.PI + Math.PI / 2;
     const dx = radiusX * Math.cos(angle);
     const dy = radiusY * Math.sin(angle);
+    const spot = BET_SPOT_VERTICAL + (BET_SPOT - BET_SPOT_VERTICAL) * Math.abs(Math.cos(angle));
     return {
       seat,
       player: snapshot?.players.find((p) => p.seat === seat.id),
       x: 50 + dx,
       y: 50 + dy,
-      betX: 50 + dx * BET_SPOT,
-      betY: 50 + dy * BET_SPOT,
+      // Chips sit well in front of a side seat and further in for a top or bottom one:
+      // the fraction slides with the seat's angle, so nothing jumps between the two.
+      betX: 50 + dx * spot,
+      betY: 50 + dy * spot,
       // Unit vector from the seat towards the middle. A seat only ever has felt on this
       // side of it, which is why the callout is thrown this way and never downwards.
       inward: { x: -Math.cos(angle), y: -Math.sin(angle) },
