@@ -10,6 +10,8 @@ export interface AudioLike {
   preload: string;
   play(): Promise<void> | void;
   pause(): void;
+  /** Set by the BGM, which is the only sound that repeats. */
+  loop?: boolean;
   /** Seconds, once known; NaN before the metadata loads. */
   duration?: number;
   addEventListener?(type: string, listener: () => void): void;

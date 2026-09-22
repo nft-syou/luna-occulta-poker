@@ -282,8 +282,8 @@
     "regular": "標準"
   },
   "voice": {
-    "title": "御霊の声",
-    "button": "声",
+    "title": "音の設定",
+    "button": "音",
     "close": "閉じる",
     "situations": "局面ごとに鳴らす声",
     "allOn": "すべて鳴らす",
@@ -301,6 +301,10 @@
     "situation_win": "勝ち",
     "situation_bigwin": "大勝ち",
     "situation_lose": "負け",
-    "situation_bust": "バースト"
+    "situation_bust": "バースト",
+    "bgm": "BGM",
+    "bgmVolume": "BGM の大きさ",
+    "se": "効果音",
+    "seVolume": "効果音の大きさ"
   }
 }

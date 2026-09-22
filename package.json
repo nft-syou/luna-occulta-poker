@@ -46,7 +46,8 @@
     "changeset": "changeset",
     "release": "pnpm build:packages && changeset publish",
     "assets:kitan": "node scripts/fetch-kitan-assets.mjs",
-    "voice:lines": "tsx scripts/voice/export-lines.ts"
+    "voice:lines": "tsx scripts/voice/export-lines.ts",
+    "assets:sound": "node scripts/fetch-sound.mjs"
   },
   "dependencies": {
     "@jev-poker/agent": "workspace:*",

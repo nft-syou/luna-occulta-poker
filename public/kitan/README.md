@@ -9,6 +9,9 @@
 - 出典と加工内容は `scripts/kitan-assets.json` にあり、`pnpm assets:kitan` で再現できます。
 - `voice/` 以下の音声は、公式の声見本 (caption と seed) を Irodori-TTS に読み込ませてこのゲーム用に
   生成したものです。音声そのものの単体再配布・販売はしないでください。
+- `sound/` 以下の BGM と効果音だけは出自が違います。宵闇素材庫 (<https://vibe.co.jp/yoiyami/>) の
+  **CC0** 素材を mp3 に変換したもので、クレジット不要・商用可・再配布可です。出典と変換は
+  `scripts/sound-assets.json`、再現は `pnpm assets:sound` (`unzip` と `ffmpeg` が要ります)。
 
 The images here are official 月蝕綺譚 -Luna Occulta- fan-work materials, bundled only so
 this game can show them, under the fan-work guidelines linked above. They are not covered by this

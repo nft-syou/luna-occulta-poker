@@ -130,6 +130,9 @@ Node.js 24 と pnpm が必要です。
 - 声は公式の声見本に添えられた設計 (caption と seed) を
   [Irodori-TTS](https://github.com/Aratako/Irodori-TTS) の VoiceDesign モデルに渡して生成した mp3 です。
   台本を直したら [scripts/voice/README.md](scripts/voice/README.md) の手順で該当行だけ作り直せます。
+- BGM と効果音は宵闇素材庫 (<https://vibe.co.jp/yoiyami/>) の CC0 素材です。卓に流れるのは
+  「琴と遠い風鈴」ひとつ、効果音は配札・勾玉・カットインなど数種だけ。公式のトンマナ
+  「静寂が地」に合わせて鳴らしすぎないようにしています。
 - デザインは公式のトンマナ「宵闇に金」に揃えています (宵闇藍の地、金は線と粒、蝕紅は警告と高揚だけ)。
 
 ## ベンチマーク

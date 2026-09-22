@@ -3,6 +3,7 @@ import "@testing-library/jest-dom/vitest";
 import type { HandSnapshot, LegalActions } from "@jev-poker/engine";
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import type { SoundPlayer } from "../characters/sound";
 import type { VoicePlayer } from "../characters/voice";
 import { initI18n } from "../i18n";
 import { EMPTY_FX, type TableFx } from "./fx";
@@ -131,6 +132,7 @@ function renderTable(
     prefetch: boolean;
     onPrefetchChange: (prefetch: boolean) => void;
     voice: VoicePlayer;
+    sound: SoundPlayer;
   }> = {},
 ) {
   return render(
@@ -560,5 +562,96 @@ describe("TableView voices", () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+});
+
+describe("TableView sounds", () => {
+  function fakeSound() {
+    const played: string[] = [];
+    const sound: SoundPlayer = {
+      se: (id) => played.push(id),
+      startBgm: () => {},
+      setBgm: () => {},
+      setBgmVolume: () => {},
+      setSe: () => {},
+      setSeVolume: () => {},
+      stopAll: () => {},
+    };
+    return { sound, played };
+  }
+
+  it("deals with a tick, sends chips out with one 勾玉 and brings a pot home with several", () => {
+    stubViewport(false);
+    const { sound, played } = fakeSound();
+    renderTable(
+      {
+        fx: {
+          ...EMPTY_FX,
+          feed: [{ id: 1, type: "street", street: "flop", at: 10 }],
+          chipMoves: [{ id: 2, seat: 1, kind: "toBet", amount: 6, at: 10 }],
+        },
+      },
+      { sound },
+    );
+    expect(played).toEqual(["deal", "chip"]);
+    cleanup();
+
+    const home = fakeSound();
+    renderTable(
+      {
+        fx: { ...EMPTY_FX, chipMoves: [{ id: 3, seat: 0, kind: "toSeat", amount: 90, at: 11 }] },
+      },
+      { sound: home.sound },
+    );
+    expect(home.played).toEqual(["pot"]);
+  });
+
+  it("strikes on an all-in cut-in and marks a big win and a bust with their own sounds", () => {
+    stubViewport(false);
+    for (const [kind, expected] of [
+      ["allin", "cutin"],
+      ["bigwin", "bigwin"],
+      ["bust", "bust"],
+    ] as const) {
+      const { sound, played } = fakeSound();
+      renderTable(
+        { fx: { ...EMPTY_FX, cutIn: { id: 9, seat: 1, kind, line: null, at: 12 } } },
+        { sound },
+      );
+      expect(played, kind).toEqual([expected]);
+      cleanup();
+    }
+  });
+
+  it("says nothing twice for the same effect", () => {
+    stubViewport(false);
+    const { sound, played } = fakeSound();
+    const fx = {
+      ...EMPTY_FX,
+      chipMoves: [{ id: 2, seat: 1, kind: "toBet" as const, amount: 6, at: 10 }],
+    };
+    const { rerender } = render(
+      <TableView
+        game={controller({ fx })}
+        speed="normal"
+        startingStack={200}
+        language="en"
+        onSpeedChange={() => {}}
+        onLeave={() => {}}
+        sound={sound}
+      />,
+    );
+    rerender(
+      <TableView
+        game={controller({ fx })}
+        speed="normal"
+        startingStack={200}
+        language="en"
+        onSpeedChange={() => {}}
+        onLeave={() => {}}
+        sound={sound}
+      />,
+    );
+    expect(played).toEqual(["chip"]);
   });
 });

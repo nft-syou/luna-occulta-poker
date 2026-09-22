@@ -2,6 +2,7 @@ import { useId } from "react";
 import { useTranslation } from "react-i18next";
 import { CPU_SPIRIT_IDS, SPIRITS, type SpiritId, spirit } from "../characters/spirits";
 import type { Language } from "../i18n";
+import { SoundSettings } from "./SoundSettings";
 import {
   DEFAULT_SEATS,
   PREFETCH_MAX_IN_FLIGHT_OPTIONS,
@@ -10,7 +11,6 @@ import {
   SPEEDS,
   validateSettings,
 } from "./storage";
-import { VoiceSettings } from "./VoiceSettings";
 
 interface Props {
   settings: Settings;
@@ -134,7 +134,7 @@ export function Setup({
         )}
       </div>
 
-      <VoiceSettings settings={settings} onChange={onChange} />
+      <SoundSettings settings={settings} onChange={onChange} />
 
       <table className="seats">
         <thead>

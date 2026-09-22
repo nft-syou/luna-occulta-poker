@@ -282,8 +282,8 @@
     "regular": "regular"
   },
   "voice": {
-    "title": "Spirit voices",
-    "button": "Voices",
+    "title": "Sound",
+    "button": "Sound",
     "close": "Close",
     "situations": "Spoken situations",
     "allOn": "All on",
@@ -301,6 +301,10 @@
     "situation_win": "Win",
     "situation_bigwin": "Big win",
     "situation_lose": "Loss",
-    "situation_bust": "Bust"
+    "situation_bust": "Bust",
+    "bgm": "Music",
+    "bgmVolume": "Music volume",
+    "se": "Sound effects",
+    "seVolume": "Effects volume"
   }
 }

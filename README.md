@@ -140,6 +140,9 @@ work); anything else falls back to the default.
 - The voices are mp3s generated with [Irodori-TTS](https://github.com/Aratako/Irodori-TTS)'s
   VoiceDesign model from the caption and seed published with each spirit's official voice sample.
   Edit a line and regenerate only that clip: see [scripts/voice/README.md](scripts/voice/README.md).
+- The music and sound effects are CC0 from 宵闇素材庫 (<https://vibe.co.jp/yoiyami/>): one quiet
+  koto loop under the table and a handful of short sounds, kept sparse because the official tone
+  sheet makes silence the ground.
 - The design follows the official tone, 宵闇に金: an indigo ground, gold as lines and grains,
   eclipse red only for warnings and all-ins.
 

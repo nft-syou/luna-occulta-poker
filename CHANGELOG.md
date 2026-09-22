@@ -8,6 +8,12 @@ All notable changes to this project are documented here. The format follows
 
 ### Changed
 
+- Sound: a quiet CC0 koto loop under the table and a few short effects (a card dealt, 勾玉 out
+  and home, the cut-in's strike), with music, effects and voices each switchable mid-hand from
+  a 音 dialog in the table header.
+- The cut-in is staged rather than played: the felt dims, a lacquer band cuts across it and the
+  official 必殺カットイン drawing bursts out with the 御霊's name and line, over in under three
+  seconds. Voices default to greetings, raises, all-ins, big wins and busts.
 - The game is now 宵闇の賭場, an unofficial 月蝕綺譚 -Luna Occulta- fan work: the CPUs are five
   official 御霊 (咲耶・マミ・タルト・孫市・蛇ノ目) with personalities derived from the public canon,
   their faces at the seats, spoken lines generated with Irodori-TTS from the official voice designs

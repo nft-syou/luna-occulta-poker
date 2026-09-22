@@ -1,0 +1,71 @@
+{
+  "$comment": "CC0 audio from 宵闇素材庫 (https://vibe.co.jp/yoiyami/). Run `pnpm assets:sound` to (re)build public/kitan/sound/. The table is quiet by design — one BGM loop and a handful of short, low sounds, per the official tone sheet (静寂が地; SE は低い鈴・柝・水滴系).",
+  "source": "https://yoiyami-files.vibe.co.jp/audio/<id>.zip",
+  "license": "CC0-1.0",
+  "assets": [
+    {
+      "out": "bgm-yoiyami.mp3",
+      "id": "a_bgm_takusen_koto_bell",
+      "name": "琴と遠い風鈴",
+      "use": "卓の BGM。静かな琴と遠い風鈴、打楽器なし、76.9 秒のループ",
+      "channels": 2,
+      "bitrate": "112k"
+    },
+    {
+      "out": "deal.mp3",
+      "id": "a_se_b01_ui_01",
+      "name": "カーソル移動",
+      "use": "札が配られる",
+      "channels": 1,
+      "bitrate": "96k"
+    },
+    {
+      "out": "chip.mp3",
+      "id": "a_se_p01_coin_a",
+      "name": "銭 A：一枚の受取り",
+      "use": "勾玉が卓に出る",
+      "channels": 1,
+      "bitrate": "96k"
+    },
+    {
+      "out": "pot.mp3",
+      "id": "a_se_p01_coin_b",
+      "name": "銭 B：数枚の受取り",
+      "use": "勾玉が勝った席へ帰る",
+      "channels": 1,
+      "bitrate": "96k"
+    },
+    {
+      "out": "cutin.mp3",
+      "id": "a_se_b01_blade_04",
+      "name": "抜刀",
+      "use": "オールインのカットインが開く",
+      "channels": 1,
+      "bitrate": "96k"
+    },
+    {
+      "out": "bigwin.mp3",
+      "id": "a_se_b01_item_06",
+      "name": "希少品の獲得",
+      "use": "大きな勾玉を取ったカットイン",
+      "channels": 1,
+      "bitrate": "96k"
+    },
+    {
+      "out": "bust.mp3",
+      "id": "a_se_b01_dark_02",
+      "name": "闇の命中",
+      "use": "御霊の勾玉が尽きたカットイン",
+      "channels": 1,
+      "bitrate": "96k"
+    },
+    {
+      "out": "tap.mp3",
+      "id": "a_se_p01_confirm_b",
+      "name": "決定 B：小さな響き",
+      "use": "あるじどのが手を決める",
+      "channels": 1,
+      "bitrate": "96k"
+    }
+  ]
+}

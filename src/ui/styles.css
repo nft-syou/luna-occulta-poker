@@ -318,6 +318,35 @@ a {
 .setup {
   padding: 20px 22px 22px;
 }
+/* Sound settings: music, effects, then the voices with a switch per situation. */
+.sound-settings {
+  display: grid;
+  gap: 10px;
+  margin: 12px 0;
+}
+.sound-settings input[type="checkbox"] {
+  width: auto;
+  margin: 0 6px 0 0;
+  padding: 0;
+  vertical-align: middle;
+}
+.sound-settings .field span {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.sound-settings input[type="range"] {
+  border: none;
+  background: transparent;
+  padding: 0;
+  accent-color: var(--kitan-kindei);
+  max-width: 320px;
+}
+.sound-settings .voice-settings {
+  margin: 4px 0 0;
+  padding-top: 10px;
+  border-top: 1px solid var(--kitan-line-quiet);
+}
 /* Voice settings: the master switch, the slider, then one switch per situation in groups. */
 .voice-settings {
   display: grid;

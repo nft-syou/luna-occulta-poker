@@ -3,16 +3,17 @@ import type { SeatId } from "@jev-poker/engine";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { createGate } from "../characters/gate";
+import { createSoundPlayer } from "../characters/sound";
 import { spirit, spiritPersonas } from "../characters/spirits";
 import { createVoicePlayer } from "../characters/voice";
 import type { Language } from "../i18n";
 import { createProxyBackend } from "../jev/backend";
 import { type Connection, modelFor } from "../jev/connection";
 import { BillingModal } from "./BillingModal";
+import { SoundSettings } from "./SoundSettings";
 import type { Settings } from "./storage";
 import { TableView } from "./TableView";
 import { useGame } from "./useGame";
-import { VoiceSettings } from "./VoiceSettings";
 
 interface Props {
   settings: Settings;
@@ -60,6 +61,23 @@ export function GameScreen({
     }),
   );
   useEffect(() => voice.setSituations(settings.voiceSituations), [voice, settings.voiceSituations]);
+  const [sound] = useState(() =>
+    createSoundPlayer({
+      bgm: settings.bgm,
+      bgmVolume: settings.bgmVolume,
+      se: settings.se,
+      seVolume: settings.seVolume,
+    }),
+  );
+  useEffect(() => sound.setBgm(settings.bgm), [sound, settings.bgm]);
+  useEffect(() => sound.setBgmVolume(settings.bgmVolume), [sound, settings.bgmVolume]);
+  useEffect(() => sound.setSe(settings.se), [sound, settings.se]);
+  useEffect(() => sound.setSeVolume(settings.seVolume), [sound, settings.seVolume]);
+  // The table was opened by a click, so the browser lets the loop start.
+  useEffect(() => {
+    sound.startBgm();
+    return () => sound.stopAll();
+  }, [sound]);
   const [voiceModalOpen, setVoiceModalOpen] = useState(false);
   const waitForTable = useCallback(() => gate.wait(), [gate]);
   useEffect(() => voice.setEnabled(settings.voice), [voice, settings.voice]);
@@ -96,6 +114,7 @@ export function GameScreen({
         model={model}
         prefetch={settings.prefetch}
         voice={voice}
+        sound={sound}
         gate={gate}
         onOpenVoice={() => setVoiceModalOpen(true)}
         onSpeedChange={(speed) => onSettingsChange({ ...settings, speed })}
@@ -111,7 +130,7 @@ export function GameScreen({
             aria-labelledby="voice-modal-title"
           >
             <h2 id="voice-modal-title">{t("voice.title")}</h2>
-            <VoiceSettings settings={settings} onChange={onSettingsChange} />
+            <SoundSettings settings={settings} onChange={onSettingsChange} />
             <div className="row">
               <button type="button" className="secondary" onClick={() => setVoiceModalOpen(false)}>
                 {t("voice.close")}

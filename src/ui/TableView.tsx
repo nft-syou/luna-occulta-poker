@@ -3,6 +3,7 @@ import { type CSSProperties, useEffect, useId, useLayoutEffect, useRef, useState
 import { useTranslation } from "react-i18next";
 import type { Gate } from "../characters/gate";
 import { pickLine, rollFrom } from "../characters/lines";
+import type { SoundPlayer } from "../characters/sound";
 import { CPU_SPIRIT_IDS, spirit } from "../characters/spirits";
 import type { VoicePlayer } from "../characters/voice";
 import type { Language } from "../i18n";
@@ -42,6 +43,8 @@ interface Props {
   onPrefetchChange?: (prefetch: boolean) => void;
   /** Says the 御霊's lines aloud. Absent, the table is silent and the bubbles still show. */
   voice?: VoicePlayer;
+  /** The table's own sounds: cards, 勾玉, the cut-in. */
+  sound?: SoundPlayer;
   /** Held by the cut-in while it is up. */
   gate?: Gate;
   /** Opens the voice settings; the header shows the button only when given. */
@@ -134,6 +137,7 @@ export function TableView({
   prefetch,
   onPrefetchChange,
   voice,
+  sound,
   gate,
   onOpenVoice,
 }: Props) {
@@ -217,6 +221,29 @@ export function TableView({
     };
   }, []);
 
+  // The table's own sounds follow the same effects, each played once: a street dealt, chips
+  // out to a bet, a pot coming home, and the cut-in's own strike.
+  const soundRef = useRef<{ feed: number; move: number; cutIn: number }>({
+    feed: 0,
+    move: 0,
+    cutIn: 0,
+  });
+  const fxFeed = state.fx.feed;
+  const fxMoves = state.fx.chipMoves;
+  useEffect(() => {
+    if (sound === undefined) return;
+    const street = [...fxFeed].reverse().find((e) => e.type === "street");
+    if (street !== undefined && street.id > soundRef.current.feed) {
+      soundRef.current.feed = street.id;
+      sound.se("deal");
+    }
+    const move = fxMoves[fxMoves.length - 1];
+    if (move !== undefined && move.id > soundRef.current.move) {
+      soundRef.current.move = move.id;
+      if (move.kind === "toBet") sound.se("chip");
+      else if (move.kind === "toSeat") sound.se("pot");
+    }
+  }, [sound, fxFeed, fxMoves]);
   // Voices follow the effects: the newest shout, word or cut-in, each said once.
   const spokenRef = useRef<{ callout: number; speech: number; cutIn: number }>({
     callout: 0,
@@ -254,6 +281,12 @@ export function TableView({
       }
     }
   }, [voice, fxCallouts, fxSpeech, fxCutIn]);
+  useEffect(() => {
+    if (sound === undefined || fxCutIn === null) return;
+    if (fxCutIn.id <= soundRef.current.cutIn) return;
+    soundRef.current.cutIn = fxCutIn.id;
+    sound.se(fxCutIn.kind === "allin" ? "cutin" : fxCutIn.kind);
+  }, [sound, fxCutIn]);
   // Warm the cut-in drawings while the first hand is dealt, so one never pops in blank.
   useEffect(() => {
     const warm: HTMLImageElement[] = [];
@@ -515,7 +548,10 @@ export function TableView({
               pot={snapshot.pot}
               bigBlind={bigBlind}
               preflop={snapshot.street === "preflop"}
-              onAct={game.humanAct}
+              onAct={(action) => {
+                sound?.se("tap");
+                game.humanAct(action);
+              }}
             />
           </div>
         )}

@@ -41,6 +41,14 @@ export interface Settings {
   voiceVolume: number;
   /** Which situations are spoken; a line for a situation switched off is shown, not said. */
   voiceSituations: VoiceSituations;
+  /** Whether the quiet loop plays under the table. */
+  bgm: boolean;
+  /** Music volume, 0–1. */
+  bgmVolume: number;
+  /** Whether the table's own sounds play (cards, 勾玉, the cut-in). */
+  se: boolean;
+  /** Effects volume, 0–1. */
+  seVolume: number;
 }
 
 export type VoiceSituations = Record<Situation, boolean>;
@@ -83,6 +91,10 @@ export const DEFAULT_SETTINGS: Settings = {
   voice: true,
   voiceVolume: 0.8,
   voiceSituations: DEFAULT_VOICE_SITUATIONS,
+  bgm: true,
+  bgmVolume: 0.35,
+  se: true,
+  seVolume: 0.55,
 };
 
 function read(key: string): string | null {
@@ -166,6 +178,10 @@ export function loadSettings(): Settings {
       voice: typeof parsed.voice === "boolean" ? parsed.voice : DEFAULT_SETTINGS.voice,
       voiceVolume: clampVolume(numberOr(parsed.voiceVolume, DEFAULT_SETTINGS.voiceVolume)),
       voiceSituations: readSituations(parsed.voiceSituations),
+      bgm: typeof parsed.bgm === "boolean" ? parsed.bgm : DEFAULT_SETTINGS.bgm,
+      bgmVolume: clampVolume(numberOr(parsed.bgmVolume, DEFAULT_SETTINGS.bgmVolume)),
+      se: typeof parsed.se === "boolean" ? parsed.se : DEFAULT_SETTINGS.se,
+      seVolume: clampVolume(numberOr(parsed.seVolume, DEFAULT_SETTINGS.seVolume)),
     };
   } catch {
     return { ...DEFAULT_SETTINGS, seats: [...DEFAULT_SEATS] };
