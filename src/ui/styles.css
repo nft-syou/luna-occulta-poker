@@ -294,7 +294,13 @@ table.seats th {
 table.seats input,
 table.seats select {
   width: 100%;
+  min-width: 7em;
   box-sizing: border-box;
+}
+table.seats td:last-child {
+  max-width: 320px;
+  font-size: 0.85rem;
+  line-height: 1.6;
 }
 .visually-hidden {
   position: absolute;
@@ -618,6 +624,39 @@ a {
 .chip-fly-stack {
   position: absolute;
   transform: translate(-50%, -50%);
+}
+/* The face sits on the tablet above the cards, framed by the same thin gold line. */
+.seat-face {
+  display: block;
+  width: var(--seat-face, 56px);
+  height: var(--seat-face, 56px);
+  margin: 0 auto 4px;
+  border-radius: var(--kitan-rounded-md);
+  border: 1px solid var(--kitan-line);
+  background: var(--kitan-panel);
+  object-fit: cover;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+}
+.seat-tagline {
+  color: var(--kitan-sublabel);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+}
+.seat-pick {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.seat-pick-face {
+  flex: 0 0 auto;
+  border-radius: var(--kitan-rounded-sm);
+  border: 1px solid var(--kitan-line);
+  background: var(--kitan-panel);
+  object-fit: cover;
+}
+table.seats .seat-pick select {
+  flex: 1 1 auto;
+  min-width: 0;
 }
 .seat-cards {
   display: flex;
@@ -1120,6 +1159,7 @@ button.danger {
   .table-screen {
     --seat-width: 88px;
     --seat-font: 0.75rem;
+    --seat-face: 40px;
     --card-width: 24px;
     --card-height: 34px;
     --board-card-width: 28px;

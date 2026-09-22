@@ -28,9 +28,9 @@ const CPU_ONLY: Settings = {
   ...DEFAULT_SETTINGS,
   speed: "max",
   seats: [
-    { name: "A", kind: "cpu", personaId: "tag" },
-    { name: "B", kind: "cpu", personaId: "lag" },
-    { name: "C", kind: "cpu", personaId: "rock" },
+    { name: "A", kind: "cpu", spiritId: "sakuya" },
+    { name: "B", kind: "cpu", spiritId: "mami" },
+    { name: "C", kind: "cpu", spiritId: "tart" },
   ],
 };
 

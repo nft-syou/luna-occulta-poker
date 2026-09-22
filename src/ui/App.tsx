@@ -1,4 +1,3 @@
-import { loadPersonas, type Persona, saveCustomPersonas } from "@jev-poker/agent";
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import i18next, { detectLanguage, initI18n, type Language } from "../i18n";
@@ -6,7 +5,6 @@ import type { Connection } from "../jev/connection";
 import { ConnectionModal } from "./ConnectionModal";
 import { GameScreen } from "./GameScreen";
 import { LanguageSwitch } from "./LanguageSwitch";
-import { PersonaEditor } from "./PersonaEditor";
 import { Setup } from "./Setup";
 import {
   clearConnection,
@@ -19,10 +17,7 @@ import {
   saveSettings,
 } from "./storage";
 
-type Screen = "setup" | "table" | "personas";
-
-/** Preset a seat falls back to when its persona is deleted. */
-const FALLBACK_PERSONA_ID = "tag";
+type Screen = "setup" | "table";
 
 const initialLanguage = detectLanguage(loadLanguage(), globalThis.navigator?.language);
 initI18n(initialLanguage);
@@ -34,7 +29,6 @@ export function App() {
   const [keyError, setKeyError] = useState<string | null>(null);
   const [keyModalOpen, setKeyModalOpen] = useState(connection === null);
   const [settings, setSettings] = useState<Settings>(() => loadSettings());
-  const [personas, setPersonas] = useState<Persona[]>(() => loadPersonas(localStorage));
   const [screen, setScreen] = useState<Screen>("setup");
 
   useEffect(() => {
@@ -56,24 +50,6 @@ export function App() {
   const changeSettings = (next: Settings) => {
     setSettings(next);
     saveSettings(next);
-  };
-
-  const changePersonas = (next: Persona[]) => {
-    setPersonas(next);
-    try {
-      saveCustomPersonas(next, localStorage);
-    } catch {
-      // storage unavailable
-    }
-    // A seat left pointing at a deleted persona would silently fall back at the table;
-    // point it at the default preset instead, and persist the correction.
-    const ids = new Set(next.map((p) => p.id));
-    const seats = settings.seats.map((seat) =>
-      ids.has(seat.personaId) ? seat : { ...seat, personaId: FALLBACK_PERSONA_ID },
-    );
-    if (seats.some((seat, i) => seat !== settings.seats[i])) {
-      changeSettings({ ...settings, seats });
-    }
   };
 
   return (
@@ -98,27 +74,16 @@ export function App() {
         {screen === "setup" && (
           <Setup
             settings={settings}
-            personas={personas}
             language={language}
             hasConnection={connection !== null}
             onChange={changeSettings}
             onStart={() => setScreen("table")}
-            onEditPersonas={() => setScreen("personas")}
             onOpenConnection={() => setKeyModalOpen(true)}
-          />
-        )}
-        {screen === "personas" && (
-          <PersonaEditor
-            personas={personas}
-            language={language}
-            onChange={changePersonas}
-            onBack={() => setScreen("setup")}
           />
         )}
         {screen === "table" && (
           <GameScreen
             settings={settings}
-            personas={personas}
             connection={connection}
             language={language}
             onSettingsChange={changeSettings}

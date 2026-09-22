@@ -4,7 +4,6 @@
     "subtitle": "月蝕綺譚 二次創作ポーカー ― 御霊たちは TypeSafe Jev で考える",
     "language": "言語",
     "connection": "接続設定",
-    "personas": "人格",
     "back": "戻る",
     "source": "ソースコード (MIT)",
     "fanworkNotice": "本作は『月蝕綺譚 -Luna Occulta-』の非公式二次創作です。公式とは関係ありません。",
@@ -89,7 +88,9 @@
     "needConnection": "まず接続設定を行ってください。",
     "invalidBlinds": "スモールブラインドは 1 以上の整数で、ビッグブラインド以下にしてください。",
     "invalidStack": "初期スタックはビッグブラインドの 10 倍以上の整数にしてください。",
-    "editPersonas": "人格を編集"
+    "duplicateSpirit": "同じ御霊は 1 卓に 1 人までです。",
+    "voice": "御霊の声",
+    "voiceVolume": "声の大きさ"
   },
   "table": {
     "pot": "勾玉",
@@ -111,7 +112,8 @@
     "prefetchOn": "⚡ 先読み ON",
     "prefetchOff": "先読み OFF",
     "pausedBilling": "一時停止中: TypeSafe のクレジットが不足しています",
-    "handsPerMin": "{{rate}} 局/分"
+    "handsPerMin": "{{rate}} 局/分",
+    "face": "{{name}}の顔"
   },
   "callout": {
     "fold": "フォールド",
@@ -272,19 +274,6 @@
     "fold": "フォールド",
     "check_or_call": "チェック / コール",
     "bet_or_raise": "ベット / レイズ"
-  },
-  "personas": {
-    "title": "人格",
-    "description": "人格はプレイヤーの性格として Jev に送られます。プリセットは複製でき、コピーは編集してこのブラウザに保存されます。",
-    "nameEn": "名前 (英語)",
-    "nameJa": "名前 (日本語)",
-    "descriptionEn": "Jev に送る説明 (英語)",
-    "descriptionJa": "説明 (日本語、UI 表示用)",
-    "variance": "ぶれ",
-    "varianceHelp": "0 = 常に最も確率の高い手、1 = Jev の確率どおりにサンプリング。",
-    "preset": "プリセット",
-    "duplicate": "複製",
-    "delete": "削除"
   },
   "opponentTypes": {
     "calling_station": "コーリングステーション",

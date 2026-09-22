@@ -19,8 +19,8 @@ afterEach(() => {
 });
 
 const SEATS: GameSeat[] = [
-  { id: 0, name: "You", kind: "human", stack: 200 },
-  { id: 1, name: "Rocky", kind: "cpu", stack: 200 },
+  { id: 0, name: "You", kind: "human", stack: 200, spiritId: "arujidono" },
+  { id: 1, name: "Rocky", kind: "cpu", stack: 200, spiritId: "sakuya" },
 ];
 
 const SNAPSHOT: HandSnapshot = {

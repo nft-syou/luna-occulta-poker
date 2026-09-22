@@ -15,9 +15,9 @@ initI18n("en");
 afterEach(cleanup);
 
 const SEATS: GameSeat[] = [
-  { id: 0, name: "You", kind: "human", stack: 120 },
-  { id: 1, name: "Rocky", kind: "cpu", stack: 300 },
-  { id: 2, name: "Lars", kind: "cpu", stack: 80 },
+  { id: 0, name: "You", kind: "human", stack: 120, spiritId: "arujidono" },
+  { id: 1, name: "Rocky", kind: "cpu", stack: 300, spiritId: "sakuya" },
+  { id: 2, name: "Lars", kind: "cpu", stack: 80, spiritId: "mami" },
 ];
 
 const KEYS: Record<SeatId, StatsKey> = {

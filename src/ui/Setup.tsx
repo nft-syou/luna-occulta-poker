@@ -1,6 +1,6 @@
-import type { Persona } from "@jev-poker/agent";
 import { useId } from "react";
 import { useTranslation } from "react-i18next";
+import { CPU_SPIRIT_IDS, SPIRITS, type SpiritId, spirit } from "../characters/spirits";
 import type { Language } from "../i18n";
 import {
   DEFAULT_SEATS,
@@ -13,23 +13,25 @@ import {
 
 interface Props {
   settings: Settings;
-  personas: readonly Persona[];
   language: Language;
   hasConnection: boolean;
   onChange: (settings: Settings) => void;
   onStart: () => void;
-  onEditPersonas: () => void;
   onOpenConnection: () => void;
+}
+
+/** A spirit not yet seated, preferring the five who speak; あるじどの last. */
+function freeSpirit(seats: readonly SeatSetting[]): SpiritId {
+  const taken = new Set(seats.map((s) => s.spiritId));
+  return [...CPU_SPIRIT_IDS, "arujidono" as const].find((id) => !taken.has(id)) ?? "arujidono";
 }
 
 export function Setup({
   settings,
-  personas,
   language,
   hasConnection,
   onChange,
   onStart,
-  onEditPersonas,
   onOpenConnection,
 }: Props) {
   const { t } = useTranslation();
@@ -44,12 +46,15 @@ export function Setup({
   };
 
   const setSeatCount = (count: number) => {
-    const seats = Array.from(
-      { length: count },
-      (_, i) =>
-        settings.seats[i] ??
-        DEFAULT_SEATS[i] ?? { name: `CPU ${i + 1}`, kind: "cpu" as const, personaId: "tag" },
-    );
+    const seats: SeatSetting[] = [];
+    for (let i = 0; i < count; i++) {
+      const kept = settings.seats[i] ?? DEFAULT_SEATS[i];
+      seats.push(
+        kept !== undefined && !seats.some((s) => s.spiritId === kept.spiritId)
+          ? kept
+          : { name: "", kind: "cpu", spiritId: freeSpirit(seats) },
+      );
+    }
     onChange({ ...settings, seats });
   };
 
@@ -66,7 +71,7 @@ export function Setup({
   );
 
   return (
-    <section className="setup">
+    <section className="setup habutae">
       <h2>{t("setup.title")}</h2>
       <div className="grid">
         <label className="field" htmlFor={`${id}-seats`}>
@@ -126,58 +131,89 @@ export function Setup({
             </select>
           </label>
         )}
+        <label className="field">
+          <span>
+            <input
+              type="checkbox"
+              checked={settings.voice}
+              onChange={(e) => onChange({ ...settings, voice: e.target.checked })}
+            />{" "}
+            {t("setup.voice")}
+          </span>
+        </label>
+        {settings.voice && (
+          <label className="field">
+            <span>{t("setup.voiceVolume")}</span>
+            <input
+              type="range"
+              min={0}
+              max={1}
+              step={0.05}
+              value={settings.voiceVolume}
+              onChange={(e) => onChange({ ...settings, voiceVolume: Number(e.target.value) })}
+            />
+          </label>
+        )}
       </div>
 
       <table className="seats">
         <thead>
           <tr>
             <th>#</th>
-            <th>{t("setup.seatName")}</th>
             <th>{t("setup.seatKind")}</th>
             <th>{t("setup.persona")}</th>
+            <th>{t("setup.seatName")}</th>
           </tr>
         </thead>
         <tbody>
-          {settings.seats.map((seat, index) => (
-            // biome-ignore lint/suspicious/noArrayIndexKey: seats have no stable id
-            <tr key={`${id}-seat-${index}`}>
-              <td>{index + 1}</td>
-              <td>
-                <input
-                  aria-label={`${t("setup.seatName")} ${index + 1}`}
-                  value={seat.name}
-                  onChange={(e) => updateSeat(index, { name: e.target.value })}
-                />
-              </td>
-              <td>
-                <select
-                  aria-label={`${t("setup.seatKind")} ${index + 1}`}
-                  value={seat.kind}
-                  onChange={(e) =>
-                    updateSeat(index, { kind: e.target.value as SeatSetting["kind"] })
-                  }
-                >
-                  <option value="human">{t("setup.human")}</option>
-                  <option value="cpu">{t("setup.cpu")}</option>
-                </select>
-              </td>
-              <td>
-                {seat.kind === "cpu" && (
+          {settings.seats.map((seat, index) => {
+            const who = spirit(seat.spiritId);
+            return (
+              // biome-ignore lint/suspicious/noArrayIndexKey: seats have no stable id
+              <tr key={`${id}-seat-${index}`}>
+                <td>{index + 1}</td>
+                <td>
                   <select
-                    aria-label={`${t("setup.persona")} ${index + 1}`}
-                    value={seat.personaId}
-                    onChange={(e) => updateSeat(index, { personaId: e.target.value })}
+                    aria-label={`${t("setup.seatKind")} ${index + 1}`}
+                    value={seat.kind}
+                    onChange={(e) =>
+                      updateSeat(index, { kind: e.target.value as SeatSetting["kind"] })
+                    }
                   >
-                    {personas.map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.name[language]}
-                      </option>
-                    ))}
+                    <option value="human">{t("setup.human")}</option>
+                    <option value="cpu">{t("setup.cpu")}</option>
                   </select>
-                )}
-              </td>
-            </tr>
-          ))}
+                </td>
+                <td>
+                  <div className="seat-pick">
+                    <img className="seat-pick-face" src={who.icon} alt="" width={40} height={40} />
+                    <select
+                      aria-label={`${t("setup.persona")} ${index + 1}`}
+                      value={seat.spiritId}
+                      onChange={(e) => updateSeat(index, { spiritId: e.target.value as SpiritId })}
+                    >
+                      {SPIRITS.map((s) => (
+                        <option key={s.id} value={s.id}>
+                          {s.name[language]} — {s.tagline[language]}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </td>
+                <td>
+                  {seat.kind === "human" ? (
+                    <input
+                      aria-label={`${t("setup.seatName")} ${index + 1}`}
+                      value={seat.name}
+                      onChange={(e) => updateSeat(index, { name: e.target.value })}
+                    />
+                  ) : (
+                    <span className="muted">{who.copy[language]}</span>
+                  )}
+                </td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
 
@@ -193,9 +229,6 @@ export function Setup({
       <div className="row">
         <button type="button" onClick={onStart} disabled={!canStart}>
           {spectator ? t("setup.spectate") : t("setup.start")}
-        </button>
-        <button type="button" className="secondary" onClick={onEditPersonas}>
-          {t("setup.editPersonas")}
         </button>
       </div>
     </section>

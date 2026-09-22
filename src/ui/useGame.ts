@@ -6,7 +6,6 @@ import {
   decideAction,
   type OpponentType,
   type Persona,
-  PRESET_PERSONAS,
   personaPrompt,
 } from "@jev-poker/agent";
 import {
@@ -25,6 +24,7 @@ import {
   Table,
 } from "@jev-poker/engine";
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
+import { isSpiritId, type SpiritId, spirit } from "../characters/spirits";
 import type { JevBackend } from "../jev/backend";
 import {
   DecisionCache,
@@ -96,6 +96,8 @@ export interface GameSeat {
   name: string;
   kind: SeatKind;
   stack: number;
+  /** Which 御霊 (or あるじどの) sits here, for the face and the lines. */
+  spiritId: SpiritId;
 }
 
 export interface GameState {
@@ -239,9 +241,14 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-/** The persona a seat plays, falling back to the default preset when its id is unknown. */
+/** The persona a seat plays, falling back to あるじどの's when its id is unknown. */
 function personaFor(personas: readonly Persona[], personaId: string | undefined): Persona {
-  return personas.find((p) => p.id === personaId) ?? (PRESET_PERSONAS[1] as Persona);
+  return personas.find((p) => p.id === personaId) ?? spirit("arujidono").persona;
+}
+
+/** The 御霊 behind an engine seat: its `personaId` is a spirit id, or it is nobody's. */
+function spiritIdOf(personaId: string | undefined): SpiritId {
+  return isSpiritId(personaId) ? personaId : "arujidono";
 }
 
 function toConfig(settings: Settings, seed: number): GameConfig {
@@ -253,7 +260,7 @@ function toConfig(settings: Settings, seed: number): GameConfig {
       id,
       name: seat.name,
       kind: seat.kind,
-      personaId: seat.personaId,
+      personaId: seat.spiritId,
     })),
     seed,
   };
@@ -351,7 +358,13 @@ export function useGame(options: UseGameOptions): GameController {
     dispatch({
       type: "sync",
       snapshot: table.snapshot(),
-      seats: table.seats.map((s) => ({ id: s.id, name: s.name, kind: s.kind, stack: s.stack })),
+      seats: table.seats.map((s) => ({
+        id: s.id,
+        name: s.name,
+        kind: s.kind,
+        stack: s.stack,
+        spiritId: spiritIdOf(s.personaId),
+      })),
       handsPlayed: table.handNumber,
     });
   }, []);

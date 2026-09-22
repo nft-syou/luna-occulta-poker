@@ -1,4 +1,5 @@
 import type { SeatKind } from "@jev-poker/engine";
+import { isSpiritId, type SpiritId } from "../characters/spirits";
 import { LANGUAGE_STORAGE_KEY, type Language } from "../i18n";
 import { type Connection, validateConnection } from "../jev/connection";
 import { EMPTY_STATS, type PlayerStats, type StatsKey } from "./stats";
@@ -16,9 +17,10 @@ export const SPEEDS: readonly Speed[] = ["slow", "normal", "fast", "max"];
 export const PREFETCH_MAX_IN_FLIGHT_OPTIONS: readonly number[] = [2, 4, 6, 8];
 
 export interface SeatSetting {
+  /** Shown for a human seat; a 御霊's seat is named after the 御霊. */
   name: string;
   kind: SeatKind;
-  personaId: string;
+  spiritId: SpiritId;
 }
 
 export interface Settings {
@@ -32,15 +34,19 @@ export interface Settings {
   prefetch: boolean;
   /** Cap on concurrent speculative Jev requests; one of `PREFETCH_MAX_IN_FLIGHT_OPTIONS`. */
   prefetchMaxInFlight: number;
+  /** Whether the 御霊 speak their lines aloud. */
+  voice: boolean;
+  /** Voice volume, 0–1. */
+  voiceVolume: number;
 }
 
 export const DEFAULT_SEATS: readonly SeatSetting[] = [
-  { name: "You", kind: "human", personaId: "tag" },
-  { name: "Rocky", kind: "cpu", personaId: "rock" },
-  { name: "Tessa", kind: "cpu", personaId: "tag" },
-  { name: "Lars", kind: "cpu", personaId: "lag" },
-  { name: "Max", kind: "cpu", personaId: "maniac" },
-  { name: "Callie", kind: "cpu", personaId: "station" },
+  { name: "あるじどの", kind: "human", spiritId: "arujidono" },
+  { name: "咲耶", kind: "cpu", spiritId: "sakuya" },
+  { name: "マミ", kind: "cpu", spiritId: "mami" },
+  { name: "タルト", kind: "cpu", spiritId: "tart" },
+  { name: "孫市", kind: "cpu", spiritId: "magoichi" },
+  { name: "蛇ノ目", kind: "cpu", spiritId: "janome" },
 ];
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -52,6 +58,8 @@ export const DEFAULT_SETTINGS: Settings = {
   model: "jev-latest",
   prefetch: true,
   prefetchMaxInFlight: 6,
+  voice: true,
+  voiceVolume: 0.8,
 };
 
 function read(key: string): string | null {
@@ -132,6 +140,8 @@ export function loadSettings(): Settings {
       prefetchMaxInFlight: isPrefetchMaxInFlight(parsed.prefetchMaxInFlight)
         ? parsed.prefetchMaxInFlight
         : DEFAULT_SETTINGS.prefetchMaxInFlight,
+      voice: typeof parsed.voice === "boolean" ? parsed.voice : DEFAULT_SETTINGS.voice,
+      voiceVolume: clampVolume(numberOr(parsed.voiceVolume, DEFAULT_SETTINGS.voiceVolume)),
     };
   } catch {
     return { ...DEFAULT_SETTINGS, seats: [...DEFAULT_SEATS] };
@@ -184,13 +194,21 @@ export function saveLanguage(language: Language): void {
   write(LANGUAGE_STORAGE_KEY, language);
 }
 
-export function validateSettings(settings: Settings): "invalidBlinds" | "invalidStack" | null {
-  const { smallBlind, bigBlind, startingStack } = settings;
+export type SettingsProblem = "invalidBlinds" | "invalidStack" | "duplicateSpirit";
+
+export function validateSettings(settings: Settings): SettingsProblem | null {
+  const { smallBlind, bigBlind, startingStack, seats } = settings;
   if (!Number.isInteger(bigBlind) || bigBlind <= 0) return "invalidBlinds";
   if (!Number.isInteger(smallBlind) || smallBlind <= 0 || smallBlind > bigBlind)
     return "invalidBlinds";
   if (!Number.isInteger(startingStack) || startingStack < bigBlind * 10) return "invalidStack";
+  // One 式札 per 御霊: the same spirit cannot sit in two chairs.
+  if (new Set(seats.map((s) => s.spiritId)).size !== seats.length) return "duplicateSpirit";
   return null;
+}
+
+export function clampVolume(value: number): number {
+  return Math.min(1, Math.max(0, value));
 }
 
 function numberOr(value: unknown, fallback: number): number {
@@ -214,7 +232,8 @@ function isSeatArray(value: unknown): value is SeatSetting[] {
       (s: Partial<SeatSetting>) =>
         typeof s.name === "string" &&
         (s.kind === "human" || s.kind === "cpu") &&
-        typeof s.personaId === "string",
+        // A record from before the 御霊 (a `personaId`) has no `spiritId` and falls back whole.
+        isSpiritId(s.spiritId),
     )
   );
 }

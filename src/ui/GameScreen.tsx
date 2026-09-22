@@ -1,6 +1,7 @@
-import type { JevBackend, Persona } from "@jev-poker/agent";
+import type { JevBackend } from "@jev-poker/agent";
 import type { SeatId } from "@jev-poker/engine";
 import { useCallback, useMemo, useState } from "react";
+import { spirit, spiritPersonas } from "../characters/spirits";
 import type { Language } from "../i18n";
 import { createProxyBackend } from "../jev/backend";
 import { type Connection, modelFor } from "../jev/connection";
@@ -11,7 +12,6 @@ import { useGame } from "./useGame";
 
 interface Props {
   settings: Settings;
-  personas: readonly Persona[];
   connection: Connection | null;
   language: Language;
   onSettingsChange: (settings: Settings) => void;
@@ -19,9 +19,11 @@ interface Props {
   onAuthFailed: () => void;
 }
 
+/** One persona per 御霊, built once: the same object every sitting. */
+const PERSONAS = spiritPersonas();
+
 export function GameScreen({
   settings,
-  personas,
   connection,
   language,
   onSettingsChange,
@@ -43,17 +45,22 @@ export function GameScreen({
   const model = connection === null ? settings.model : modelFor(connection, settings.model);
   const [billingModalOpen, setBillingModalOpen] = useState(false);
   const onBillingFailed = useCallback(() => setBillingModalOpen(true), []);
-  const game = useGame({ settings, personas, backend, model, onAuthFailed, onBillingFailed });
-  // Recording mode names the character, not the chair, so the overlays get persona names.
+  const game = useGame({
+    settings,
+    personas: PERSONAS,
+    backend,
+    model,
+    onAuthFailed,
+    onBillingFailed,
+  });
+  // A 御霊's seat is named after her in the current language; a human keeps their own name.
   const personaNames = useMemo(() => {
-    const byId = new Map(personas.map((p) => [p.id, p.name[language]]));
     const names: Record<SeatId, string> = {};
     settings.seats.forEach((seat, id) => {
-      const name = seat.kind === "cpu" ? byId.get(seat.personaId) : undefined;
-      names[id] = name ?? seat.name;
+      names[id] = seat.kind === "cpu" ? spirit(seat.spiritId).name[language] : seat.name;
     });
     return names;
-  }, [language, personas, settings.seats]);
+  }, [language, settings.seats]);
 
   return (
     <>

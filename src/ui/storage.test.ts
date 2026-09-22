@@ -6,6 +6,7 @@ import {
   CONNECTION_STORAGE_KEY,
   clearConnection,
   clearCumulativeStats,
+  DEFAULT_SEATS,
   DEFAULT_SETTINGS,
   LEGACY_API_KEY_STORAGE_KEY,
   loadConnection,
@@ -153,5 +154,54 @@ describe("storage", () => {
       JSON.stringify({ "persona:rock": { handsPlayed: 3, netChips: "nope" }, bogus: 7 }),
     );
     expect(loadCumulativeStats()).toEqual({ "persona:rock": { ...EMPTY_STATS, handsPlayed: 3 } });
+  });
+});
+
+describe("spirit seats", () => {
+  beforeEach(() => localStorage.clear());
+
+  it("drops a seat list written before the 御霊 (personaId) and seats the defaults", () => {
+    localStorage.setItem(
+      SETTINGS_STORAGE_KEY,
+      JSON.stringify({
+        seats: [
+          { name: "You", kind: "human", personaId: "tag" },
+          { name: "Rocky", kind: "cpu", personaId: "rock" },
+        ],
+        bigBlind: 4,
+      }),
+    );
+    expect(loadSettings()).toEqual({ ...DEFAULT_SETTINGS, bigBlind: 4 });
+  });
+
+  it("keeps a seat list of known spirits and rejects an unknown one", () => {
+    const seats = [
+      { name: "me", kind: "human", spiritId: "arujidono" },
+      { name: "", kind: "cpu", spiritId: "janome" },
+    ];
+    localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify({ seats }));
+    expect(loadSettings().seats).toEqual(seats);
+    localStorage.setItem(
+      SETTINGS_STORAGE_KEY,
+      JSON.stringify({ seats: [seats[0], { name: "", kind: "cpu", spiritId: "gokou" }] }),
+    );
+    expect(loadSettings().seats).toEqual(DEFAULT_SEATS);
+  });
+
+  it("refuses the same spirit in two chairs", () => {
+    const seats = DEFAULT_SETTINGS.seats.map((s, i) =>
+      i === 3 ? { ...s, spiritId: "mami" as const } : s,
+    );
+    expect(validateSettings({ ...DEFAULT_SETTINGS, seats })).toBe("duplicateSpirit");
+    expect(validateSettings(DEFAULT_SETTINGS)).toBeNull();
+  });
+
+  it("reads the voice switch and clamps the volume", () => {
+    localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify({ voice: false, voiceVolume: 3 }));
+    expect(loadSettings()).toEqual({ ...DEFAULT_SETTINGS, voice: false, voiceVolume: 1 });
+    localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify({ voice: "loud", voiceVolume: -1 }));
+    expect(loadSettings()).toEqual({ ...DEFAULT_SETTINGS, voiceVolume: 0 });
+    saveSettings({ ...DEFAULT_SETTINGS, voiceVolume: 0.25 });
+    expect(loadSettings().voiceVolume).toBe(0.25);
   });
 });

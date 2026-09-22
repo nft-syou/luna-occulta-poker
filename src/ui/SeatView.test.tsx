@@ -14,7 +14,7 @@ initI18n("en");
 // `afterEach` exists, which this project's Vitest config does not enable (no `test.globals`).
 afterEach(cleanup);
 
-const SEAT: GameSeat = { id: 1, name: "Lars", kind: "cpu", stack: 200 };
+const SEAT: GameSeat = { id: 1, name: "Lars", kind: "cpu", stack: 200, spiritId: "mami" };
 
 const PLAYER: HandPlayerSnapshot = {
   seat: 1,

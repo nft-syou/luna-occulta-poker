@@ -1,15 +1,11 @@
 // @vitest-environment jsdom
 import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
-import {
-  createMockBackend,
-  type DecisionFeatures,
-  OPPONENT_TYPES_INTRO,
-  PRESET_PERSONAS,
-} from "@jev-poker/agent";
+import { createMockBackend, type DecisionFeatures, OPPONENT_TYPES_INTRO } from "@jev-poker/agent";
 import { act, cleanup, renderHook, waitFor } from "@testing-library/react";
 import { APIError, AuthenticationError } from "@typesafe-ai/sdk";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { spiritPersonas } from "../characters/spirits";
 import type { JevBackend } from "../jev/backend";
 import { MAX_CHIP_MOVES } from "./fx";
 import { opponentTypeOf, type PlayerStats } from "./stats";
@@ -24,9 +20,9 @@ const cpuOnly: Settings = {
   ...DEFAULT_SETTINGS,
   speed: "max",
   seats: [
-    { name: "A", kind: "cpu", personaId: "tag" },
-    { name: "B", kind: "cpu", personaId: "lag" },
-    { name: "C", kind: "cpu", personaId: "rock" },
+    { name: "A", kind: "cpu", spiritId: "sakuya" },
+    { name: "B", kind: "cpu", spiritId: "mami" },
+    { name: "C", kind: "cpu", spiritId: "tart" },
   ],
 };
 
@@ -98,7 +94,7 @@ describe("useGame", () => {
     const { result, unmount } = renderHook(() =>
       useGame({
         settings: cpuOnly,
-        personas: [...PRESET_PERSONAS],
+        personas: spiritPersonas(),
         backend: createMockBackend(),
         onAuthFailed: () => {},
         onBillingFailed: () => {},
@@ -128,7 +124,7 @@ describe("useGame", () => {
     const { result, unmount } = renderHook(() =>
       useGame({
         settings: cpuOnly,
-        personas: [...PRESET_PERSONAS],
+        personas: spiritPersonas(),
         backend: createMockBackend(),
         onAuthFailed: () => {},
         onBillingFailed: () => {},
@@ -155,16 +151,16 @@ describe("useGame", () => {
 
     // Session stats are keyed by seat; the cumulative store by persona.
     expect(result.current.statsKeys).toEqual({
-      0: "persona:tag",
-      1: "persona:lag",
-      2: "persona:rock",
+      0: "spirit:sakuya",
+      1: "spirit:mami",
+      2: "spirit:tart",
     });
     const stored = JSON.parse(localStorage.getItem(STATS_STORAGE_KEY) ?? "{}") as Record<
       string,
       PlayerStats
     >;
-    expect(Object.keys(stored).sort()).toEqual(["persona:lag", "persona:rock", "persona:tag"]);
-    expect(stored["persona:tag"]?.handsPlayed).toBe(result.current.state.stats[0]?.handsPlayed);
+    expect(Object.keys(stored).sort()).toEqual(["spirit:mami", "spirit:sakuya", "spirit:tart"]);
+    expect(stored["spirit:sakuya"]?.handsPlayed).toBe(result.current.state.stats[0]?.handsPlayed);
     expect(result.current.cumulative).toEqual(stored);
 
     act(() => result.current.resetCumulative());
@@ -177,7 +173,7 @@ describe("useGame", () => {
     const { result, unmount } = renderHook(() =>
       useGame({
         settings: cpuOnly,
-        personas: [...PRESET_PERSONAS],
+        personas: spiritPersonas(),
         backend: createMockBackend(),
         onAuthFailed: () => {},
         onBillingFailed: () => {},
@@ -209,7 +205,7 @@ describe("useGame", () => {
     const { result, unmount } = renderHook(() =>
       useGame({
         settings: cpuOnly,
-        personas: [...PRESET_PERSONAS],
+        personas: spiritPersonas(),
         backend: createMockBackend(),
         onAuthFailed: () => {},
         onBillingFailed: () => {},
@@ -256,14 +252,14 @@ describe("useGame", () => {
     const settings: Settings = {
       ...cpuOnly,
       seats: [
-        { name: "Me", kind: "human", personaId: "tag" },
-        { name: "B", kind: "cpu", personaId: "lag" },
+        { name: "Me", kind: "human", spiritId: "arujidono" },
+        { name: "B", kind: "cpu", spiritId: "mami" },
       ],
     };
     const { result, unmount } = renderHook(() =>
       useGame({
         settings,
-        personas: [...PRESET_PERSONAS],
+        personas: spiritPersonas(),
         backend: createMockBackend(),
         onAuthFailed: () => {},
         onBillingFailed: () => {},
@@ -286,7 +282,7 @@ describe("useGame", () => {
     const { result, unmount } = renderHook(() =>
       useGame({
         settings: cpuOnly,
-        personas: [...PRESET_PERSONAS],
+        personas: spiritPersonas(),
         backend: createMockBackend(),
         onAuthFailed: () => {},
         onBillingFailed: () => {},
@@ -314,7 +310,7 @@ describe("useGame", () => {
     const { result, unmount } = renderHook(() =>
       useGame({
         settings: cpuOnly,
-        personas: [...PRESET_PERSONAS],
+        personas: spiritPersonas(),
         backend: slowBackend(seen),
         onAuthFailed: () => {},
         onBillingFailed: () => {},
@@ -339,7 +335,7 @@ describe("useGame", () => {
     const { result, unmount } = renderHook(() =>
       useGame({
         settings: cpuOnly,
-        personas: [...PRESET_PERSONAS],
+        personas: spiritPersonas(),
         backend: countingBackend(seen),
         onAuthFailed: () => {},
         onBillingFailed: () => {},
@@ -366,7 +362,7 @@ describe("useGame", () => {
     const { result, unmount } = renderHook(() =>
       useGame({
         settings: cpuOnly,
-        personas: [...PRESET_PERSONAS],
+        personas: spiritPersonas(),
         backend: createMockBackend(),
         onAuthFailed: () => {},
         onBillingFailed: () => {},
@@ -389,15 +385,15 @@ describe("useGame", () => {
     const settings: Settings = {
       ...cpuOnly,
       seats: [
-        { name: "Me", kind: "human", personaId: "tag" },
-        { name: "B", kind: "cpu", personaId: "lag" },
-        { name: "C", kind: "cpu", personaId: "rock" },
+        { name: "Me", kind: "human", spiritId: "arujidono" },
+        { name: "B", kind: "cpu", spiritId: "mami" },
+        { name: "C", kind: "cpu", spiritId: "tart" },
       ],
     };
     const { result, unmount } = renderHook(() =>
       useGame({
         settings,
-        personas: [...PRESET_PERSONAS],
+        personas: spiritPersonas(),
         backend: createMockBackend(),
         onAuthFailed: () => {},
         onBillingFailed: () => {},
@@ -423,7 +419,7 @@ describe("useGame", () => {
 
   it("pauses on an auth failure, notifies, and resumes when a new backend arrives", async () => {
     const onAuthFailed = vi.fn();
-    const personas = [...PRESET_PERSONAS];
+    const personas = spiritPersonas();
     const { result, rerender, unmount } = renderHook(
       ({ backend }: { backend: JevBackend }) =>
         useGame({
@@ -458,7 +454,7 @@ describe("useGame", () => {
 
   it("pauses on a billing failure (402), notifies, and only resumes when toggled", async () => {
     const onBillingFailed = vi.fn();
-    const personas = [...PRESET_PERSONAS];
+    const personas = spiritPersonas();
     const { result, rerender, unmount } = renderHook(
       ({ backend }: { backend: JevBackend }) =>
         useGame({
@@ -506,7 +502,7 @@ describe("useGame", () => {
     const { result, unmount } = renderHook(() =>
       useGame({
         settings: cpuOnly,
-        personas: [...PRESET_PERSONAS],
+        personas: spiritPersonas(),
         backend: recordingBackend(seen),
         onAuthFailed: () => {},
         onBillingFailed: () => {},
@@ -545,7 +541,7 @@ describe("useGame", () => {
     const { result, unmount } = renderHook(() =>
       useGame({
         settings: { ...cpuOnly, prefetch: false },
-        personas: [...PRESET_PERSONAS],
+        personas: spiritPersonas(),
         backend: createMockBackend(),
         onAuthFailed: () => {},
         onBillingFailed: () => {},

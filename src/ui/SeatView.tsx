@@ -1,6 +1,7 @@
 import type { HandPlayerSnapshot } from "@jev-poker/engine";
 import type { CSSProperties, ReactNode } from "react";
 import { useTranslation } from "react-i18next";
+import { spirit } from "../characters/spirits";
 import { CalloutView, INWARD_UP, type Inward } from "./CalloutView";
 import { CardView } from "./CardView";
 import type { Callout } from "./fx";
@@ -42,9 +43,11 @@ export function SeatView({
   flipAt = 0,
   inward = INWARD_UP,
 }: Props) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const folded = player?.folded ?? false;
   const classes = ["seat", isActing ? "acting" : "", folded ? "folded" : ""].join(" ");
+  const who = spirit(seat.spiritId);
+  const lang = i18n.language === "ja" ? "ja" : "en";
   return (
     <div className={classes} style={style}>
       {/* Keyed by the callout, so a seat that acts twice running flashes twice. */}
@@ -52,6 +55,8 @@ export function SeatView({
         <span key={callout.id} className={`seat-flash flash-${callout.kind}`} aria-hidden="true" />
       )}
       {winnerAt > 0 && <span key={winnerAt} className="winner-glow" aria-hidden="true" />}
+      {/* The face on the 式札. Decorative: the name below it carries the meaning. */}
+      <img className="seat-face" src={who.icon} alt="" width={56} height={56} />
       <div className={flipAt > 0 ? "seat-cards flipping" : "seat-cards"} key={flipAt}>
         {player !== undefined && !folded ? (
           <>
@@ -69,6 +74,7 @@ export function SeatView({
         {isButton && <span className="dealer-button">{t("table.dealer")}</span>}
         {seat.name}
       </div>
+      <div className="seat-tagline">{who.tagline[lang]}</div>
       <div className="seat-stack">{player?.stack ?? seat.stack}</div>
       <div className="seat-status">
         {isThinking && t("table.thinking")}

@@ -4,7 +4,6 @@
     "subtitle": "An unofficial Luna Occulta fan poker — the spirits think with TypeSafe Jev",
     "language": "Language",
     "connection": "Connection",
-    "personas": "Personas",
     "back": "Back",
     "source": "Source (MIT)",
     "fanworkNotice": "An unofficial fan work based on “月蝕綺譚 -Luna Occulta-”. Not affiliated with the official game.",
@@ -89,7 +88,9 @@
     "needConnection": "Set up a connection first.",
     "invalidBlinds": "Small blind must be a positive whole number no larger than the big blind.",
     "invalidStack": "Starting stack must be a whole number of at least 10 big blinds.",
-    "editPersonas": "Edit personas"
+    "duplicateSpirit": "Each spirit can sit at the table only once.",
+    "voice": "Spirit voices",
+    "voiceVolume": "Voice volume"
   },
   "table": {
     "pot": "Pot",
@@ -111,7 +112,8 @@
     "prefetchOn": "⚡ Prefetch on",
     "prefetchOff": "Prefetch off",
     "pausedBilling": "Paused: TypeSafe credit exhausted",
-    "handsPerMin": "{{rate}} hands/min"
+    "handsPerMin": "{{rate}} hands/min",
+    "face": "{{name}}'s face"
   },
   "callout": {
     "fold": "FOLD",
@@ -272,19 +274,6 @@
     "fold": "Fold",
     "check_or_call": "Check / Call",
     "bet_or_raise": "Bet / Raise"
-  },
-  "personas": {
-    "title": "Personas",
-    "description": "A persona is sent to Jev as the player's character. Presets can be duplicated; copies are editable and saved in this browser.",
-    "nameEn": "Name (English)",
-    "nameJa": "Name (Japanese)",
-    "descriptionEn": "Description sent to Jev (English)",
-    "descriptionJa": "Description (Japanese, shown in the UI)",
-    "variance": "Variance",
-    "varianceHelp": "0 = always the most likely action, 1 = sample exactly by Jev's probabilities.",
-    "preset": "Preset",
-    "duplicate": "Duplicate",
-    "delete": "Delete"
   },
   "opponentTypes": {
     "calling_station": "calling station",

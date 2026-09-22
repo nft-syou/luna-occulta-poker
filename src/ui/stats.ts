@@ -7,7 +7,7 @@ import {
 } from "@jev-poker/agent";
 import type { GameEvent, SeatId } from "@jev-poker/engine";
 
-/** `persona:<id>` for a CPU seat, `human:<name>` for a human one. */
+/** `spirit:<id>` for a 御霊's seat, `human:<name>` for a human one. */
 export type StatsKey = string;
 
 export interface PlayerStats {
@@ -73,11 +73,11 @@ const FIELDS = Object.keys(EMPTY_STATS) as (keyof PlayerStats)[];
 export function statsKeyFor(seat: {
   kind: "human" | "cpu";
   name: string;
-  personaId?: string;
+  spiritId?: string;
 }): StatsKey {
-  // Humans are told apart by name; CPUs share a line per persona, so "the LAG" accumulates
-  // across seats and sessions no matter which chair it sat in.
-  return seat.kind === "human" ? `human:${seat.name}` : `persona:${seat.personaId ?? "unknown"}`;
+  // Humans are told apart by name; a 御霊 keeps one line across seats and sessions, no
+  // matter which chair she sat in.
+  return seat.kind === "human" ? `human:${seat.name}` : `spirit:${seat.spiritId ?? "unknown"}`;
 }
 
 export function addStats(a: PlayerStats, b: PlayerStats): PlayerStats {

@@ -164,10 +164,10 @@ function shoveOut(table: Table): void {
 }
 
 describe("statsKeyFor", () => {
-  it("keys CPUs by persona and humans by name", () => {
-    expect(statsKeyFor({ kind: "cpu", name: "Rocky", personaId: "rock" })).toBe("persona:rock");
-    expect(statsKeyFor({ kind: "human", name: "You", personaId: "tag" })).toBe("human:You");
-    expect(statsKeyFor({ kind: "cpu", name: "Nameless" })).toBe("persona:unknown");
+  it("keys 御霊 by spirit and humans by name", () => {
+    expect(statsKeyFor({ kind: "cpu", name: "Rocky", spiritId: "sakuya" })).toBe("spirit:sakuya");
+    expect(statsKeyFor({ kind: "human", name: "You", spiritId: "arujidono" })).toBe("human:You");
+    expect(statsKeyFor({ kind: "cpu", name: "Nameless" })).toBe("spirit:unknown");
   });
 });
 
