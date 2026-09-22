@@ -7,3 +7,7 @@ dist
 .env.*
 *.local
 .packs/
+
+# Irodori-TTS working files (the mp3s under public/kitan/voice are committed)
+scripts/voice/lines.json
+scripts/voice/out/

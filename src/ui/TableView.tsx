@@ -1,7 +1,9 @@
 import type { SeatId } from "@jev-poker/engine";
 import { type CSSProperties, useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { pickLine, rollFrom } from "../characters/lines";
 import { CPU_SPIRIT_IDS, spirit } from "../characters/spirits";
+import type { VoicePlayer } from "../characters/voice";
 import type { Language } from "../i18n";
 import { ActionBar } from "./ActionBar";
 import { ActionFeed } from "./ActionFeed";
@@ -10,7 +12,7 @@ import { ChipStack } from "./ChipStack";
 import { CutInLayer } from "./CutInLayer";
 import { DecisionBubble } from "./DecisionBubble";
 import { cardText } from "./format";
-import { handsPerMinute } from "./fx";
+import { handsPerMinute, type Speech } from "./fx";
 import { HistoryPanel } from "./HistoryPanel";
 import { SeatView } from "./SeatView";
 import { ShowcasePanel } from "./ShowcasePanel";
@@ -37,7 +39,12 @@ interface Props {
   /** Whether CPU turns are speculatively prefetched; the header toggle mirrors it. */
   prefetch?: boolean;
   onPrefetchChange?: (prefetch: boolean) => void;
+  /** Says the 御霊's lines aloud. Absent, the table is silent and the bubbles still show. */
+  voice?: VoicePlayer;
 }
+
+/** The gap between one 御霊's greeting and the next as the table opens. */
+const GREET_GAP_MS = 600;
 
 type Panel = "table" | "stats" | "log";
 
@@ -115,6 +122,7 @@ export function TableView({
   model,
   prefetch,
   onPrefetchChange,
+  voice,
 }: Props) {
   const { t } = useTranslation();
   const speedId = useId();
@@ -165,6 +173,72 @@ export function TableView({
     felt.scrollIntoView({ block: "end" });
   }, [phone, legalForHuman]);
   const names = new Map(state.seats.map((s) => [s.id, s.name]));
+
+  // Greetings as the table opens: each 御霊 in turn, a beat apart. Local, not an effect
+  // of the game, because no engine event says "we sat down".
+  const [greetings, setGreetings] = useState<ReadonlyMap<SeatId, Speech>>(new Map());
+  const seatsRef = useRef(state.seats);
+  seatsRef.current = state.seats;
+  // biome-ignore lint/correctness/useExhaustiveDependencies: once per sitting, on mount
+  useEffect(() => {
+    const timers: ReturnType<typeof setTimeout>[] = [];
+    const seated = seatsRef.current.filter((s) => s.kind === "cpu" && !spirit(s.spiritId).silent);
+    seated.forEach((seat, i) => {
+      timers.push(
+        setTimeout(
+          () => {
+            const line = pickLine(seat.spiritId, "greet", rollFrom(Date.now() + i));
+            if (line === null) return;
+            const at = Date.now();
+            setGreetings((prev) =>
+              new Map(prev).set(seat.id, { id: -1 - i, seat: seat.id, situation: "win", line, at }),
+            );
+            voice?.play(seat.spiritId, line);
+          },
+          GREET_GAP_MS * (i + 1),
+        ),
+      );
+    });
+    return () => {
+      for (const t of timers) clearTimeout(t);
+    };
+  }, []);
+
+  // Voices follow the effects: the newest shout, word or cut-in, each said once.
+  const spokenRef = useRef<{ callout: number; speech: number; cutIn: number }>({
+    callout: 0,
+    speech: 0,
+    cutIn: 0,
+  });
+  const fxCallouts = state.fx.callouts;
+  const fxSpeech = state.fx.speech;
+  const fxCutIn = state.fx.cutIn;
+  useEffect(() => {
+    if (voice === undefined) return;
+    const spiritOf = (seat: SeatId) => seatsRef.current.find((s) => s.id === seat)?.spiritId;
+    const last = fxCallouts[fxCallouts.length - 1];
+    if (last !== undefined && last.id > spokenRef.current.callout) {
+      spokenRef.current.callout = last.id;
+      const who = spiritOf(last.seat);
+      // An all-in's line belongs to the cut-in, which says it with priority below.
+      if (last.line !== null && who !== undefined && last.kind !== "allin")
+        voice.play(who, last.line);
+    }
+    const word = fxSpeech[fxSpeech.length - 1];
+    if (word !== undefined && word.id > spokenRef.current.speech) {
+      spokenRef.current.speech = word.id;
+      const who = spiritOf(word.seat);
+      if (who !== undefined && word.situation !== "bigwin" && word.situation !== "bust") {
+        voice.play(who, word.line);
+      }
+    }
+    if (fxCutIn !== null && fxCutIn.id > spokenRef.current.cutIn) {
+      spokenRef.current.cutIn = fxCutIn.id;
+      const who = spiritOf(fxCutIn.seat);
+      if (fxCutIn.line !== null && who !== undefined)
+        voice.play(who, fxCutIn.line, { priority: true });
+    }
+  }, [voice, fxCallouts, fxSpeech, fxCutIn]);
   // Warm the showcase videos while the first hand is dealt, so a cut-in never buffers. Done
   // with detached <video preload> elements, not fetch: the app's fetch is Jev's.
   useEffect(() => {
@@ -349,7 +423,7 @@ export function TableView({
                   style={style}
                   overlay={bubble}
                   callout={calloutBySeat.get(seat.id) ?? null}
-                  speech={speechBySeat.get(seat.id) ?? null}
+                  speech={speechBySeat.get(seat.id) ?? greetings.get(seat.id) ?? null}
                   bigBlind={bigBlind}
                   winnerAt={fx.winners.includes(seat.id) ? fx.winnersAt : 0}
                   flipAt={revealAll ? fx.flipAt : 0}

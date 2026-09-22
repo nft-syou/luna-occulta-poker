@@ -1,0 +1,115 @@
+import { audioPath, type SpeechLine } from "./lines";
+import type { SpiritId } from "./spirits";
+
+/** The slice of `HTMLAudioElement` the player uses, so a test can hand in a fake. */
+export interface AudioLike {
+  src: string;
+  volume: number;
+  currentTime: number;
+  preload: string;
+  play(): Promise<void> | void;
+  pause(): void;
+}
+
+export interface VoicePlayer {
+  /** Says a line. A spirit already speaking stops; with `priority` everyone else does too. */
+  play(spiritId: SpiritId, line: SpeechLine, opts?: { priority?: boolean }): void;
+  /** Asks the browser to fetch a clip ahead of time. */
+  preload(spiritId: SpiritId, line: SpeechLine): void;
+  setEnabled(enabled: boolean): void;
+  setVolume(volume: number): void;
+  stopAll(): void;
+}
+
+export interface VoicePlayerInit {
+  enabled: boolean;
+  /** 0–1. */
+  volume: number;
+  /** How to make an audio element; defaults to `new Audio(src)`. */
+  audio?: (src: string) => AudioLike;
+}
+
+function defaultAudio(src: string): AudioLike {
+  return new Audio(src);
+}
+
+/**
+ * Plays the generated clips. One element per clip, made on first use and kept, so a line
+ * said twice is fetched once; one voice per spirit at a time, so she never talks over
+ * herself; a cut-in's line silences the table. Every failure — a missing file, a browser
+ * that refuses to play before a gesture, no audio at all — is swallowed: the bubble still
+ * shows the words, and the game never waits on a sound.
+ */
+export function createVoicePlayer(init: VoicePlayerInit): VoicePlayer {
+  const make = init.audio ?? defaultAudio;
+  let enabled = init.enabled;
+  let volume = clamp(init.volume);
+  const clips = new Map<string, AudioLike>();
+  const speaking = new Map<SpiritId, AudioLike>();
+
+  const clip = (spiritId: SpiritId, line: SpeechLine): AudioLike | null => {
+    const src = audioPath(spiritId, line);
+    const cached = clips.get(src);
+    if (cached !== undefined) return cached;
+    try {
+      const audio = make(src);
+      audio.preload = "auto";
+      clips.set(src, audio);
+      return audio;
+    } catch {
+      return null;
+    }
+  };
+
+  const stop = (audio: AudioLike) => {
+    try {
+      audio.pause();
+      audio.currentTime = 0;
+    } catch {
+      // A detached or never-loaded element: nothing to stop.
+    }
+  };
+
+  return {
+    play(spiritId, line, opts) {
+      if (!enabled) return;
+      if (opts?.priority === true) {
+        for (const audio of speaking.values()) stop(audio);
+        speaking.clear();
+      } else {
+        const current = speaking.get(spiritId);
+        if (current !== undefined) stop(current);
+      }
+      const audio = clip(spiritId, line);
+      if (audio === null) return;
+      audio.volume = volume;
+      audio.currentTime = 0;
+      speaking.set(spiritId, audio);
+      try {
+        const result = audio.play();
+        if (result !== undefined) result.catch(() => {});
+      } catch {
+        // Autoplay refused or no audio device: the words are on screen anyway.
+      }
+    },
+    preload(spiritId, line) {
+      clip(spiritId, line);
+    },
+    setEnabled(next) {
+      enabled = next;
+      if (!next) this.stopAll();
+    },
+    setVolume(next) {
+      volume = clamp(next);
+      for (const audio of speaking.values()) audio.volume = volume;
+    },
+    stopAll() {
+      for (const audio of speaking.values()) stop(audio);
+      speaking.clear();
+    },
+  };
+}
+
+function clamp(value: number): number {
+  return Number.isFinite(value) ? Math.min(1, Math.max(0, value)) : 0;
+}

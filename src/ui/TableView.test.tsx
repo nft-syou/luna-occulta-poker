@@ -1,8 +1,9 @@
 // @vitest-environment jsdom
 import "@testing-library/jest-dom/vitest";
 import type { HandSnapshot, LegalActions } from "@jev-poker/engine";
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import type { VoicePlayer } from "../characters/voice";
 import { initI18n } from "../i18n";
 import { EMPTY_FX, type TableFx } from "./fx";
 import { TableView } from "./TableView";
@@ -126,7 +127,11 @@ function stubViewport(phone: boolean): void {
 
 function renderTable(
   overrides: Partial<GameController["state"]> = {},
-  extraProps: Partial<{ prefetch: boolean; onPrefetchChange: (prefetch: boolean) => void }> = {},
+  extraProps: Partial<{
+    prefetch: boolean;
+    onPrefetchChange: (prefetch: boolean) => void;
+    voice: VoicePlayer;
+  }> = {},
 ) {
   return render(
     <TableView
@@ -430,5 +435,129 @@ describe("TableView", () => {
     expect(screen.queryByText("Paused: TypeSafe credit exhausted")).not.toBeInTheDocument();
     // The pause/resume control itself survives recording mode, same as before.
     expect(screen.getByRole("button", { name: "Resume" })).toBeInTheDocument();
+  });
+});
+
+describe("TableView voices", () => {
+  function fakeVoice() {
+    const calls: { spirit: string; id: string; priority: boolean }[] = [];
+    const voice: VoicePlayer = {
+      play: (spirit, line, opts) => {
+        calls.push({ spirit, id: line.id, priority: opts?.priority === true });
+      },
+      preload: () => {},
+      setEnabled: () => {},
+      setVolume: () => {},
+      stopAll: () => {},
+    };
+    return { voice, calls };
+  }
+  const line = { id: "sakuya.raise.1", text: "レイズ。あたしの番だ" };
+
+  it("says a new shout's line once, and never a human's", () => {
+    stubViewport(false);
+    const { voice, calls } = fakeVoice();
+    const withCallout = (id: number, seat: number) => ({
+      fx: {
+        ...EMPTY_FX,
+        callouts: [{ id, seat, kind: "raise" as const, amount: 12, at: 10, line }],
+      },
+    });
+    const { rerender } = render(
+      <TableView
+        game={controller(withCallout(1, 1))}
+        speed="normal"
+        startingStack={200}
+        language="en"
+        onSpeedChange={() => {}}
+        onLeave={() => {}}
+        voice={voice}
+      />,
+    );
+    expect(calls).toEqual([{ spirit: "sakuya", id: line.id, priority: false }]);
+    // The same callout again: nothing more.
+    rerender(
+      <TableView
+        game={controller(withCallout(1, 1))}
+        speed="normal"
+        startingStack={200}
+        language="en"
+        onSpeedChange={() => {}}
+        onLeave={() => {}}
+        voice={voice}
+      />,
+    );
+    expect(calls).toHaveLength(1);
+    // A human seat's shout (seat 0) carries no line and says nothing.
+    rerender(
+      <TableView
+        game={controller(withCallout(2, 0))}
+        speed="normal"
+        startingStack={200}
+        language="en"
+        onSpeedChange={() => {}}
+        onLeave={() => {}}
+        voice={voice}
+      />,
+    );
+    expect(calls).toHaveLength(2);
+    expect(calls[1]?.spirit).toBe("arujidono");
+  });
+
+  it("gives a cut-in's line priority and lets it stand for the all-in shout", () => {
+    stubViewport(false);
+    const { voice, calls } = fakeVoice();
+    const shove = { id: "sakuya.allin.1", text: "全部だ。あたしは嘘つかない" };
+    renderTable(
+      {
+        fx: {
+          ...EMPTY_FX,
+          callouts: [{ id: 1, seat: 1, kind: "allin", amount: 200, at: 10, line: shove }],
+          cutIn: { id: 2, seat: 1, kind: "allin", line: shove, at: 10 },
+        },
+      },
+      { voice },
+    );
+    expect(calls).toEqual([{ spirit: "sakuya", id: shove.id, priority: true }]);
+  });
+
+  it("speaks a word after the hand, but leaves the big ones to the cut-in", () => {
+    stubViewport(false);
+    const { voice, calls } = fakeVoice();
+    const win = { id: "sakuya.win.1", text: "ほらね。言ったでしょ" };
+    const big = { id: "sakuya.bigwin.1", text: "ひと太刀で" };
+    renderTable(
+      {
+        fx: {
+          ...EMPTY_FX,
+          speech: [
+            { id: 5, seat: 1, situation: "win", line: win, at: 10 },
+            { id: 6, seat: 1, situation: "bigwin", line: big, at: 11 },
+          ],
+          cutIn: { id: 7, seat: 1, kind: "bigwin", line: big, at: 11 },
+        },
+      },
+      { voice },
+    );
+    // Only the newest word is considered, and a big win is the cut-in's to say.
+    expect(calls).toEqual([{ spirit: "sakuya", id: big.id, priority: true }]);
+  });
+
+  it("greets from every 御霊's seat as the table opens, a beat apart", () => {
+    vi.useFakeTimers();
+    try {
+      stubViewport(false);
+      const { voice, calls } = fakeVoice();
+      renderTable({}, { voice });
+      expect(calls).toEqual([]);
+      act(() => {
+        vi.advanceTimersByTime(600);
+      });
+      expect(calls).toHaveLength(1);
+      expect(calls[0]?.id).toMatch(/^sakuya\.greet\./);
+      expect(screen.getByText(/^(あんたの顔見ると|さ、始めよっか)/)).toBeInTheDocument();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

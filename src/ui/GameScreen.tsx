@@ -1,7 +1,8 @@
 import type { JevBackend } from "@jev-poker/agent";
 import type { SeatId } from "@jev-poker/engine";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { spirit, spiritPersonas } from "../characters/spirits";
+import { createVoicePlayer } from "../characters/voice";
 import type { Language } from "../i18n";
 import { createProxyBackend } from "../jev/backend";
 import { type Connection, modelFor } from "../jev/connection";
@@ -43,6 +44,13 @@ export function GameScreen({
   );
   // The Vercel gateway answers as `typesafe-ai/jev`, so that is what the table should say.
   const model = connection === null ? settings.model : modelFor(connection, settings.model);
+  // One player per sitting; the settings' switch and slider reach it through effects.
+  const [voice] = useState(() =>
+    createVoicePlayer({ enabled: settings.voice, volume: settings.voiceVolume }),
+  );
+  useEffect(() => voice.setEnabled(settings.voice), [voice, settings.voice]);
+  useEffect(() => voice.setVolume(settings.voiceVolume), [voice, settings.voiceVolume]);
+  useEffect(() => () => voice.stopAll(), [voice]);
   const [billingModalOpen, setBillingModalOpen] = useState(false);
   const onBillingFailed = useCallback(() => setBillingModalOpen(true), []);
   const game = useGame({
@@ -72,6 +80,7 @@ export function GameScreen({
         personaNames={personaNames}
         model={model}
         prefetch={settings.prefetch}
+        voice={voice}
         onSpeedChange={(speed) => onSettingsChange({ ...settings, speed })}
         onPrefetchChange={(prefetch) => onSettingsChange({ ...settings, prefetch })}
         onLeave={onLeave}

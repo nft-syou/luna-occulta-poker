@@ -487,12 +487,6 @@ a {
   display: block;
   font-weight: 700;
 }
-.speech .callout {
-  padding: 1px 8px;
-  font-size: 11px;
-  animation: none;
-  box-shadow: none;
-}
 .speech.speech-allin {
   box-shadow:
     var(--kitan-shadow-sm),
@@ -510,6 +504,12 @@ a {
   white-space: nowrap;
   box-shadow: var(--kitan-shadow-sm);
   animation: callout-flash var(--callout-ms, 900ms) var(--kitan-ease) forwards;
+}
+.speech .callout {
+  padding: 1px 8px;
+  font-size: 11px;
+  animation: none;
+  box-shadow: none;
 }
 @keyframes callout-flash {
   0% {
