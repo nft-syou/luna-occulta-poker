@@ -4,10 +4,11 @@ interface Props {
   onPlay: () => void;
   onWatch: () => void;
   onSettings: () => void;
+  onRules: () => void;
 }
 
-/** The first thing a player sees: the name, the line, and three ways in. */
-export function TitleScreen({ onPlay, onWatch, onSettings }: Props) {
+/** The first thing a player sees: the name, the line, and its ways in: play, watch, the rules and the settings. */
+export function TitleScreen({ onPlay, onWatch, onSettings, onRules }: Props) {
   const { t } = useTranslation();
   return (
     <section className="title-screen">
@@ -28,6 +29,9 @@ export function TitleScreen({ onPlay, onWatch, onSettings }: Props) {
         </button>
         <button type="button" className="secondary" onClick={onWatch}>
           {t("title.watch")}
+        </button>
+        <button type="button" className="secondary" onClick={onRules}>
+          {t("rules.open")}
         </button>
         <button type="button" className="secondary" onClick={onSettings}>
           {t("title.settings")}

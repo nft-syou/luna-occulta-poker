@@ -1739,13 +1739,14 @@ button.danger {
     box-sizing: border-box;
     max-width: min(160px, 42vw);
   }
-  /* Tighter buttons, so the five controls share one row down to 360px. */
+  /* Tighter buttons, so the six controls share one row down to 360px. */
   .table-header-actions {
-    gap: 4px;
+    gap: 3px;
   }
   .table-header-actions button {
-    padding: 6px 6px;
+    padding: 6px 5px;
     letter-spacing: 0;
+    font-size: 0.9rem;
   }
   .drawer {
     /* The whole width of a phone (100vw would count the scrollbar gutter too). */
@@ -2494,4 +2495,125 @@ body.showcase .app {
   .winner-glow {
     animation: fade-out-hold var(--glow-ms, 1200ms) linear forwards;
   }
+}
+
+/* --- How to play --------------------------------------------------------- */
+/* How to play: the tabs and the buttons stay put, and only the panel between them scrolls,
+   so the dialog fits any screen without the page moving under it. */
+.modal.rules {
+  max-width: 600px;
+  max-height: calc(100dvh - 32px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.rules h2 {
+  margin: 0 0 8px;
+}
+.rules-first {
+  margin: 0 0 10px;
+  font-size: 0.85rem;
+}
+.rules-tabs {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+}
+/* Two by two on a phone: four in a row left the longest name in two lines. */
+@media (max-width: 520px) {
+  .rules-tabs {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+.rules-tabs .rules-tab {
+  min-height: 36px;
+  padding: 4px 6px;
+  letter-spacing: 0.04em;
+  font-size: 0.85rem;
+}
+.rules-panel {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  margin: 12px 0;
+  padding-right: 6px;
+  font-size: 0.92rem;
+  line-height: 1.65;
+}
+.rules-panel:focus-visible {
+  outline: 1px solid var(--kitan-line);
+  outline-offset: 2px;
+}
+.rules-panel h3 {
+  margin: 14px 0 6px;
+  font-size: 0.95rem;
+  color: var(--kitan-kindei);
+}
+.rules-list {
+  margin: 0;
+  padding-left: 1.2em;
+}
+.rules-list li + li {
+  margin-top: 6px;
+}
+.rules-terms {
+  margin: 0;
+}
+.rules-terms div {
+  display: grid;
+  grid-template-columns: 6.5em 1fr;
+  gap: 8px;
+  padding: 3px 0;
+}
+.rules-terms dt {
+  color: var(--kitan-kindei-hi);
+  font-weight: 800;
+}
+.rules-terms dd {
+  margin: 0;
+}
+.rules-hands {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.rules-hand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 5px 0;
+  border-bottom: 1px solid var(--kitan-line-quiet);
+}
+/* The felt's own cards, smaller. */
+.rules-hand-cards {
+  display: inline-flex;
+  flex: none;
+  gap: 2px;
+}
+.rules .rules-hand-cards .card {
+  --card-width: 24px;
+  --card-height: 33px;
+  font-size: 0.72rem;
+}
+.rules-hand-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.35;
+}
+.rules-hand-desc {
+  color: var(--kitan-sublabel);
+  margin: 0;
+  font-size: 0.82rem;
+}
+.rules-hand-name {
+  color: var(--kitan-kindei-hi);
+}
+.rules-note {
+  margin: 8px 0 0;
+  font-size: 0.85rem;
+  color: var(--kitan-sublabel);
+}
+.rules-foot {
+  justify-content: flex-end;
 }

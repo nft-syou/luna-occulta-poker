@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { EMPTY_STATS, type PlayerStats } from "./stats";
 import {
   clearCumulativeStats,
@@ -8,6 +8,9 @@ import {
   forgetOldCredentials,
   loadCumulativeStats,
   loadSettings,
+  markRulesSeen,
+  RULES_SEEN_STORAGE_KEY,
+  rulesSeen,
   SETTINGS_STORAGE_KEY,
   STATS_STORAGE_KEY,
   saveCumulativeStats,
@@ -163,5 +166,35 @@ describe("spirit seats", () => {
     expect(loadSettings()).toEqual({ ...DEFAULT_SETTINGS, voiceVolume: 0 });
     saveSettings({ ...DEFAULT_SETTINGS, voiceVolume: 0.25 });
     expect(loadSettings().voiceVolume).toBe(0.25);
+  });
+});
+
+describe("rules seen", () => {
+  beforeEach(() => localStorage.clear());
+
+  it("remembers in the browser that the rules were shown", () => {
+    expect(rulesSeen()).toBe(false);
+    markRulesSeen();
+    expect(localStorage.getItem(RULES_SEEN_STORAGE_KEY)).toBe("1");
+    expect(rulesSeen()).toBe(true);
+    localStorage.clear();
+    expect(rulesSeen()).toBe(false);
+  });
+
+  it("remembers for the page load when the browser keeps nothing", () => {
+    const setItem = vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+      throw new Error("quota");
+    });
+    const getItem = vi.spyOn(Storage.prototype, "getItem").mockImplementation(() => {
+      throw new Error("denied");
+    });
+    try {
+      expect(rulesSeen()).toBe(false);
+      markRulesSeen();
+      expect(rulesSeen()).toBe(true);
+    } finally {
+      setItem.mockRestore();
+      getItem.mockRestore();
+    }
   });
 });

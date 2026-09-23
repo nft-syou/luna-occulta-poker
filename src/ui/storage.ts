@@ -210,6 +210,24 @@ export function saveLanguage(language: Language): void {
   write(LANGUAGE_STORAGE_KEY, language);
 }
 
+export const RULES_SEEN_STORAGE_KEY = "jev-poker.rulesSeen";
+
+/** Stands in for the stored flag when the browser keeps nothing: once per page load, then. */
+let rulesSeenThisLoad = false;
+
+/** Whether the rules have been shown in this browser, so the table need not open them itself. */
+export function rulesSeen(): boolean {
+  return rulesSeenThisLoad || read(RULES_SEEN_STORAGE_KEY) === "1";
+}
+
+export function markRulesSeen(): void {
+  try {
+    localStorage.setItem(RULES_SEEN_STORAGE_KEY, "1");
+  } catch {
+    rulesSeenThisLoad = true;
+  }
+}
+
 export type SettingsProblem = "invalidBlinds" | "invalidStack" | "duplicateSpirit";
 
 export function validateSettings(settings: Settings): SettingsProblem | null {

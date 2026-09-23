@@ -6,7 +6,7 @@ import { spirit, spiritPersonas } from "../characters/spirits";
 import { createVoicePlayer } from "../characters/voice";
 import type { Language } from "../i18n";
 import { createGameBackend, type SessionSource, type StopReason } from "../jev/gameBackend";
-import type { Settings } from "./storage";
+import { rulesSeen, type Settings } from "./storage";
 import { TableView } from "./TableView";
 import { TonightOverDialog } from "./TonightOverDialog";
 import { useGame } from "./useGame";
@@ -34,6 +34,8 @@ export function GameScreen({
   onLeave,
 }: Props) {
   const [stopReason, setStopReason] = useState<StopReason | null>(null);
+  // Decided as the player sits down: a browser that has seen the rules is not shown them again.
+  const [autoRules] = useState(() => !rulesSeen());
   const [backend] = useState(() => createGameBackend({ session, onStop: setStopReason }));
   // One player per sitting; the settings' switch and slider reach it through effects.
   // The gate the loop waits at: held by the opening, by a line being said and by a cut-in.
@@ -105,6 +107,7 @@ export function GameScreen({
         sound={sound}
         gate={gate}
         opening
+        autoRules={autoRules}
         recording={recording}
         stopReason={stopReason}
         onOpenSettings={onOpenSettings}

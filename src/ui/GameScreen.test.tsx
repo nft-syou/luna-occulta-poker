@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { initI18n } from "../i18n";
 import { DEV_SESSION } from "../jev/gameBackend";
 import { GameScreen } from "./GameScreen";
-import { DEFAULT_SETTINGS, type Settings } from "./storage";
+import { DEFAULT_SETTINGS, RULES_SEEN_STORAGE_KEY, type Settings } from "./storage";
 
 initI18n("en");
 
@@ -17,6 +17,8 @@ afterEach(() => {
 });
 
 beforeEach(() => {
+  // These tables are not a first visit; the one that is says so itself.
+  localStorage.setItem(RULES_SEEN_STORAGE_KEY, "1");
   vi.spyOn(HTMLMediaElement.prototype, "play").mockResolvedValue(undefined);
   vi.spyOn(HTMLMediaElement.prototype, "pause").mockImplementation(() => {});
 });
@@ -92,6 +94,45 @@ describe("GameScreen", () => {
 
     fireEvent.keyDown(window, { key: "Enter" });
     expect(container.querySelector(".opening")).toBeNull();
+    expect(await screen.findByText("Hand #1", {}, { timeout: 500 })).toBeInTheDocument();
+  });
+
+  it("shows a first table the rules after the opening, and deals once they are skipped", async () => {
+    localStorage.removeItem(RULES_SEEN_STORAGE_KEY);
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() => new Promise<Response>(() => {})),
+    );
+    const sitDown = () =>
+      render(
+        <GameScreen
+          settings={{ ...HUMAN_FIRST, seats: HUMAN_FIRST.seats.slice(1) }}
+          language="en"
+          session={DEV_SESSION}
+          recording={false}
+          onOpenSettings={() => {}}
+          onLeave={() => {}}
+        />,
+      );
+    const first = sitDown();
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    fireEvent.keyDown(window, { key: "Enter" });
+    expect(screen.getByRole("dialog", { name: "How to play" })).toBeInTheDocument();
+    // The first hand waits for the rules.
+    await new Promise((r) => setTimeout(r, 300));
+    expect(screen.queryByText("Hand #1")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Resume" })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Skip" }));
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(localStorage.getItem(RULES_SEEN_STORAGE_KEY)).toBe("1");
+    expect(await screen.findByText("Hand #1", {}, { timeout: 500 })).toBeInTheDocument();
+    first.unmount();
+
+    // The next sitting goes straight to the cards.
+    sitDown();
+    fireEvent.keyDown(window, { key: "Enter" });
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     expect(await screen.findByText("Hand #1", {}, { timeout: 500 })).toBeInTheDocument();
   });
 });

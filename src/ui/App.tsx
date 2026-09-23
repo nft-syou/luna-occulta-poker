@@ -4,11 +4,13 @@ import i18next, { detectLanguage, initI18n, type Language } from "../i18n";
 import type { SessionSource } from "../jev/gameBackend";
 import { defaultSessionSource } from "../jev/session";
 import { GameScreen } from "./GameScreen";
+import { RulesDialog } from "./RulesDialog";
 import { SettingsDialog } from "./SettingsDialog";
 import {
   forgetOldCredentials,
   loadLanguage,
   loadSettings,
+  markRulesSeen,
   type Settings,
   saveLanguage,
   saveSettings,
@@ -43,6 +45,7 @@ export function App() {
   /** The sound settings; the table's own shape comes from `choice` and `mode`. */
   const [settings, setSettings] = useState<Settings>(() => loadSettings());
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [rulesOpen, setRulesOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   // One object per change, not per render: the table reads its seats from it.
@@ -100,6 +103,7 @@ export function App() {
             onPlay={() => openSetup("play")}
             onWatch={() => openSetup("watch")}
             onSettings={() => setSettingsOpen(true)}
+            onRules={() => setRulesOpen(true)}
           />
         )}
         {screen === "setup" && (
@@ -157,6 +161,14 @@ export function App() {
         onChange={changeSettings}
         onLanguage={changeLanguage}
         onClose={() => setSettingsOpen(false)}
+      />
+      <RulesDialog
+        open={rulesOpen}
+        onClose={() => {
+          // Read once from the title, the rules need not open themselves at the first table.
+          markRulesSeen();
+          setRulesOpen(false);
+        }}
       />
     </div>
   );

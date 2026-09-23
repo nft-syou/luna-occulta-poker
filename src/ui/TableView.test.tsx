@@ -2,6 +2,7 @@
 import "@testing-library/jest-dom/vitest";
 import type { HandSnapshot, LegalActions } from "@jev-poker/engine";
 import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import { useState } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createGate, type Gate } from "../characters/gate";
 import type { SoundPlayer } from "../characters/sound";
@@ -10,6 +11,7 @@ import { initI18n } from "../i18n";
 import type { StopReason } from "../jev/gameBackend";
 import { EMPTY_FX, type TableFx } from "./fx";
 import { OPENING_DOORS_AT_MS, OPENING_DOORS_MS, openingHoldMs } from "./OpeningLayer";
+import { RULES_SEEN_STORAGE_KEY } from "./storage";
 import { TableView } from "./TableView";
 import type { GameController, GameSeat } from "./useGame";
 
@@ -21,6 +23,7 @@ afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
   document.body.classList.remove("showcase");
+  localStorage.clear();
 });
 
 const SEATS: GameSeat[] = [
@@ -336,7 +339,15 @@ describe("TableView", () => {
     const actions = container.querySelector(".table-header-actions");
     expect(info).toHaveTextContent("Hand #1");
     const names = [...(actions?.querySelectorAll("button") ?? [])].map((b) => b.textContent);
-    expect(names).toEqual(["Pause", "Log", "Stats", "Settings", "Recording mode", "Leave table"]);
+    expect(names).toEqual([
+      "Pause",
+      "Log",
+      "Stats",
+      "Settings",
+      "?",
+      "Recording mode",
+      "Leave table",
+    ]);
     expect(info?.querySelector("button")).toBeNull();
   });
 
@@ -1070,6 +1081,135 @@ describe("TableView opening", () => {
         vi.advanceTimersByTime(600);
       });
       expect(calls[0]).toMatch(/^sakuya\.greet\./);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+});
+
+describe("TableView rules", () => {
+  /** A table whose pause really toggles, counting every toggle. */
+  function PausingTable({
+    initiallyPaused = false,
+    toggles,
+    ...props
+  }: {
+    initiallyPaused?: boolean;
+    toggles: { count: number };
+    opening?: boolean;
+    gate?: Gate;
+    autoRules?: boolean;
+  }) {
+    const [paused, setPaused] = useState(initiallyPaused);
+    const game: GameController = {
+      ...controller({ paused, snapshot: props.opening ? null : SNAPSHOT }),
+      togglePause: () => {
+        toggles.count++;
+        setPaused((p) => !p);
+      },
+    };
+    return (
+      <TableView
+        game={game}
+        speed="normal"
+        startingStack={200}
+        language="en"
+        onLeave={() => {}}
+        onOpenSettings={() => {}}
+        recording={false}
+        {...props}
+      />
+    );
+  }
+
+  it("opens the rules from the header, pausing the table until they close", () => {
+    stubViewport(false);
+    const toggles = { count: 0 };
+    render(<PausingTable toggles={toggles} />);
+    const opener = screen.getByRole("button", { name: "How to play" });
+    opener.focus();
+    fireEvent.click(opener);
+    expect(screen.getByRole("dialog", { name: "How to play" })).toBeInTheDocument();
+    expect(toggles.count).toBe(1);
+    // Asked for, not opened by the table: nothing to skip.
+    expect(screen.queryByRole("button", { name: "Skip" })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Close" }));
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(toggles.count).toBe(2);
+    expect(screen.getByRole("button", { name: "Pause" })).toBeInTheDocument();
+    expect(opener).toHaveFocus();
+  });
+
+  it("closes on Escape and resumes the table", () => {
+    stubViewport(false);
+    const toggles = { count: 0 };
+    render(<PausingTable toggles={toggles} />);
+    fireEvent.click(screen.getByRole("button", { name: "How to play" }));
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(toggles.count).toBe(2);
+  });
+
+  it("leaves a table the player had paused paused", () => {
+    stubViewport(false);
+    const toggles = { count: 0 };
+    render(<PausingTable toggles={toggles} initiallyPaused />);
+    fireEvent.click(screen.getByRole("button", { name: "How to play" }));
+    fireEvent.click(screen.getByRole("button", { name: "Close" }));
+    expect(toggles.count).toBe(0);
+    expect(screen.getByRole("button", { name: "Resume" })).toBeInTheDocument();
+  });
+
+  it("offers no rules once the server has stopped the table", () => {
+    stubViewport(false);
+    renderTable({}, { stopReason: "tonight" });
+    expect(screen.getByRole("button", { name: "How to play" })).toBeDisabled();
+  });
+
+  it("opens them by itself at a first table once the opening is over, and holds the table", () => {
+    vi.useFakeTimers();
+    try {
+      stubViewport(false);
+      const toggles = { count: 0 };
+      const gate = createGate();
+      render(<PausingTable toggles={toggles} opening gate={gate} autoRules />);
+      // Never over the opening.
+      act(() => {
+        vi.advanceTimersByTime(OPENING_DOORS_AT_MS);
+      });
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+      expect(toggles.count).toBe(0);
+
+      act(() => {
+        vi.advanceTimersByTime(OPENING_DOORS_MS);
+      });
+      expect(screen.getByRole("dialog", { name: "How to play" })).toBeInTheDocument();
+      expect(toggles.count).toBe(1);
+      expect(localStorage.getItem(RULES_SEEN_STORAGE_KEY)).toBeNull();
+
+      fireEvent.click(screen.getByRole("button", { name: "Skip" }));
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+      expect(toggles.count).toBe(2);
+      expect(localStorage.getItem(RULES_SEEN_STORAGE_KEY)).toBe("1");
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("does not open them by itself once this browser has seen them, but still on request", () => {
+    vi.useFakeTimers();
+    try {
+      stubViewport(false);
+      localStorage.setItem(RULES_SEEN_STORAGE_KEY, "1");
+      const toggles = { count: 0 };
+      render(<PausingTable toggles={toggles} opening gate={createGate()} autoRules />);
+      act(() => {
+        vi.advanceTimersByTime(openingHoldMs(2));
+      });
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+      expect(toggles.count).toBe(0);
+      fireEvent.click(screen.getByRole("button", { name: "How to play" }));
+      expect(screen.getByRole("dialog", { name: "How to play" })).toBeInTheDocument();
     } finally {
       vi.useRealTimers();
     }

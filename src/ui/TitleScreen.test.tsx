@@ -9,8 +9,10 @@ initI18n("en");
 afterEach(cleanup);
 
 describe("TitleScreen", () => {
-  it("renders the title and its three ways in", () => {
-    render(<TitleScreen onPlay={() => {}} onWatch={() => {}} onSettings={() => {}} />);
+  it("renders the title and its ways in", () => {
+    render(
+      <TitleScreen onPlay={() => {}} onWatch={() => {}} onSettings={() => {}} onRules={() => {}} />,
+    );
     expect(screen.getByRole("heading", { name: "Yoiyami Poker" })).toBeInTheDocument();
     expect(screen.getByText("Meet me under the eaten moon")).toBeInTheDocument();
     // The fan-work line stays; the engine behind the spirits is credited in the footer only.
@@ -18,6 +20,7 @@ describe("TitleScreen", () => {
     expect(screen.queryByText(/Jev/)).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Play" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Watch" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "How to play" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Settings" })).toBeInTheDocument();
   });
 
@@ -25,12 +28,17 @@ describe("TitleScreen", () => {
     const onPlay = vi.fn();
     const onWatch = vi.fn();
     const onSettings = vi.fn();
-    render(<TitleScreen onPlay={onPlay} onWatch={onWatch} onSettings={onSettings} />);
+    const onRules = vi.fn();
+    render(
+      <TitleScreen onPlay={onPlay} onWatch={onWatch} onSettings={onSettings} onRules={onRules} />,
+    );
     fireEvent.click(screen.getByRole("button", { name: "Play" }));
     fireEvent.click(screen.getByRole("button", { name: "Watch" }));
     fireEvent.click(screen.getByRole("button", { name: "Settings" }));
+    fireEvent.click(screen.getByRole("button", { name: "How to play" }));
     expect(onPlay).toHaveBeenCalledTimes(1);
     expect(onWatch).toHaveBeenCalledTimes(1);
     expect(onSettings).toHaveBeenCalledTimes(1);
+    expect(onRules).toHaveBeenCalledTimes(1);
   });
 });

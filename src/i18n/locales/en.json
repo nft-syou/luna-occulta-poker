@@ -260,5 +260,68 @@
     "unavailableTitle": "The moon is hidden",
     "unavailableBody": "Please come back in a little while.",
     "leave": "Leave the table"
+  },
+  "rules": {
+    "title": "How to play",
+    "open": "How to play",
+    "close": "Close",
+    "skip": "Skip",
+    "firstVisit": "Your first table, so here are the rules. You can open them again any time with the ? above the table.",
+    "tabs": {
+      "flow": "The flow",
+      "actions": "Actions",
+      "hands": "Hand rankings",
+      "house": "House rules"
+    },
+    "flow": {
+      "cards": "You get two cards of your own, and five shared cards come up on the board. Your hand is the best five of those seven.",
+      "streets": "Preflop is right after the deal. Then come the flop (three board cards), the turn (a fourth) and the river (a fifth), with a round of betting each time.",
+      "showdown": "If two or more players are left after the river, it's a showdown: the cards are shown and the best hand takes the pot. If everyone else folds earlier, the last player left wins.",
+      "blinds": "The D marker is the button. The player to its left posts the small blind (1) and the next one the big blind (2) before the deal. The button moves one seat to the left every hand.",
+      "order": "Preflop, the player left of the big blind acts first; from the flop on, the first player left of the button. Play goes clockwise.",
+      "headsUp": "Heads-up, the button posts the small blind, acts first preflop and last from the flop on."
+    },
+    "terms": {
+      "fold": "Fold",
+      "check": "Check",
+      "call": "Call",
+      "bet": "Bet",
+      "raise": "Raise",
+      "allin": "All in"
+    },
+    "actions": {
+      "fold": "Throw your cards away and drop out of the hand. Chips you have put in stay in.",
+      "check": "Pass without betting. Only when nobody has bet yet.",
+      "call": "Match the bet in front of you.",
+      "bet": "Make the first bet when nobody has bet yet.",
+      "raise": "Put in more than the current bet. \"Raise to 12\" means making it 12 in total.",
+      "allin": "Put in every chip you have. Even if it's short of the bet, you play for what you put in.",
+      "barTitle": "The action bar",
+      "bar": "On your turn the action bar comes up at the bottom. Pick an amount on the top row, end your turn on the bottom row.",
+      "barSizes": "\"Min\", \"2.5x\", \"3x\", \"4x\" and \"All in\" pick an amount in one tap. From the flop on they become shares of the pot: \"1/3\", \"1/2\", \"2/3\" and \"Pot\".",
+      "barFine": "\"−\" and \"+\" step by one big blind, the slider goes anywhere in between, or type the amount in the box.",
+      "barCommit": "Fold, Check or Call, and Bet or Raise on the bottom row end your turn. Pick All in as the amount and the right-hand button turns into All in."
+    },
+    "hands": {
+      "straight_flush": "Five in a row, all one suit.",
+      "four_of_a_kind": "Four of the same rank.",
+      "full_house": "Three of one rank and two of another.",
+      "flush": "Five of one suit.",
+      "straight": "Five in a row, any suits.",
+      "three_of_a_kind": "Three of the same rank.",
+      "two_pair": "Two different pairs.",
+      "pair": "Two of the same rank.",
+      "high_card": "Nothing made: the highest card decides.",
+      "royal": "The top straight flush, ace down to ten (T on the cards), is the royal flush. An ace also plays low, in 5-4-3-2-A, the lowest straight.",
+      "ties": "Within the same hand, higher ranks win. Suits are never ranked, and an exact tie splits the pot."
+    },
+    "house": {
+      "stakes": "Three stakes: Dusk sits you down with 100 BB (200), Midnight with 50 BB (100) and Eclipse with 25 BB (50). The blinds are 1/2 at all three and never go up.",
+      "rebuy": "Running out of chips doesn't cost you your seat. When the hand ends you are topped back up to the stack you sat down with; the log shows it as a rebuy and the stats count it. The spirits get the same.",
+      "spirits": "Each spirit has a style of her own: some play it safe, some love a bluff.",
+      "sakuya": "Sakuya cannot lie, and her lines change only when she is bluffing. Whether you catch it is up to you.",
+      "tonight": "The house has a daily budget. When it runs out the table closes with \"That's all for tonight\" and opens again at midnight, Japan time.",
+      "voices": "The spirits speak aloud only while you are still in the hand. To hear them after you fold too, turn on \"Voices even after I fold\" in Settings. When you watch, they always speak."
+    }
   }
 }

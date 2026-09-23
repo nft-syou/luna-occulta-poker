@@ -19,6 +19,8 @@ afterEach(() => {
 
 // jsdom plays no media; the table's music and voices are not what these tests are about.
 beforeEach(() => {
+  // The rules open themselves at a first table; these tests are about what comes after.
+  localStorage.setItem("jev-poker.rulesSeen", "1");
   vi.spyOn(HTMLMediaElement.prototype, "play").mockResolvedValue(undefined);
   vi.spyOn(HTMLMediaElement.prototype, "pause").mockImplementation(() => {});
 });
@@ -196,5 +198,16 @@ describe("App", () => {
     expect(localStorage.getItem("jev-poker.lang")).toBe("ja");
     fireEvent.change(screen.getByLabelText("言語"), { target: { value: "en" } });
     expect(localStorage.getItem("jev-poker.lang")).toBe("en");
+  });
+
+  it("opens how to play from the title and closes it again", async () => {
+    await renderApp();
+    fireEvent.click(screen.getByRole("button", { name: "How to play" }));
+    const dialog = screen.getByRole("dialog", { name: "How to play" });
+    fireEvent.click(within(dialog).getByRole("tab", { name: "Hand rankings" }));
+    expect(within(dialog).getByRole("list", { name: "Hand rankings" })).toBeInTheDocument();
+    fireEvent.click(within(dialog).getByRole("button", { name: "Close" }));
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(titleHeading()).toBeInTheDocument();
   });
 });

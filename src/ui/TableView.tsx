@@ -18,11 +18,12 @@ import { cardText } from "./format";
 import { handsPerMinute, type Speech } from "./fx";
 import { HistoryPanel } from "./HistoryPanel";
 import { OpeningLayer, SEAT_LIT_STAGGER_MS } from "./OpeningLayer";
+import { RulesDialog } from "./RulesDialog";
 import { SeatSpeech, SeatView } from "./SeatView";
 import { ShowcasePanel } from "./ShowcasePanel";
 import { StatsPanel } from "./StatsPanel";
 import { compactBubble } from "./showcase";
-import type { Speed } from "./storage";
+import { markRulesSeen, rulesSeen, type Speed } from "./storage";
 import { TableFxLayer } from "./TableFxLayer";
 import { Ticker } from "./Ticker";
 import { presentationTimings } from "./timings";
@@ -56,6 +57,11 @@ interface Props {
    * by one. Once per mount, so once per sitting; the greetings and the music wait for it.
    */
   opening?: boolean;
+  /**
+   * Opens the rules by themselves once the opening is over, unless this browser has seen them:
+   * a first table starts with how to play, and the first hand waits for it.
+   */
+  autoRules?: boolean;
 }
 
 /** How long a bubble with a spoken line stays: long enough to read and to hear it out. */
@@ -167,6 +173,7 @@ export function TableView({
   sound,
   gate,
   opening = false,
+  autoRules = false,
 }: Props) {
   const { t } = useTranslation();
   const phone = useMediaQuery(PHONE_QUERY);
@@ -229,6 +236,42 @@ export function TableView({
 
   const { state } = game;
   const snapshot = state.snapshot;
+
+  /** The rules, when they are up: asked for from the header, or opened by the table itself. */
+  const [rules, setRules] = useState<"asked" | "auto" | null>(null);
+  /** Set when the rules paused the table, so closing them resumes it and nothing else does. */
+  const rulesPausedRef = useRef(false);
+  const gameRef = useRef(game);
+  gameRef.current = game;
+  const stoppedRef = useRef(stopReason !== null);
+  stoppedRef.current = stopReason !== null;
+  // Synchronous on purpose: called from the opening's own callback, the pause has to land
+  // before the gate lets the loop deal the first hand.
+  const openRules = (how: "asked" | "auto") => {
+    const current = gameRef.current;
+    // One overlay at a time: the drawer steps aside for the rules.
+    setDrawer(null);
+    if (!current.state.paused && !current.state.gameOver && !stoppedRef.current) {
+      current.togglePause();
+      rulesPausedRef.current = true;
+    }
+    setRules(how);
+  };
+  const closeRules = () => {
+    markRulesSeen();
+    setRules(null);
+    const current = gameRef.current;
+    if (rulesPausedRef.current && current.state.paused && !stoppedRef.current) {
+      current.togglePause();
+    }
+    rulesPausedRef.current = false;
+  };
+  // The server's stop has a dialog of its own, and the table stays stopped under it.
+  useEffect(() => {
+    if (stopReason === null) return;
+    rulesPausedRef.current = false;
+    setRules(null);
+  }, [stopReason]);
 
   // On a phone the action bar is fixed over the bottom of the page, which is exactly where
   // the player's own seat is drawn: left alone it hid their cards on their own turn. So the
@@ -465,7 +508,7 @@ export function TableView({
   return (
     <section ref={screenRef} className={showcase ? "table-screen showcase-mode" : "table-screen"}>
       {/* Behind an open drawer the table is inert: Tab cannot wander under the backdrop. */}
-      <div className="table-main" inert={drawer !== null && !showcase}>
+      <div className="table-main" inert={(drawer !== null && !showcase) || rules !== null}>
         {/* The hand and its badges on the left; every control together on the right. */}
         <div className="table-header">
           <div className="table-header-info row">
@@ -518,6 +561,16 @@ export function TableView({
                 ))}
                 <button type="button" className="secondary" onClick={onOpenSettings}>
                   {t("title.settings")}
+                </button>
+                <button
+                  type="button"
+                  className="secondary rules-open"
+                  aria-label={t("rules.open")}
+                  aria-haspopup="dialog"
+                  disabled={stopReason !== null}
+                  onClick={() => openRules("asked")}
+                >
+                  ?
                 </button>
                 {recording && (
                   <button type="button" className="secondary" onClick={() => setShowcase(true)}>
@@ -735,9 +788,14 @@ export function TableView({
           sound={sound}
           seatCount={count}
           reducedMotion={reducedMotion}
-          onOpened={(instant) => setSeatLight(instant ? null : "lit")}
+          onOpened={(instant) => {
+            setSeatLight(instant ? null : "lit");
+            if (autoRules && !rulesSeen()) openRules("auto");
+          }}
         />
       )}
+
+      <RulesDialog open={rules !== null} auto={rules === "auto"} onClose={closeRules} />
 
       {showcase && (
         <div className="showcase-bottom">
