@@ -477,6 +477,37 @@ describe("TableView", () => {
     }
   });
 
+  it("shows only the newest bubble on a phone, and one per seat on a wide screen", () => {
+    const fx = {
+      fx: {
+        ...EMPTY_FX,
+        callouts: [
+          {
+            id: 1,
+            seat: 1,
+            kind: "raise" as const,
+            amount: 12,
+            at: 10,
+            line: { id: "sakuya.raise.1", text: "レイズ。あたしの番だ" },
+          },
+          { id: 2, seat: 0, kind: "call" as const, amount: 12, at: 11, line: null },
+        ],
+      },
+    };
+    stubViewport(true);
+    const phone = renderTable(fx);
+    // Two seats acted in quick succession: the second one's shout replaces the first.
+    expect(phone.container.querySelectorAll(".callout-spot")).toHaveLength(1);
+    expect(screen.getByText("CALL 6 BB")).toBeInTheDocument();
+    expect(screen.queryByText("レイズ。あたしの番だ")).not.toBeInTheDocument();
+    phone.unmount();
+
+    stubViewport(false);
+    const wide = renderTable(fx);
+    expect(wide.container.querySelectorAll(".callout-spot")).toHaveLength(2);
+    expect(screen.getByText("レイズ。あたしの番だ")).toBeInTheDocument();
+  });
+
   it("empties the middle as soon as the pot has been paid out", () => {
     stubViewport(false);
     const { container } = renderTable({

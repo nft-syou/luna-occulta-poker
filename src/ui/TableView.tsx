@@ -407,6 +407,31 @@ export function TableView({
   for (const callout of fx.callouts) calloutBySeat.set(callout.seat, callout);
   const speechBySeat = new Map<SeatId, (typeof fx.speech)[number]>();
   for (const speech of fx.speech) speechBySeat.set(speech.seat, speech);
+  // What each seat's bubble is made of: its newest shout and its newest word (or greeting).
+  const bubbleOf = (seat: SeatId) => ({
+    callout: calloutBySeat.get(seat) ?? null,
+    speech: speechBySeat.get(seat) ?? greetings.get(seat) ?? null,
+  });
+  // A phone has no room for two: the bubbles all lean towards the middle of a narrow felt and
+  // piled up on each other and the board. There only the newest one shows, and it replaces
+  // any other at once. A wider felt keeps one per seat.
+  let newestSeat: SeatId | null = null;
+  if (phone) {
+    let newestAt = Number.NEGATIVE_INFINITY;
+    for (const { seat } of layout) {
+      const { callout, speech } = bubbleOf(seat.id);
+      const at = Math.max(
+        callout?.at ?? Number.NEGATIVE_INFINITY,
+        speech?.at ?? Number.NEGATIVE_INFINITY,
+      );
+      if (at > Number.NEGATIVE_INFINITY && at >= newestAt) {
+        newestAt = at;
+        newestSeat = seat.id;
+      }
+    }
+  }
+  const shownBubble = (seat: SeatId) =>
+    phone && seat !== newestSeat ? { callout: null, speech: null } : bubbleOf(seat);
   const cutInSeat = fx.cutIn === null ? null : state.seats.find((s) => s.id === fx.cutIn?.seat);
   const cutInSpirit =
     cutInSeat === null || cutInSeat === undefined ? null : spirit(cutInSeat.spiritId);
@@ -561,8 +586,7 @@ export function TableView({
               <SeatSpeech
                 key={seat.id}
                 style={{ left: `${x}%`, top: `${y}%` }}
-                callout={calloutBySeat.get(seat.id) ?? null}
-                speech={speechBySeat.get(seat.id) ?? greetings.get(seat.id) ?? null}
+                {...shownBubble(seat.id)}
                 bigBlind={bigBlind}
                 inward={inward}
               />
