@@ -37,13 +37,15 @@ const ANSWER = {
   bluff_intent: { noul: 0.1 },
 };
 
+/** The dev server's pass (no site key in tests, so the session source posts "dev"). */
+const PASS = { token: "dev", expiresAt: new Date(Date.now() + 7200_000).toISOString() };
+
+/** Answers `/api/session` with a pass and every decide call with `status` and `body`. */
 function stubFetch(status: number, body: unknown): ReturnType<typeof vi.fn> {
-  const mock = vi.fn(
-    async () =>
-      new Response(JSON.stringify(body), {
-        status,
-        headers: { "content-type": "application/json" },
-      }),
+  const reply = (s: number, b: unknown) =>
+    new Response(JSON.stringify(b), { status: s, headers: { "content-type": "application/json" } });
+  const mock = vi.fn(async (url: RequestInfo | URL) =>
+    String(url) === "/api/session" ? reply(200, PASS) : reply(status, body),
   );
   vi.stubGlobal("fetch", mock);
   return mock;
@@ -83,8 +85,15 @@ describe("App", () => {
     await waitFor(() => expect(screen.getAllByText("Jev").length).toBeGreaterThan(0), {
       timeout: 15_000,
     });
-    // The decisions came from the Worker's decide endpoint, not from the fail-open fallback.
-    expect(String(fetchMock.mock.calls[0]?.[0])).toBe("/api/jev/decide");
+    // A pass first, then the decisions from the Worker's decide endpoint, not from the
+    // fail-open fallback.
+    const urls = fetchMock.mock.calls.map((call) => String(call[0]));
+    expect(urls[0]).toBe("/api/session");
+    expect(JSON.parse(String(fetchMock.mock.calls[0]?.[1]?.body))).toEqual({
+      turnstileToken: "dev",
+    });
+    expect(urls.slice(1).every((url) => url === "/api/jev/decide")).toBe(true);
+    expect(urls.length).toBeGreaterThan(1);
     expect(screen.queryByText("Fallback: Jev was unavailable")).not.toBeInTheDocument();
     // No recording mode unless the page was opened for it.
     expect(screen.queryByRole("button", { name: "Recording mode" })).not.toBeInTheDocument();
@@ -114,6 +123,29 @@ describe("App", () => {
       format: "hu",
       opponent: "janome",
     });
+  });
+
+  it("stays at the table setup when no pass can be had", async () => {
+    // A fresh module, so no pass cached by an earlier test is waiting.
+    vi.resetModules();
+    const fetchMock = vi.fn(
+      async (_url: RequestInfo | URL) =>
+        new Response(JSON.stringify({ error: "turnstile_failed" }), {
+          status: 403,
+          headers: { "content-type": "application/json" },
+        }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    await renderApp();
+
+    fireEvent.click(screen.getByRole("button", { name: "Watch" }));
+    fireEvent.click(screen.getByRole("button", { name: "Watch" }));
+
+    expect(
+      await screen.findByText("The moon slipped behind a cloud. Please try again."),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "A table to watch" })).toBeInTheDocument();
+    expect(String(fetchMock.mock.calls[0]?.[0])).toBe("/api/session");
   });
 
   it("closes the table for the night and sends the player back to the title", {

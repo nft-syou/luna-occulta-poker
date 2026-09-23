@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import i18next, { detectLanguage, initI18n, type Language } from "../i18n";
-import { DEV_SESSION, type SessionSource } from "../jev/gameBackend";
+import type { SessionSource } from "../jev/gameBackend";
+import { defaultSessionSource } from "../jev/session";
 import { GameScreen } from "./GameScreen";
 import { SettingsDialog } from "./SettingsDialog";
 import {
@@ -29,8 +30,8 @@ initI18n(initialLanguage);
 // Players once brought their own key; the operator holds it now, so none may linger here.
 forgetOldCredentials();
 
-/** Until Turnstile arrives, the pass is the dev server's open one. */
-const session: SessionSource = DEV_SESSION;
+/** One pass for the whole visit: Turnstile runs when it is first needed and again on expiry. */
+const session: SessionSource = defaultSessionSource();
 
 export function App() {
   const { t } = useTranslation();
