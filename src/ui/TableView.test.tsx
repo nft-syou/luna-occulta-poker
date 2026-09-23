@@ -136,6 +136,7 @@ function renderTable(
     stopReason: StopReason | null;
     voice: VoicePlayer;
     sound: SoundPlayer;
+    voiceWhenOut: boolean;
   }> = {},
 ) {
   return render(
@@ -576,6 +577,123 @@ describe("TableView voices", () => {
       expect(calls).toHaveLength(1);
       expect(calls[0]?.id).toMatch(/^sakuya\.greet\./);
       expect(screen.getByText(/^(あんたの顔見ると|さ、始めよっか)/)).toBeInTheDocument();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+});
+
+describe("TableView voices while the player is out of the hand", () => {
+  const raise = { id: "sakuya.raise.1", text: "レイズ。あたしの番だ" };
+  const shout = {
+    fx: {
+      ...EMPTY_FX,
+      callouts: [{ id: 1, seat: 1, kind: "raise" as const, amount: 12, at: 10, line: raise }],
+    },
+  };
+  function voiceCalls() {
+    const calls: string[] = [];
+    const voice: VoicePlayer = {
+      play: (_spirit, line) => {
+        calls.push(line.id);
+      },
+      preload: () => {},
+      setEnabled: () => {},
+      setVolume: () => {},
+      setSituations: () => {},
+      stopAll: () => {},
+    };
+    return { voice, calls };
+  }
+  /** The same hand with the human (seat 0) folded. */
+  const humanFolded: HandSnapshot = {
+    ...SNAPSHOT,
+    players: SNAPSHOT.players.map((p) => (p.seat === 0 ? { ...p, folded: true } : p)),
+  };
+  /** A hand the human was not dealt into (busted, or waiting). */
+  const humanNotDealt: HandSnapshot = {
+    ...SNAPSHOT,
+    players: SNAPSHOT.players.filter((p) => p.seat !== 0),
+  };
+
+  it("keeps the 御霊 quiet once the player has folded", () => {
+    stubViewport(false);
+    const { voice, calls } = voiceCalls();
+    renderTable({ ...shout, snapshot: humanFolded }, { voice });
+    expect(calls).toEqual([]);
+    // The bubble still shows the words.
+    expect(screen.getByText(raise.text)).toBeInTheDocument();
+  });
+
+  it("keeps them quiet in a hand the player was not dealt into", () => {
+    stubViewport(false);
+    const { voice, calls } = voiceCalls();
+    renderTable({ ...shout, snapshot: humanNotDealt }, { voice });
+    expect(calls).toEqual([]);
+  });
+
+  it("lets them speak after a fold when the player asked for it", () => {
+    stubViewport(false);
+    const { voice, calls } = voiceCalls();
+    renderTable({ ...shout, snapshot: humanFolded }, { voice, voiceWhenOut: true });
+    expect(calls).toEqual([raise.id]);
+  });
+
+  it("lets them speak while the player is still in the hand", () => {
+    stubViewport(false);
+    const { voice, calls } = voiceCalls();
+    renderTable(shout, { voice });
+    expect(calls).toEqual([raise.id]);
+  });
+
+  it("lets them speak at a table with no human seat", () => {
+    stubViewport(false);
+    const { voice, calls } = voiceCalls();
+    const watched = controller({ ...shout, snapshot: humanNotDealt });
+    render(
+      <TableView
+        game={{ ...watched, humanSeats: [], spectator: true, legalForHuman: null }}
+        speed="normal"
+        startingStack={200}
+        language="en"
+        onLeave={() => {}}
+        onOpenSettings={() => {}}
+        recording={false}
+        voice={voice}
+      />,
+    );
+    expect(calls).toEqual([raise.id]);
+  });
+
+  it("does not say a line held back during the fold once the player is dealt in again", () => {
+    stubViewport(false);
+    const { voice, calls } = voiceCalls();
+    const props = {
+      speed: "normal" as const,
+      startingStack: 200,
+      language: "en" as const,
+      onLeave: () => {},
+      onOpenSettings: () => {},
+      recording: false,
+      voice,
+    };
+    const { rerender } = render(
+      <TableView game={controller({ ...shout, snapshot: humanFolded })} {...props} />,
+    );
+    rerender(<TableView game={controller({ ...shout, snapshot: SNAPSHOT })} {...props} />);
+    expect(calls).toEqual([]);
+  });
+
+  it("still greets as the player sits down", () => {
+    vi.useFakeTimers();
+    try {
+      stubViewport(false);
+      const { voice, calls } = voiceCalls();
+      renderTable({ snapshot: null }, { voice });
+      act(() => {
+        vi.advanceTimersByTime(600);
+      });
+      expect(calls[0]).toMatch(/^sakuya\.greet\./);
     } finally {
       vi.useRealTimers();
     }

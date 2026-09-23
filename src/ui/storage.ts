@@ -41,6 +41,11 @@ export interface Settings {
   voiceVolume: number;
   /** Which situations are spoken; a line for a situation switched off is shown, not said. */
   voiceSituations: VoiceSituations;
+  /**
+   * Whether the 御霊 still speak in a hand the player has folded (or was not dealt into).
+   * Off by default: once out, the player is waiting, and the lines are shown, not said.
+   */
+  voiceWhenOut: boolean;
   /** Whether the quiet loop plays under the table. */
   bgm: boolean;
   /** Music volume, 0–1. */
@@ -90,6 +95,7 @@ export const DEFAULT_SETTINGS: Settings = {
   voice: true,
   voiceVolume: 0.8,
   voiceSituations: DEFAULT_VOICE_SITUATIONS,
+  voiceWhenOut: false,
   bgm: true,
   // Under the table, not on it: the loop should sit well below the voices and the felt.
   bgmVolume: 0.12,
@@ -144,6 +150,10 @@ export function loadSettings(): Settings {
       voice: typeof parsed.voice === "boolean" ? parsed.voice : DEFAULT_SETTINGS.voice,
       voiceVolume: clampVolume(numberOr(parsed.voiceVolume, DEFAULT_SETTINGS.voiceVolume)),
       voiceSituations: readSituations(parsed.voiceSituations),
+      voiceWhenOut:
+        typeof parsed.voiceWhenOut === "boolean"
+          ? parsed.voiceWhenOut
+          : DEFAULT_SETTINGS.voiceWhenOut,
       bgm: typeof parsed.bgm === "boolean" ? parsed.bgm : DEFAULT_SETTINGS.bgm,
       bgmVolume: clampVolume(numberOr(parsed.bgmVolume, DEFAULT_SETTINGS.bgmVolume)),
       se: typeof parsed.se === "boolean" ? parsed.se : DEFAULT_SETTINGS.se,

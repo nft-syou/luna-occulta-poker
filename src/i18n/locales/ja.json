@@ -11,7 +11,8 @@
   },
   "setup": {
     "voice": "御霊の声",
-    "voiceVolume": "声の大きさ"
+    "voiceVolume": "声の大きさ",
+    "voiceWhenOut": "自分が降りた局でも声を出す"
   },
   "table": {
     "pot": "勾玉",

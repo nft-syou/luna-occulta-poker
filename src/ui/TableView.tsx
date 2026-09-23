@@ -1,4 +1,4 @@
-import type { SeatId } from "@jev-poker/engine";
+import type { HandSnapshot, SeatId } from "@jev-poker/engine";
 import { type CSSProperties, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { Gate } from "../characters/gate";
@@ -44,6 +44,8 @@ interface Props {
   personaNames?: Record<SeatId, string>;
   /** Says the 御霊's lines aloud. Absent, the table is silent and the bubbles still show. */
   voice?: VoicePlayer;
+  /** Whether the voices go on in a hand the player is out of; see `playerOutOfHand`. */
+  voiceWhenOut?: boolean;
   /** The table's own sounds: cards, 勾玉, the cut-in. */
   sound?: SoundPlayer;
   /** Held by the cut-in while it is up. */
@@ -71,6 +73,19 @@ const REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
 const BET_SPOT = 0.6;
 /** The same for a seat on the top or bottom rail, whose tall box the chips must clear. */
 const BET_SPOT_VERTICAL = 0.41;
+
+/**
+ * Whether a seated player is out of the hand being played: folded, or not dealt into it.
+ * A table with no human seat (watching) has nobody to be out, and before the first deal
+ * everyone is still in — which is what lets the greetings through as the player sits down.
+ */
+export function playerOutOfHand(
+  snapshot: HandSnapshot | null,
+  humanSeats: readonly SeatId[],
+): boolean {
+  if (humanSeats.length === 0 || snapshot === null) return false;
+  return !snapshot.players.some((p) => humanSeats.includes(p.seat) && !p.folded);
+}
 
 function mediaMatches(query: string): boolean {
   // jsdom (and any non-browser host) has no matchMedia; treat those as a wide, moving screen.
@@ -135,6 +150,7 @@ export function TableView({
   stopReason = null,
   personaNames,
   voice,
+  voiceWhenOut = false,
   sound,
   gate,
 }: Props) {
@@ -186,6 +202,11 @@ export function TableView({
     felt.scrollIntoView({ block: "end" });
   }, [phone, legalForHuman]);
   const names = new Map(state.seats.map((s) => [s.id, s.name]));
+  // Once the player is out of the hand the 御霊 keep their lines to the bubbles, unless the
+  // player asked to hear them anyway. Music and the table's own sounds are not affected.
+  const quiet = !voiceWhenOut && playerOutOfHand(snapshot, game.humanSeats);
+  const quietRef = useRef(quiet);
+  quietRef.current = quiet;
 
   // Greetings as the table opens: each 御霊 in turn, a beat apart. Local, not an effect
   // of the game, because no engine event says "we sat down".
@@ -206,7 +227,7 @@ export function TableView({
             setGreetings((prev) =>
               new Map(prev).set(seat.id, { id: -1 - i, seat: seat.id, situation: "win", line, at }),
             );
-            voice?.play(seat.spiritId, line, { situation: "greet" });
+            if (!quietRef.current) voice?.play(seat.spiritId, line, { situation: "greet" });
           },
           GREET_GAP_MS * (i + 1),
         ),
@@ -240,7 +261,9 @@ export function TableView({
       else if (move.kind === "toSeat") sound.se("pot");
     }
   }, [sound, fxFeed, fxMoves]);
-  // Voices follow the effects: the newest shout, word or cut-in, each said once.
+  // Voices follow the effects: the newest shout, word or cut-in, each said once. A line that
+  // comes while the table is quiet is marked as said, so it is not said late when the
+  // player is dealt back in.
   const spokenRef = useRef<{ callout: number; speech: number; cutIn: number }>({
     callout: 0,
     speech: 0,
@@ -257,7 +280,7 @@ export function TableView({
       spokenRef.current.callout = last.id;
       const who = spiritOf(last.seat);
       // An all-in's line belongs to the cut-in, which says it with priority below.
-      if (last.line !== null && who !== undefined && last.kind !== "allin") {
+      if (!quiet && last.line !== null && who !== undefined && last.kind !== "allin") {
         voice.play(who, last.line, { situation: last.kind });
       }
     }
@@ -265,18 +288,18 @@ export function TableView({
     if (word !== undefined && word.id > spokenRef.current.speech) {
       spokenRef.current.speech = word.id;
       const who = spiritOf(word.seat);
-      if (who !== undefined && word.situation !== "bigwin" && word.situation !== "bust") {
+      if (!quiet && who !== undefined && word.situation !== "bigwin" && word.situation !== "bust") {
         voice.play(who, word.line, { situation: word.situation });
       }
     }
     if (fxCutIn !== null && fxCutIn.id > spokenRef.current.cutIn) {
       spokenRef.current.cutIn = fxCutIn.id;
       const who = spiritOf(fxCutIn.seat);
-      if (fxCutIn.line !== null && who !== undefined) {
+      if (!quiet && fxCutIn.line !== null && who !== undefined) {
         voice.play(who, fxCutIn.line, { priority: true, situation: fxCutIn.kind });
       }
     }
-  }, [voice, fxCallouts, fxSpeech, fxCutIn]);
+  }, [voice, quiet, fxCallouts, fxSpeech, fxCutIn]);
   useEffect(() => {
     if (sound === undefined || fxCutIn === null) return;
     if (fxCutIn.id <= soundRef.current.cutIn) return;

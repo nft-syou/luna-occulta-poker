@@ -103,6 +103,7 @@ export function GameScreen({
         language={language}
         personaNames={personaNames}
         voice={voice}
+        voiceWhenOut={settings.voiceWhenOut}
         sound={sound}
         gate={gate}
         recording={recording}

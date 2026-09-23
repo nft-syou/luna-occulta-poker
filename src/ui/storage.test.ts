@@ -145,6 +145,17 @@ describe("spirit seats", () => {
     expect(validateSettings(DEFAULT_SETTINGS)).toBeNull();
   });
 
+  it("keeps the voices to hands the player is in unless a saved setting says otherwise", () => {
+    expect(DEFAULT_SETTINGS.voiceWhenOut).toBe(false);
+    // A record from before the switch existed reads as off.
+    localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify({ voice: true }));
+    expect(loadSettings().voiceWhenOut).toBe(false);
+    localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify({ voiceWhenOut: "yes" }));
+    expect(loadSettings().voiceWhenOut).toBe(false);
+    saveSettings({ ...DEFAULT_SETTINGS, voiceWhenOut: true });
+    expect(loadSettings().voiceWhenOut).toBe(true);
+  });
+
   it("reads the voice switch and clamps the volume", () => {
     localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify({ voice: false, voiceVolume: 3 }));
     expect(loadSettings()).toEqual({ ...DEFAULT_SETTINGS, voice: false, voiceVolume: 1 });

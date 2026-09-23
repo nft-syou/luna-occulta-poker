@@ -30,10 +30,21 @@ describe("VoiceSettings", () => {
     expect(next.voice).toBe(true);
   });
 
+  it("offers to keep the voices on after the player folds, off by default", () => {
+    const onChange = vi.fn();
+    render(<VoiceSettings settings={DEFAULT_SETTINGS} onChange={onChange} />);
+    const box = screen.getByLabelText("Voices even after I fold");
+    expect(box).not.toBeChecked();
+    fireEvent.click(box);
+    const next = onChange.mock.calls[0]?.[0] as Settings | undefined;
+    expect(next?.voiceWhenOut).toBe(true);
+  });
+
   it("hides the details while the voices are off", () => {
     render(<VoiceSettings settings={{ ...DEFAULT_SETTINGS, voice: false }} onChange={() => {}} />);
     expect(screen.queryByLabelText("Fold")).not.toBeInTheDocument();
     expect(screen.queryByLabelText("Voice volume")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Voices even after I fold")).not.toBeInTheDocument();
   });
 
   it("turns every situation off and on again in one click", () => {

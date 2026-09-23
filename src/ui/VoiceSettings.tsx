@@ -52,6 +52,16 @@ export function VoiceSettings({ settings, onChange }: Props) {
               onChange={(e) => onChange({ ...settings, voiceVolume: Number(e.target.value) })}
             />
           </label>
+          <label className="field">
+            <span>
+              <input
+                type="checkbox"
+                checked={settings.voiceWhenOut}
+                onChange={(e) => onChange({ ...settings, voiceWhenOut: e.target.checked })}
+              />{" "}
+              {t("setup.voiceWhenOut")}
+            </span>
+          </label>
           <div className="voice-situations">
             <div className="voice-group-head">
               <span className="muted">{t("voice.situations")}</span>

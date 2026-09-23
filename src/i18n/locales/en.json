@@ -11,7 +11,8 @@
   },
   "setup": {
     "voice": "Spirit voices",
-    "voiceVolume": "Voice volume"
+    "voiceVolume": "Voice volume",
+    "voiceWhenOut": "Voices even after I fold"
   },
   "table": {
     "pot": "Pot",
