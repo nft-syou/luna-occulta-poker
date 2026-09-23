@@ -40,7 +40,8 @@
     "check": "pnpm lint && pnpm typecheck && pnpm test && pnpm build",
     "assets:kitan": "node scripts/fetch-kitan-assets.mjs",
     "voice:lines": "tsx scripts/voice/export-lines.ts",
-    "assets:sound": "node scripts/fetch-sound.mjs"
+    "assets:sound": "node scripts/fetch-sound.mjs",
+    "prose:allowlist": "tsx scripts/prose-allowlist.ts"
   },
   "dependencies": {
     "@jev-poker/agent": "^0.2.1",

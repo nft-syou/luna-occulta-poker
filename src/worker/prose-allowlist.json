@@ -1,0 +1,43 @@
+{
+  "tasks": {
+    "Decide the next poker action for the acting player in No-Limit Texas Hold'em.": "unified",
+    "Decide the acting player's PREFLOP action in No-Limit Texas Hold'em: whether to enter the pot, and how to size a raise.": "split",
+    "Decide the acting player's POSTFLOP action in No-Limit Texas Hold'em, weighing the made hand, draws, the board and the betting so far.": "split"
+  },
+  "lines": [
+    "A bluff raise only profits when opponents fold often enough; against an opponent who has already shown strength it rarely does. Whether to bluff and whether to continue against a re-raise are separate decisions.",
+    "Against a calling_station: never bluff, because they do not fold. Bet good hands for value more often and larger than usual, including top pair, and keep betting on later streets.",
+    "Against a maniac: their bets and raises mean much less than usual, so do not fold top pair or better to them; call and let them keep bluffing rather than bluffing them yourself, and raise for value with strong hands.",
+    "Against a nit: steal their blinds and bet when they check, because they fold too much. When a nit bets or raises, believe them and fold everything but very strong hands.",
+    "Amounts are in big blinds.",
+    "Before calling, compare equityVsRangePct with requiredEquityPct (the pot odds).",
+    "Before calling, compare equityVsRangePct with requiredEquityPct (the pot odds). Do not call large bets or raises unless beatsPctOfHands is very high (about 85 or more) or you have a strong draw getting the right price.",
+    "Before calling, compare your equity with requiredEquityPct (the pot odds).",
+    "Before calling, compare your equity with requiredEquityPct (the pot odds). Do not call large bets or raises unless beatsPctOfHands is very high (about 85 or more) or you have a strong draw getting the right price.",
+    "Do not call large bets or raises unless beatsPctOfHands is very high (about 85 or more) or you have a strong draw getting the right price.",
+    "Heads-up, the button should open-raise most hands and the big blind should defend against small raises; folding the small blind too often bleeds chips.",
+    "On the turn and river, a bet from an opponent usually beats one pair; call with one pair only when the bet is small relative to the pot, and fold to big bets and raises.",
+    "Once someone has already raised, only premium and strong hands should re-raise (3-bet); medium hands may call a single raise, everything else folds.",
+    "Only legal actions are offered.",
+    "Preflop raise sizes: open to about 2.5-3 big blinds; 3-bet to about 3 times the raise; 4-bet to about 2.5 times the 3-bet. Use \"minimum\" or \"about one third of the pot\" for opens and \"about two thirds of the pot\" for re-raises rather than large sizes.",
+    "Preflop, once someone has already raised, only premium and strong hands should re-raise (3-bet); medium hands may call a single raise, everything else folds. If your own raise gets re-raised, continue only with premium hands (4-bet or call) and fold everything else, however big your earlier raise was. 4-bet bluffs are rarely profitable against tight opponents.",
+    "Sizes: bet about two thirds of the pot for value; use the pot or an overbet only with very strong hands; use the minimum or one third of the pot for thin value or as a probe.",
+    "Sizes: open to about 2.5-3 big blinds; 3-bet to about 3 times the raise; 4-bet to about 2.5 times the 3-bet.",
+    "Stay in character as the persona.",
+    "When myBetWasRaisedThisStreet is true, your bet has been raised and the raiser is usually very strong: re-raise only with beatsPctOfHands of about 95 or more, call only with a strong hand or a draw at the right price, otherwise fold. Bluff re-raises are rarely profitable in this spot.",
+    "When myBetWasRaisedThisStreet is true, your raise has been re-raised: continue only with premium hands (4-bet or call) and fold everything else, however big your earlier raise was. 4-bet bluffs are rarely profitable against tight opponents.",
+    "When unopenedPot is true (everyone before you folded), open-raising to steal the blinds is very profitable: raise a wide range from late position (CO, BTN, SB), a medium range from MP, and a solid range from UTG. Limping (calling the big blind) is rarely right; raise or fold.",
+    "You cannot see other players' hole cards.",
+    "beatsPctOfHands is exact: the share of all possible opponent holdings your hand beats right now. It is the main measure of strength after the flop; the hand category alone (e.g. two pair) can be misleading on paired or coordinated boards (see board_texture).",
+    "beatsPctOfHands is exact: the share of all possible opponent holdings your hand beats right now. It is the main measure of strength; the hand category alone (e.g. two pair) can be misleading on paired or coordinated boards (see board_texture).",
+    "equityVsRandomPct is your estimated chance to win at showdown against random hands. Opponents who have bet or raised usually hold far better than random hands, so discount it heavily against aggression.",
+    "equityVsRandomPct is your estimated chance to win at showdown against random hands. equityVsRangePct is the same estimate against the hands opponents plausibly hold given their actions this hand; once anyone has bet or raised, judge calls and raises by equityVsRangePct, not by equityVsRandomPct.",
+    "opponentStats describes how each live opponent has played so far in this session: vpipPct is how often they enter a pot, pfrPct how often they raise preflop, postflopAggressionPct how often their postflop actions are bets or raises, foldToBetPct how often they fold when they face a postflop bet. A raise from an opponent with a low pfrPct means a very strong hand, and their blinds are easy to steal; against an opponent with a high vpipPct or a low foldToBetPct, bluff less and bet good hands for value; an opponent with a very high pfrPct and postflopAggressionPct is often bluffing, so do not fold good made hands to them.",
+    "opponentTypes says what kind of player each live opponent has been in this session; adjust to the opponents who are actually in the hand with you.",
+    "pairKind tells how good a one-pair hand is: top_pair and overpair are decent, middle_pair, bottom_pair, underpair and board_pair are weak.",
+    "preflopStrength is a 169-hand tier: premium > strong > medium > weak > trash.",
+    "raisesThisStreet counts the bets and raises so far on this street; two or more means someone is very strong, so anything but a near-nut hand should fold.",
+    "raisesThisStreet counts the raises so far; two or more means someone is very strong.",
+    "stackToPotRatio is your remaining stack divided by the pot. When it is low, continuing is cheap relative to the pot: judge the call by requiredEquityPct against the likely range of the opponent instead of folding automatically, and avoid a raise that commits most of your stack with a hand you would not call an all-in with."
+  ]
+}
