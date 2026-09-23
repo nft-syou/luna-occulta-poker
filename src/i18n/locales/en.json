@@ -259,7 +259,8 @@
   "tonight": {
     "title": "That's all for tonight",
     "body": "The moon will rise again. The table opens at midnight, Japan time.",
-    "unavailableBody": "The moon is behind a cloud. Please come back in a little while.",
+    "unavailableTitle": "The moon is hidden",
+    "unavailableBody": "Please come back in a little while.",
     "leave": "Leave the table"
   }
 }

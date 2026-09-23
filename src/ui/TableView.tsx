@@ -42,8 +42,6 @@ interface Props {
   stopReason?: StopReason | null;
   /** Persona name per seat, for the recording overlays; the seat's own name otherwise. */
   personaNames?: Record<SeatId, string>;
-  /** Model the table asks for, shown when no decision has named one yet. */
-  model?: string;
   /** Says the 御霊's lines aloud. Absent, the table is silent and the bubbles still show. */
   voice?: VoicePlayer;
   /** The table's own sounds: cards, 勾玉, the cut-in. */
@@ -136,7 +134,6 @@ export function TableView({
   recording,
   stopReason = null,
   personaNames,
-  model,
   voice,
   sound,
   gate,
@@ -388,7 +385,9 @@ export function TableView({
             type="button"
             className="secondary"
             onClick={game.togglePause}
-            disabled={state.gameOver}
+            // A server stop is final for the sitting: the dialog covers the table, but the
+            // keyboard can still reach this button behind it.
+            disabled={state.gameOver || stopReason !== null}
           >
             {state.paused ? t("table.resume") : t("table.pause")}
           </button>
@@ -541,7 +540,6 @@ export function TableView({
             last={last}
             personaName={last === null ? "" : nameOf(last.seat)}
             bigBlind={snapshot?.bigBlind ?? 0}
-            model={model ?? ""}
           />
         )}
         {!showcase && !phone && (

@@ -7,16 +7,16 @@ interface Props {
   /** Name of the persona that seat plays; the seat's own name when none is known. */
   personaName: string;
   bigBlind: number;
-  model: string;
 }
 
 /**
  * The right-hand column of the recording layout: the decision the table just played, in
  * full, at a size a screen recording can read.
  */
-export function ShowcasePanel({ last, personaName, bigBlind, model }: Props) {
+export function ShowcasePanel({ last, personaName, bigBlind }: Props) {
   const { t } = useTranslation();
-  const shown = last?.record.jev?.model ?? model;
+  // The model Jev answered with; the Worker picks it, so the browser has none of its own.
+  const model = last?.record.jev?.model;
 
   return (
     <aside className="showcase-panel">
@@ -25,12 +25,14 @@ export function ShowcasePanel({ last, personaName, bigBlind, model }: Props) {
       ) : (
         <Decision last={last} personaName={personaName} bigBlind={bigBlind} />
       )}
-      <footer className="showcase-footer">{t("showcase.poweredByModel", { model: shown })}</footer>
+      <footer className="showcase-footer">
+        {model ? t("showcase.poweredByModel", { model }) : t("showcase.poweredBy")}
+      </footer>
     </aside>
   );
 }
 
-function Decision({ last, personaName, bigBlind }: Omit<Props, "model">) {
+function Decision({ last, personaName, bigBlind }: Props) {
   const { t } = useTranslation();
   if (last === null) return null;
   const { record, features } = last;

@@ -35,7 +35,6 @@ export function GameScreen({
 }: Props) {
   const [stopReason, setStopReason] = useState<StopReason | null>(null);
   const [backend] = useState(() => createGameBackend({ session, onStop: setStopReason }));
-  const model = settings.model;
   // One player per sitting; the settings' switch and slider reach it through effects.
   // The gate the loop waits at: held by a line being said and by a cut-in on screen.
   const [gate] = useState(() => createGate());
@@ -73,7 +72,6 @@ export function GameScreen({
     settings,
     personas: PERSONAS,
     backend,
-    model,
     // The game backend turns a refused pass into a stop of its own; should the agent still
     // report one, the table cannot go on either.
     onAuthFailed: () => setStopReason("unavailable"),
@@ -104,7 +102,6 @@ export function GameScreen({
         startingStack={settings.startingStack}
         language={language}
         personaNames={personaNames}
-        model={model}
         voice={voice}
         sound={sound}
         gate={gate}

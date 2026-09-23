@@ -16,7 +16,9 @@ export function TonightOverDialog({ reason, onLeave }: Props) {
   return (
     <div className="modal-backdrop" role="presentation">
       <div className="modal" role="dialog" aria-modal="true" aria-labelledby={`${id}-title`}>
-        <h2 id={`${id}-title`}>{t("tonight.title")}</h2>
+        <h2 id={`${id}-title`}>
+          {reason === "tonight" ? t("tonight.title") : t("tonight.unavailableTitle")}
+        </h2>
         <p>{reason === "tonight" ? t("tonight.body") : t("tonight.unavailableBody")}</p>
         <div className="row">
           <button type="button" onClick={onLeave}>

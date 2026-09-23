@@ -27,10 +27,9 @@ describe("TonightOverDialog", () => {
 
   it("says the moon is hidden when the table cannot be reached", () => {
     render(<TonightOverDialog reason="unavailable" onLeave={() => {}} />);
-    expect(
-      screen.getByText("The moon is behind a cloud. Please come back in a little while."),
-    ).toBeInTheDocument();
-    expect(screen.queryByText(/midnight/)).not.toBeInTheDocument();
+    expect(screen.getByRole("dialog", { name: "The moon is hidden" })).toBeInTheDocument();
+    expect(screen.getByText("Please come back in a little while.")).toBeInTheDocument();
+    expect(screen.queryByText(/midnight|tonight/)).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Leave the table" })).toBeInTheDocument();
   });
 });

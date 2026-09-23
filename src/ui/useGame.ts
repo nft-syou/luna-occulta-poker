@@ -144,8 +144,6 @@ export interface UseGameOptions {
   settings: Settings;
   personas: readonly Persona[];
   backend: JevBackend | null;
-  /** Model id to ask for; defaults to `settings.model` (the Vercel route pins its own). */
-  model?: string;
   onAuthFailed: () => void;
   onTonightOver: () => void;
   seed?: number;
@@ -175,7 +173,7 @@ type Msg =
 
 const MAX_LOG = 400;
 
-/** `GameState.error` marker for "there is no API key"; the UI localizes it. */
+/** `GameState.error` marker for "there is no backend to ask"; the UI localizes it. */
 export const NO_BACKEND_ERROR = "no backend";
 
 function reducer(state: GameState, msg: Msg): GameState {
@@ -290,7 +288,6 @@ export function useGame(options: UseGameOptions): GameController {
   const { settings, personas, backend, onAuthFailed, onTonightOver } = options;
   const gateRef = useRef(options.gate);
   gateRef.current = options.gate;
-  const model = options.model ?? settings.model;
   const [state, dispatch] = useReducer(reducer, {
     snapshot: null,
     seats: [],
@@ -317,10 +314,10 @@ export function useGame(options: UseGameOptions): GameController {
   if (decisionSeedRef.current === null) decisionSeedRef.current = options.seed ?? randomSeed();
   const runRef = useRef<Run | null>(null);
   const pausedRef = useRef(false);
-  /** Set when the loop stopped itself because Jev rejected the key. */
+  /** Set when the loop stopped itself because the backend reported an auth failure. */
   const authPausedRef = useRef(false);
   /**
-   * Set when the loop stopped itself because TypeSafe returned 402 Payment Required. Mirrors
+   * Set when the loop stopped itself on a 402 (the game backend's stop signal). Mirrors
    * `authPausedRef` for symmetry, but nothing branches on it: unlike an auth pause, a "tonight
    * is over" pause never auto-resumes, so the UI is driven entirely by `state.pauseReason`
    * instead.
@@ -454,14 +451,13 @@ export function useGame(options: UseGameOptions): GameController {
             snapshot: target.snapshot,
             variance: persona.variance,
             rng: rngFor(key),
-            model,
             signal,
           }),
         );
       }
       reportPrefetch();
     },
-    [backend, model, opponentTypeFor, personas, reportPrefetch, rngFor],
+    [backend, opponentTypeFor, personas, reportPrefetch, rngFor],
   );
 
   const loop = useCallback(
@@ -498,7 +494,7 @@ export function useGame(options: UseGameOptions): GameController {
             return; // resumed by humanAct
           }
           if (backend === null) {
-            // No API key means no Jev, and CPUs must not play on a fallback forever.
+            // No backend means no Jev, and CPUs must not play on a fallback forever.
             noBackendRef.current = true;
             dispatch({ type: "gameOver", error: NO_BACKEND_ERROR });
             return;
@@ -535,7 +531,6 @@ export function useGame(options: UseGameOptions): GameController {
                     snapshot,
                     variance: persona.variance,
                     rng: rngFor(key),
-                    model,
                     signal: run.abort.signal,
                   })),
                   prefetched: false,
@@ -579,7 +574,6 @@ export function useGame(options: UseGameOptions): GameController {
     },
     [
       backend,
-      model,
       opponentTypeFor,
       onAuthFailed,
       onTonightOver,
@@ -656,7 +650,7 @@ export function useGame(options: UseGameOptions): GameController {
     };
   }, []);
 
-  // A fresh backend (the user fixed the API key) revives a table that stopped for want of a
+  // A fresh backend (a new one handed in) revives a table that stopped for want of a
   // working one. React only re-runs this when the backend identity changes, and both guards
   // are refs that are false until the loop itself trips them, so the initial mount — and any
   // later backend swap on a healthy table — starts nothing extra.

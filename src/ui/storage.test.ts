@@ -56,6 +56,17 @@ describe("storage", () => {
     });
   });
 
+  it("reads settings an older version saved with a model, and drops the model", () => {
+    // The Worker picks the model now; a BYOK-era choice must neither break loading nor linger.
+    localStorage.setItem(
+      SETTINGS_STORAGE_KEY,
+      JSON.stringify({ model: "jev-custom", speed: "max" }),
+    );
+    const settings = loadSettings();
+    expect(settings).toEqual({ ...DEFAULT_SETTINGS, speed: "max" });
+    expect(settings).not.toHaveProperty("model");
+  });
+
   it("round-trips settings", () => {
     const settings = { ...DEFAULT_SETTINGS, speed: "max" as const, startingStack: 500 };
     saveSettings(settings);

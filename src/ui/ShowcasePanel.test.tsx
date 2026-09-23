@@ -57,7 +57,7 @@ const LAST: LastDecision = {
       probabilities: { fold: 0.1, check_or_call: 0.3, bet_or_raise: 0.6 },
       sizingScore: 2.4,
       bluffIntent: 0.35,
-      model: "jev-latest",
+      model: "jev-2026-09",
     },
     error: null,
     errorKind: null,
@@ -83,9 +83,7 @@ describe("compactBubble", () => {
 
 describe("ShowcasePanel", () => {
   it("describes the decision Jev just made", () => {
-    const { container } = render(
-      <ShowcasePanel last={LAST} personaName="LAG" bigBlind={2} model="jev-latest" />,
-    );
+    const { container } = render(<ShowcasePanel last={LAST} personaName="LAG" bigBlind={2} />);
 
     expect(screen.getByText("LAG")).toBeInTheDocument();
     expect(screen.getByText(/CO/)).toBeInTheDocument();
@@ -102,12 +100,13 @@ describe("ShowcasePanel", () => {
     expect(screen.getByText("35%")).toBeInTheDocument();
     expect(screen.getByText("820 ms")).toBeInTheDocument();
     expect(container.querySelectorAll(".showcase-bar-fill")).toHaveLength(3);
-    expect(screen.getByText("Powered by TypeSafe Jev · jev-latest")).toBeInTheDocument();
+    // The model Jev answered with, never one the browser asked for (the Worker picks it).
+    expect(screen.getByText("Powered by TypeSafe Jev · jev-2026-09")).toBeInTheDocument();
   });
 
   it("waits quietly until the first decision lands", () => {
-    render(<ShowcasePanel last={null} personaName="" bigBlind={2} model="jev-latest" />);
+    render(<ShowcasePanel last={null} personaName="" bigBlind={2} />);
     expect(screen.getByText("Waiting for the first decision…")).toBeInTheDocument();
-    expect(screen.getByText("Powered by TypeSafe Jev · jev-latest")).toBeInTheDocument();
+    expect(screen.getByText("Powered by TypeSafe Jev")).toBeInTheDocument();
   });
 });

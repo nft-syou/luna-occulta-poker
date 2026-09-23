@@ -188,7 +188,9 @@ describe("TableView", () => {
     expect(container.querySelector(".showcase-panel")).not.toBeNull();
     expect(container.querySelector(".ticker")).not.toBeNull();
     expect(container.querySelector(".felt")).not.toBeNull();
-    expect(screen.getByText("Powered by TypeSafe Jev")).toBeInTheDocument();
+    expect(container.querySelector(".showcase-corner")).toHaveTextContent(
+      "Powered by TypeSafe Jev",
+    );
     // Everything that is not the table itself steps aside.
     expect(screen.queryByRole("heading", { name: "Hand history" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Leave table" })).not.toBeInTheDocument();
@@ -415,6 +417,18 @@ describe("TableView", () => {
     expect(screen.getByText("Paused")).toBeInTheDocument();
     expect(screen.queryByText("That's all for tonight")).not.toBeInTheDocument();
     expect(screen.queryByText(/credit|TypeSafe/)).not.toBeInTheDocument();
+  });
+
+  it("offers no resume once the server has stopped the table", () => {
+    stubViewport(false);
+    for (const stopReason of ["tonight", "unavailable"] as const) {
+      const { unmount } = renderTable({ paused: true, pauseReason: "tonight" }, { stopReason });
+      // The dialog covers the table, but the keyboard can still reach the header behind it.
+      expect(screen.getByRole("button", { name: "Resume" })).toBeDisabled();
+      unmount();
+    }
+    renderTable({ paused: true, pauseReason: null }, { stopReason: null });
+    expect(screen.getByRole("button", { name: "Resume" })).toBeEnabled();
   });
 
   it("shows no stop badge when there is no pause reason", () => {

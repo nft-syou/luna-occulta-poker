@@ -30,7 +30,7 @@ const cpuOnly: Settings = {
   ],
 };
 
-/** Mock whose every call fails the way a rejected API key does. */
+/** Mock whose every call fails the way a refused credential (an HTTP 401) does. */
 function authFailingBackend(): JevBackend {
   return {
     kind: "typesafe",

@@ -31,7 +31,6 @@ export interface Settings {
   smallBlind: number;
   bigBlind: number;
   speed: Speed;
-  model: string;
   /** Whether CPU turns are speculatively prefetched ahead of the acting seat's turn. */
   prefetch: boolean;
   /** Cap on concurrent speculative Jev requests; one of `PREFETCH_MAX_IN_FLIGHT_OPTIONS`. */
@@ -86,7 +85,6 @@ export const DEFAULT_SETTINGS: Settings = {
   smallBlind: 1,
   bigBlind: 2,
   speed: "normal",
-  model: "jev-latest",
   prefetch: true,
   prefetchMaxInFlight: 6,
   voice: true,
@@ -139,10 +137,6 @@ export function loadSettings(): Settings {
       smallBlind: numberOr(parsed.smallBlind, DEFAULT_SETTINGS.smallBlind),
       bigBlind: numberOr(parsed.bigBlind, DEFAULT_SETTINGS.bigBlind),
       speed: isSpeed(parsed.speed) ? parsed.speed : DEFAULT_SETTINGS.speed,
-      model:
-        typeof parsed.model === "string" && parsed.model.length > 0
-          ? parsed.model
-          : DEFAULT_SETTINGS.model,
       prefetch: typeof parsed.prefetch === "boolean" ? parsed.prefetch : DEFAULT_SETTINGS.prefetch,
       prefetchMaxInFlight: isPrefetchMaxInFlight(parsed.prefetchMaxInFlight)
         ? parsed.prefetchMaxInFlight
