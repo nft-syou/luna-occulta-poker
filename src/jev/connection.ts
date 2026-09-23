@@ -3,14 +3,48 @@
  * proxy. It must stay dependency-free: `tsconfig.functions.json` compiles it for the
  * Cloudflare Pages Function, so it may not import React, the SDK or any node/browser API.
  *
- * The security rule this module exists to enforce: the proxy never accepts a free-form
- * upstream URL. It picks one of four fixed hosts by route id and interpolates only values
- * that passed an anchored regex here and then `encodeURIComponent`.
+ * The URL-building half of that story — the fixed hosts, the allow-listed paths and the
+ * regex-anchored Cloudflare gateway segments — now lives in `../worker/upstream`; this module
+ * imports and re-exports it so every existing importer keeps compiling unchanged.
  */
 
-export type JevRoute = "typesafe" | "vercel" | "lolipop" | "cloudflare";
+import {
+  ALLOWED_PATHS,
+  CF_ACCOUNT_ID_PATTERN,
+  CF_GATEWAY_ID_PATTERN,
+  CF_PROVIDER_SLUG_PATTERN,
+  CLOUDFLARE_UPSTREAM,
+  type CloudflareGatewayInput,
+  isJevRoute,
+  isProviderSlug,
+  JEV_ROUTES,
+  type JevRoute,
+  LOLIPOP_UPSTREAM,
+  TYPESAFE_UPSTREAM,
+  type UpstreamEnv,
+  type UpstreamUrlError,
+  upstreamUrl,
+  VERCEL_UPSTREAM,
+} from "../worker/upstream.ts";
 
-export const JEV_ROUTES: readonly JevRoute[] = ["typesafe", "vercel", "lolipop", "cloudflare"];
+export {
+  ALLOWED_PATHS,
+  CF_ACCOUNT_ID_PATTERN,
+  CF_GATEWAY_ID_PATTERN,
+  CF_PROVIDER_SLUG_PATTERN,
+  CLOUDFLARE_UPSTREAM,
+  type CloudflareGatewayInput,
+  isJevRoute,
+  isProviderSlug,
+  JEV_ROUTES,
+  type JevRoute,
+  LOLIPOP_UPSTREAM,
+  TYPESAFE_UPSTREAM,
+  type UpstreamEnv,
+  type UpstreamUrlError,
+  upstreamUrl,
+  VERCEL_UPSTREAM,
+};
 
 export type Connection =
   | { route: "typesafe"; apiKey: string }
@@ -38,25 +72,11 @@ export const CF_TOKEN_HEADER = "X-Jev-CF-Token";
 
 /** Printable ASCII only: anything a header may carry, and nothing that could split one. */
 export const SECRET_PATTERN = /^[\x21-\x7E]{1,512}$/;
-export const CF_ACCOUNT_ID_PATTERN = /^[0-9a-f]{32}$/i;
-export const CF_GATEWAY_ID_PATTERN = /^[A-Za-z0-9_-]{1,64}$/;
-export const CF_PROVIDER_SLUG_PATTERN = /^[a-z0-9][a-z0-9-]{0,62}$/;
-
-export const TYPESAFE_UPSTREAM = "https://api.typesafe.ai";
-export const VERCEL_UPSTREAM = "https://ai-gateway.vercel.sh/typesafe";
-export const LOLIPOP_UPSTREAM = "https://ai-gateway.lolipop.jp";
-export const CLOUDFLARE_UPSTREAM = "https://gateway.ai.cloudflare.com";
 
 /** The Vercel AI Gateway addresses Jev by this id instead of `jev-latest`. */
 export const VERCEL_MODEL = "typesafe-ai/jev";
 /** The Lolipop AI Gateway lists Jev under this id. */
 export const LOLIPOP_MODEL = "typesafe/jev-latest";
-
-/** The only paths the proxy will ever forward, with the method each one allows. */
-export const ALLOWED_PATHS: Readonly<Record<string, "GET" | "POST">> = {
-  "v1/systemone": "POST",
-  "v1/models": "GET",
-};
 
 export type ConnectionField =
   | "route"
@@ -73,23 +93,6 @@ export type ConnectionValidation =
   | { ok: true; connection: Connection }
   | { ok: false; errors: ConnectionErrors };
 
-export interface CloudflareGatewayInput {
-  accountId?: unknown;
-  gatewayId?: unknown;
-  providerSlug?: unknown;
-}
-
-export interface UpstreamEnv {
-  /** Overrides the upstream root of the `typesafe` route only (tests, staging). */
-  TYPESAFE_BASE_URL?: string | undefined;
-}
-
-export type UpstreamUrlError = "invalid_route" | "invalid_path" | "invalid_gateway_config";
-
-export function isJevRoute(value: unknown): value is JevRoute {
-  return typeof value === "string" && (JEV_ROUTES as readonly string[]).includes(value);
-}
-
 /**
  * Cloudflare shows the provider as `custom-<slug>` but the URL segment already adds that
  * prefix, so a pasted `custom-foo` must not become `custom-custom-foo`.
@@ -102,20 +105,6 @@ export function normalizeProviderSlug(raw: string): string {
 function trimmed(value: unknown): string | null {
   return typeof value === "string" ? value.trim() : null;
 }
-
-/**
- * The URL segment is `custom-<slug>`, so the slug itself must not carry that prefix — one
- * `custom-` is stripped on the way in, and a second one (`custom-custom-x`) is a mistake the
- * player has to see in the modal rather than a 400 on every hand.
- */
-export function isProviderSlug(slug: string): boolean {
-  return CF_PROVIDER_SLUG_PATTERN.test(slug) && !slug.startsWith("custom-");
-}
-
-const SAFE_BASE_URL_PATTERNS = [
-  /^https:\/\/[^\s]+$/,
-  /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?(\/|$)/,
-] as const;
 
 export function validateConnection(input: unknown): ConnectionValidation {
   if (typeof input !== "object" || input === null || Array.isArray(input)) {
@@ -179,44 +168,4 @@ export function modelFor(connection: Connection, settingsModel: string): string 
   if (connection.route === "vercel") return VERCEL_MODEL;
   if (connection.route === "lolipop") return LOLIPOP_MODEL;
   return settingsModel;
-}
-
-/**
- * The single place an upstream URL is built. Every caller passes a route id and an
- * allow-listed path; nothing here is taken from user input except values that just matched
- * an anchored regex, and those are still `encodeURIComponent`d before interpolation.
- */
-export function upstreamUrl(
-  route: string | null | undefined,
-  path: string,
-  cf: CloudflareGatewayInput | null | undefined,
-  env: UpstreamEnv,
-): string | { error: UpstreamUrlError } {
-  const id = route === null || route === undefined ? "typesafe" : route;
-  if (!isJevRoute(id)) return { error: "invalid_route" };
-  if (!Object.hasOwn(ALLOWED_PATHS, path)) return { error: "invalid_path" };
-
-  if (id === "typesafe") {
-    // An empty or malformed override would otherwise build a relative URL, or ship the key
-    // over plain http to somewhere else entirely: fall back to the default instead.
-    const override = (env.TYPESAFE_BASE_URL ?? "").trim();
-    const safe = SAFE_BASE_URL_PATTERNS.some((pattern) => pattern.test(override));
-    const base = (safe ? override : TYPESAFE_UPSTREAM).replace(/\/+$/, "");
-    return `${base}/${path}`;
-  }
-  if (id === "vercel") return `${VERCEL_UPSTREAM}/${path}`;
-  if (id === "lolipop") return `${LOLIPOP_UPSTREAM}/${path}`;
-
-  const accountId = trimmed(cf?.accountId) ?? "";
-  const gatewayId = trimmed(cf?.gatewayId) ?? "";
-  const providerSlug = trimmed(cf?.providerSlug) ?? "";
-  if (
-    !CF_ACCOUNT_ID_PATTERN.test(accountId) ||
-    !CF_GATEWAY_ID_PATTERN.test(gatewayId) ||
-    !isProviderSlug(providerSlug)
-  ) {
-    return { error: "invalid_gateway_config" };
-  }
-  const segments = [accountId, gatewayId, `custom-${providerSlug}`].map(encodeURIComponent);
-  return `${CLOUDFLARE_UPSTREAM}/v1/${segments.join("/")}/${path}`;
 }
