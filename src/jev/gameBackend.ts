@@ -69,6 +69,18 @@ export function createGameBackend(options: GameBackendOptions): JevBackend {
     throw new APIError(402, { error: reason }, new Headers(), reason);
   };
 
+  /**
+   * A session that cannot be had (Turnstile failed or timed out, /api/session refused, the
+   * network is down) is the same stop as a 503: without it no spirit can think tonight.
+   */
+  const session = async (which: "token" | "renew"): Promise<string> => {
+    try {
+      return await options.session[which]();
+    } catch {
+      return stop("unavailable");
+    }
+  };
+
   return {
     kind: "typesafe",
     async systemOne(request, requestOptions) {
@@ -76,8 +88,8 @@ export function createGameBackend(options: GameBackendOptions): JevBackend {
         toDecideRequest(request as { state: unknown; questions: unknown }),
       );
       const signal = requestOptions?.signal ?? undefined;
-      let res = await post(body, await options.session.token(), signal);
-      if (res.status === 401) res = await post(body, await options.session.renew(), signal);
+      let res = await post(body, await session("token"), signal);
+      if (res.status === 401) res = await post(body, await session("renew"), signal);
       if (res.status === 429) {
         const payload = (await res
           .clone()
@@ -86,7 +98,7 @@ export function createGameBackend(options: GameBackendOptions): JevBackend {
         if (payload.error === "tonight_is_over") stop("tonight");
         const seconds = Number(res.headers.get("retry-after") ?? "2");
         await sleep((Number.isFinite(seconds) ? seconds : 2) * 1000);
-        res = await post(body, await options.session.token(), signal);
+        res = await post(body, await session("token"), signal);
       }
       if (res.status === 401 || res.status === 503) stop("unavailable");
       if (res.status === 429) {

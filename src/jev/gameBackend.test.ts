@@ -106,4 +106,87 @@ describe("createGameBackend", () => {
       expect(onStop).toHaveBeenCalledWith(reason);
     }
   });
+
+  it("stops the table as unavailable when the session cannot be had", async () => {
+    const boom = async (): Promise<string> => {
+      throw new Error("turnstile timed out");
+    };
+    const cases = [
+      { session: { token: boom, renew: boom }, first: 200 },
+      { session: { token: async () => "old", renew: boom }, first: 401 },
+    ];
+    for (const { session, first } of cases) {
+      const onStop = vi.fn();
+      const f = vi.fn(
+        async () =>
+          new Response(JSON.stringify(first === 200 ? ANSWER : { error: "session_expired" }), {
+            status: first,
+          }),
+      );
+      const backend = createGameBackend({ session, onStop, fetch: f });
+      const err = await backend
+        .systemOne({ state: STATE, questions: QUESTIONS } as never)
+        .catch((e) => e);
+      expect(err).toBeInstanceOf(APIError);
+      expect((err as APIError).status).toBe(402);
+      expect(onStop).toHaveBeenCalledWith("unavailable");
+    }
+  });
+
+  it("stops as unavailable when a renewed session is refused too", async () => {
+    const onStop = vi.fn();
+    const f = vi.fn(
+      async () => new Response(JSON.stringify({ error: "session_expired" }), { status: 401 }),
+    );
+    const renew = vi.fn(async () => "fresh");
+    const backend = createGameBackend({
+      session: { token: async () => "old", renew },
+      onStop,
+      fetch: f,
+    });
+    const err = await backend
+      .systemOne({ state: STATE, questions: QUESTIONS } as never)
+      .catch((e) => e);
+    expect(renew).toHaveBeenCalledTimes(1);
+    expect(f).toHaveBeenCalledTimes(2);
+    expect((err as APIError).status).toBe(402);
+    expect(onStop).toHaveBeenCalledWith("unavailable");
+  });
+
+  it("waits out a burst only once, then gives the agent the 429", async () => {
+    const onStop = vi.fn();
+    const f = vi.fn(
+      async () =>
+        new Response(JSON.stringify({ error: "slow_down" }), {
+          status: 429,
+          headers: { "retry-after": "2" },
+        }),
+    );
+    const sleep = vi.fn(async () => {});
+    const backend = createGameBackend({ session: DEV_SESSION, onStop, fetch: f, sleep });
+    const err = await backend
+      .systemOne({ state: STATE, questions: QUESTIONS } as never)
+      .catch((e) => e);
+    expect(sleep).toHaveBeenCalledTimes(1);
+    expect(f).toHaveBeenCalledTimes(2);
+    expect(err).toBeInstanceOf(APIError);
+    expect((err as APIError).status).toBe(429);
+    expect(onStop).not.toHaveBeenCalled();
+  });
+
+  it("falls back to two seconds when retry-after is not a number", async () => {
+    const f = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ error: "slow_down" }), {
+          status: 429,
+          headers: { "retry-after": "soon" },
+        }),
+      )
+      .mockResolvedValueOnce(new Response(JSON.stringify(ANSWER), { status: 200 }));
+    const sleep = vi.fn(async () => {});
+    const backend = createGameBackend({ session: DEV_SESSION, onStop: () => {}, fetch: f, sleep });
+    await backend.systemOne({ state: STATE, questions: QUESTIONS } as never);
+    expect(sleep).toHaveBeenCalledWith(2000);
+  });
 });
