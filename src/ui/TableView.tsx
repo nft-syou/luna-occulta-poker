@@ -58,7 +58,8 @@ const SPEECH_MS = 4200;
 /** The gap between one 御霊's greeting and the next as the table opens. */
 const GREET_GAP_MS = 600;
 
-type Panel = "table" | "stats" | "log";
+/** What the drawer beside the table is showing, if it is open. */
+type Drawer = "stats" | "log";
 
 const PHONE_QUERY = "(max-width: 720px)";
 const REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
@@ -158,7 +159,31 @@ export function TableView({
   const phone = useMediaQuery(PHONE_QUERY);
   const reducedMotion = useMediaQuery(REDUCED_MOTION_QUERY);
   const timings = presentationTimings(speed);
-  const [panel, setPanel] = useState<Panel>("table");
+  const [drawer, setDrawer] = useState<Drawer | null>(null);
+  const drawerRef = useRef<HTMLDivElement>(null);
+  /** The header button that opened the drawer, which gets the focus back when it closes. */
+  const openerRef = useRef<HTMLElement | null>(null);
+  const closeDrawer = () => {
+    setDrawer(null);
+    openerRef.current?.focus();
+  };
+  const toggleDrawer = (key: Drawer, opener: HTMLElement) => {
+    openerRef.current = opener;
+    if (drawer === key) closeDrawer();
+    else setDrawer(key);
+  };
+  // Focus goes into the drawer as it opens (or changes panel), and Escape closes it.
+  useEffect(() => {
+    if (drawer === null) return;
+    drawerRef.current?.focus();
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      setDrawer(null);
+      openerRef.current?.focus();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [drawer]);
   /** Recording mode: the table alone, narrated. Kept here, and only for this sitting. */
   const [showcase, setShowcase] = useState(false);
 
@@ -329,12 +354,6 @@ export function TableView({
   const radiusX = phone ? 40 : 42;
   const radiusY = phone ? 42 : 40;
 
-  // On a phone one panel shows at a time; on a wide screen the felt is always up and the
-  // side column carries whichever of the two panels the tab switch selected. Recording mode
-  // takes the side column for itself.
-  const showFelt = !phone || panel === "table" || showcase;
-  const showStats = !showcase && panel === "stats";
-  const showLog = !showcase && (phone ? panel === "log" : panel !== "stats");
   const last = state.lastDecision;
   const nameOf = (seat: SeatId) => personaNames?.[seat] ?? names.get(seat) ?? `#${seat}`;
   const bigBlind = snapshot?.bigBlind ?? 0;
@@ -396,150 +415,164 @@ export function TableView({
   return (
     <section ref={screenRef} className={showcase ? "table-screen showcase-mode" : "table-screen"}>
       <div className="table-main">
-        <div className="table-header row">
-          <span>{snapshot !== null && t("table.hand", { number: snapshot.handNumber + 1 })}</span>
-          {game.spectator && !phone && !showcase && (
-            <span className="badge">{t("table.spectating")}</span>
-          )}
-          {game.spectator && !phone && rate !== null && (
-            <span className="badge">{t("table.handsPerMin", { rate })}</span>
-          )}
-          <button
-            type="button"
-            className="secondary"
-            onClick={game.togglePause}
-            // A server stop is final for the sitting: the dialog covers the table, but the
-            // keyboard can still reach this button behind it.
-            disabled={state.gameOver || stopReason !== null}
-          >
-            {state.paused ? t("table.resume") : t("table.pause")}
-          </button>
-          {state.pauseReason === "tonight" && !showcase && (
-            <span className="badge">
-              {stopReason === "unavailable" ? t("table.paused") : t("tonight.title")}
-            </span>
-          )}
-          {showcase ? (
+        {/* The hand and its badges on the left; every control together on the right. */}
+        <div className="table-header">
+          <div className="table-header-info row">
+            <span>{snapshot !== null && t("table.hand", { number: snapshot.handNumber + 1 })}</span>
+            {game.spectator && !phone && !showcase && (
+              <span className="badge">{t("table.spectating")}</span>
+            )}
+            {game.spectator && !phone && rate !== null && (
+              <span className="badge">{t("table.handsPerMin", { rate })}</span>
+            )}
+            {state.pauseReason === "tonight" && !showcase && (
+              <span className="badge">
+                {stopReason === "unavailable" ? t("table.paused") : t("tonight.title")}
+              </span>
+            )}
+          </div>
+          <div className="table-header-actions row">
             <button
               type="button"
-              className="secondary showcase-exit"
-              aria-label={t("showcase.exit")}
-              onClick={() => setShowcase(false)}
+              className="secondary"
+              onClick={game.togglePause}
+              // A server stop is final for the sitting: the dialog covers the table, but the
+              // keyboard can still reach this button behind it.
+              disabled={state.gameOver || stopReason !== null}
             >
-              ×
+              {state.paused ? t("table.resume") : t("table.pause")}
             </button>
-          ) : (
-            <>
-              <button type="button" className="secondary" onClick={onOpenSettings}>
-                {t("title.settings")}
+            {showcase ? (
+              <button
+                type="button"
+                className="secondary showcase-exit"
+                aria-label={t("showcase.exit")}
+                onClick={() => setShowcase(false)}
+              >
+                ×
               </button>
-              {recording && (
-                <button type="button" className="secondary" onClick={() => setShowcase(true)}>
-                  {t("showcase.toggle")}
+            ) : (
+              <>
+                {(["log", "stats"] as const).map((key) => (
+                  <button
+                    key={key}
+                    type="button"
+                    className={drawer === key ? "" : "secondary"}
+                    aria-expanded={drawer === key}
+                    aria-haspopup="dialog"
+                    onClick={(event) => toggleDrawer(key, event.currentTarget)}
+                  >
+                    {t(`tabs.${key}`)}
+                  </button>
+                ))}
+                <button type="button" className="secondary" onClick={onOpenSettings}>
+                  {t("title.settings")}
                 </button>
-              )}
-              <button type="button" className="secondary" onClick={onLeave}>
-                {t("table.leave")}
-              </button>
-            </>
-          )}
+                {recording && (
+                  <button type="button" className="secondary" onClick={() => setShowcase(true)}>
+                    {t("showcase.toggle")}
+                  </button>
+                )}
+                <button type="button" className="secondary" onClick={onLeave}>
+                  {t("table.leave")}
+                </button>
+              </>
+            )}
+          </div>
         </div>
 
-        {showFelt && (
-          <div ref={feltRef} className="felt" style={feltVars}>
-            {layout.map(({ seat, player, x, y, inward }) => {
-              const style = { left: `${x}%`, top: `${y}%` };
-              const thinking = state.thinkingSeat === seat.id;
-              // A seat is narrated while it thinks, and for a moment after it has decided.
-              const decided = last !== null && last.seat === seat.id ? last : null;
-              const bubble =
-                showcase && (thinking || decided !== null) ? (
-                  <DecisionBubble
-                    seat={seat.id}
-                    personaName={nameOf(seat.id)}
-                    thinking={thinking}
-                    decision={decided?.record ?? null}
-                    features={decided?.features ?? null}
-                    bigBlind={snapshot?.bigBlind ?? 0}
-                    visibleUntil={decided === null ? null : decided.at + timings.decisionHoldMs}
-                    speed={speed}
-                    compact={compactBubble(inward)}
-                  />
-                ) : null;
-              return (
-                <SeatView
-                  key={seat.id}
-                  seat={seat}
-                  player={player}
-                  isButton={snapshot?.button === seat.id}
-                  isActing={snapshot?.actingSeat === seat.id && !snapshot.complete}
-                  isThinking={thinking}
-                  revealCards={revealAll || game.humanSeats.includes(seat.id)}
-                  style={style}
-                  overlay={bubble}
-                  callout={calloutBySeat.get(seat.id) ?? null}
-                  winnerAt={fx.winners.includes(seat.id) ? fx.winnersAt : 0}
-                  flipAt={revealAll ? fx.flipAt : 0}
+        {/* The felt is always up, on a phone too: the log and stats open over it. */}
+        <div ref={feltRef} className="felt" style={feltVars}>
+          {layout.map(({ seat, player, x, y, inward }) => {
+            const style = { left: `${x}%`, top: `${y}%` };
+            const thinking = state.thinkingSeat === seat.id;
+            // A seat is narrated while it thinks, and for a moment after it has decided.
+            const decided = last !== null && last.seat === seat.id ? last : null;
+            const bubble =
+              showcase && (thinking || decided !== null) ? (
+                <DecisionBubble
+                  seat={seat.id}
+                  personaName={nameOf(seat.id)}
+                  thinking={thinking}
+                  decision={decided?.record ?? null}
+                  features={decided?.features ?? null}
+                  bigBlind={snapshot?.bigBlind ?? 0}
+                  visibleUntil={decided === null ? null : decided.at + timings.decisionHoldMs}
+                  speed={speed}
+                  compact={compactBubble(inward)}
                 />
-              );
-            })}
-
-            {/* Chips on their way out to a bet, into the pot, or home to a winner. */}
-            <TableFxLayer moves={fx.chipMoves} spots={spots} bigBlind={bigBlind} />
-
-            {/* A 御霊's all-in, big pot or bust, over the middle. */}
-            <CutInLayer cutIn={fx.cutIn} spirit={cutInSpirit} gate={gate} />
-
-            {/* Each seat's live bet, drawn as chips between the player and the middle. */}
-            {layout.map(({ seat, player, betX, betY }) => (
-              <ChipStack
+              ) : null;
+            return (
+              <SeatView
                 key={seat.id}
-                className="bet-stack"
-                amount={fx.potPaid ? 0 : (player?.streetBet ?? 0)}
+                seat={seat}
+                player={player}
+                isButton={snapshot?.button === seat.id}
+                isActing={snapshot?.actingSeat === seat.id && !snapshot.complete}
+                isThinking={thinking}
+                revealCards={revealAll || game.humanSeats.includes(seat.id)}
+                style={style}
+                overlay={bubble}
+                callout={calloutBySeat.get(seat.id) ?? null}
+                winnerAt={fx.winners.includes(seat.id) ? fx.winnersAt : 0}
+                flipAt={revealAll ? fx.flipAt : 0}
+              />
+            );
+          })}
+
+          {/* Chips on their way out to a bet, into the pot, or home to a winner. */}
+          <TableFxLayer moves={fx.chipMoves} spots={spots} bigBlind={bigBlind} />
+
+          {/* A 御霊's all-in, big pot or bust, over the middle. */}
+          <CutInLayer cutIn={fx.cutIn} spirit={cutInSpirit} gate={gate} />
+
+          {/* Each seat's live bet, drawn as chips between the player and the middle. */}
+          {layout.map(({ seat, player, betX, betY }) => (
+            <ChipStack
+              key={seat.id}
+              className="bet-stack"
+              amount={fx.potPaid ? 0 : (player?.streetBet ?? 0)}
+              bigBlind={bigBlind}
+              style={{ left: `${betX}%`, top: `${betY}%` }}
+            />
+          ))}
+
+          {/* Every seat's bubble, in one layer above the chips and below the cut-in. */}
+          <div className="speech-layer">
+            {layout.map(({ seat, x, y, inward }) => (
+              <SeatSpeech
+                key={seat.id}
+                style={{ left: `${x}%`, top: `${y}%` }}
+                callout={calloutBySeat.get(seat.id) ?? null}
+                speech={speechBySeat.get(seat.id) ?? greetings.get(seat.id) ?? null}
                 bigBlind={bigBlind}
-                style={{ left: `${betX}%`, top: `${betY}%` }}
+                inward={inward}
               />
             ))}
-
-            {/* Every seat's bubble, in one layer above the chips and below the cut-in. */}
-            <div className="speech-layer">
-              {layout.map(({ seat, x, y, inward }) => (
-                <SeatSpeech
-                  key={seat.id}
-                  style={{ left: `${x}%`, top: `${y}%` }}
-                  callout={calloutBySeat.get(seat.id) ?? null}
-                  speech={speechBySeat.get(seat.id) ?? greetings.get(seat.id) ?? null}
-                  bigBlind={bigBlind}
-                  inward={inward}
-                />
-              ))}
-            </div>
-
-            <div className="board">
-              <div className="board-cards">
-                {[0, 1, 2, 3, 4].map((i) => {
-                  const card = snapshot?.board[i] ?? null;
-                  // Keying on the card itself remounts only the slots that just changed, so
-                  // a new street's cards pop in and the ones already out stay put.
-                  return (
-                    <CardView key={`${i}:${card === null ? "" : cardText(card)}`} card={card} />
-                  );
-                })}
-              </div>
-              {snapshot !== null && (
-                <PotView
-                  pot={pot}
-                  total={total}
-                  bigBlind={bigBlind}
-                  ms={reducedMotion ? 0 : timings.potCountMs}
-                />
-              )}
-            </div>
           </div>
-        )}
+
+          <div className="board">
+            <div className="board-cards">
+              {[0, 1, 2, 3, 4].map((i) => {
+                const card = snapshot?.board[i] ?? null;
+                // Keying on the card itself remounts only the slots that just changed, so
+                // a new street's cards pop in and the ones already out stay put.
+                return <CardView key={`${i}:${card === null ? "" : cardText(card)}`} card={card} />;
+              })}
+            </div>
+            {snapshot !== null && (
+              <PotView
+                pot={pot}
+                total={total}
+                bigBlind={bigBlind}
+                ms={reducedMotion ? 0 : timings.potCountMs}
+              />
+            )}
+          </div>
+        </div>
 
         {/* The strip belongs to the felt; a phone has no room for it unless it is the shot. */}
-        {showFelt && (!phone || showcase) && (
+        {(!phone || showcase) && (
           <ActionFeed entries={fx.feed} nameOf={nameOf} bigBlind={bigBlind} />
         )}
 
@@ -568,48 +601,56 @@ export function TableView({
         )}
       </div>
 
-      <div className="table-side">
-        {showcase && (
+      {/* Recording mode keeps a column of its own for the decision being narrated. */}
+      {showcase && (
+        <div className="table-side">
           <ShowcasePanel
             last={last}
             personaName={last === null ? "" : nameOf(last.seat)}
             bigBlind={snapshot?.bigBlind ?? 0}
           />
-        )}
-        {!showcase && !phone && (
-          <div className="row side-tabs">
-            <button
-              type="button"
-              className={showLog ? "" : "secondary"}
-              aria-pressed={showLog}
-              onClick={() => setPanel("log")}
-            >
-              {t("tabs.log")}
-            </button>
-            <button
-              type="button"
-              className={showStats ? "" : "secondary"}
-              aria-pressed={showStats}
-              onClick={() => setPanel("stats")}
-            >
-              {t("tabs.stats")}
-            </button>
+        </div>
+      )}
+
+      {/* The log and the stats slide in over the table from the right, one at a time. */}
+      {drawer !== null && !showcase && (
+        <>
+          <div className="drawer-backdrop" aria-hidden="true" onClick={closeDrawer} />
+          <div
+            ref={drawerRef}
+            className="drawer"
+            role="dialog"
+            aria-modal="true"
+            aria-label={drawer === "stats" ? t("stats.title") : t("history.title")}
+            tabIndex={-1}
+          >
+            <div className="drawer-head">
+              <button
+                type="button"
+                className="secondary drawer-close"
+                aria-label={t("settings.close")}
+                onClick={closeDrawer}
+              >
+                ×
+              </button>
+            </div>
+            {drawer === "stats" ? (
+              <StatsPanel
+                seats={state.seats}
+                session={state.stats}
+                cumulative={game.cumulative}
+                keys={game.statsKeys}
+                startingStack={startingStack}
+                bigBlind={bigBlind}
+                onResetCumulative={game.resetCumulative}
+                language={language}
+              />
+            ) : (
+              <HistoryPanel log={state.log} names={names} />
+            )}
           </div>
-        )}
-        {showStats && (
-          <StatsPanel
-            seats={state.seats}
-            session={state.stats}
-            cumulative={game.cumulative}
-            keys={game.statsKeys}
-            startingStack={startingStack}
-            bigBlind={bigBlind}
-            onResetCumulative={game.resetCumulative}
-            language={language}
-          />
-        )}
-        {showLog && <HistoryPanel log={state.log} names={names} />}
-      </div>
+        </>
+      )}
 
       {showcase && (
         <div className="showcase-bottom">
@@ -621,22 +662,6 @@ export function TableView({
           />
           <p className="showcase-corner">{t("showcase.poweredBy")}</p>
         </div>
-      )}
-
-      {!showcase && phone && (
-        <nav className="tab-bar">
-          {(["table", "stats", "log"] as const).map((key) => (
-            <button
-              key={key}
-              type="button"
-              className={panel === key ? "" : "secondary"}
-              aria-pressed={panel === key}
-              onClick={() => setPanel(key)}
-            >
-              {t(`tabs.${key}`)}
-            </button>
-          ))}
-        </nav>
       )}
     </section>
   );

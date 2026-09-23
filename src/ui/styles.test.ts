@@ -129,10 +129,23 @@ describe("dialog stacking", () => {
       ".fx-layer",
       ".speech-layer",
       ".cutin",
-      ".tab-bar",
+      ".drawer",
+      ".drawer-backdrop",
       ".your-turn",
     ]) {
       expect(dialog, selector).toBeGreaterThan(z(selector));
     }
+  });
+
+  it("slides the drawer in above the felt, the chips, the cut-in and the action bar", () => {
+    const z = (selector: string) => Number(/z-index:\s*(\d+)/.exec(rule(selector))?.[1] ?? 0);
+    for (const selector of [".speech-layer", ".cutin", ".your-turn"]) {
+      expect(z(".drawer"), selector).toBeGreaterThan(z(selector));
+      expect(z(".drawer-backdrop"), selector).toBeGreaterThan(z(selector));
+    }
+    expect(z(".drawer")).toBeGreaterThan(z(".drawer-backdrop"));
+    expect(z(".turnstile-challenge")).toBeGreaterThan(z(".drawer"));
+    expect(rule(".drawer")).toMatch(/position:\s*fixed/);
+    expect(rule(".drawer")).toMatch(/right:\s*0/);
   });
 });

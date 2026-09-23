@@ -442,8 +442,9 @@ a {
   --board-card-width: 32px;
   /* How far towards the middle a callout is thrown from its seat's centre. */
   --callout-reach: 34px;
+  /* One column: the felt has the full width, and the log and stats open over it. */
   display: grid;
-  grid-template-columns: 1fr 320px;
+  grid-template-columns: minmax(0, 1fr);
   gap: 16px;
   align-items: start;
 }
@@ -456,19 +457,21 @@ a {
 .table-screen > * {
   min-width: 0;
 }
-@media (max-width: 900px) {
-  .table-screen {
-    grid-template-columns: 1fr;
-  }
-}
-.side-tabs {
-  margin-bottom: 8px;
-}
-.side-tabs button {
-  flex: 1;
-}
+/* The hand and its badges on the left, the controls kept together on the right. When the
+   row runs out of room the controls drop below as one group, and wrap within it. */
 .table-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
   justify-content: space-between;
+  gap: 8px 16px;
+}
+.table-header-info {
+  min-width: 0;
+}
+.table-header-actions {
+  justify-content: flex-end;
+  margin-left: auto;
 }
 .badge {
   padding: 2px 10px;
@@ -490,7 +493,10 @@ a {
   border: 1px solid var(--kitan-line);
   /* The seats sit on the rail and lean out over it; the room above and below is theirs, so
      the top seat never meets the header and the bottom one never meets the feed. */
-  margin: 72px 0 64px;
+  margin: 72px auto 64px;
+  /* The full width, as long as the felt, the feed and a player's buttons still fit the
+     screen's height: a 16:10 oval 1100px wide pushed the action bar below the fold. */
+  width: min(100%, max(640px, calc((100vh - 380px) * 1.6)));
   box-shadow:
     inset 0 0 0 1px rgba(0, 0, 0, 0.6),
     inset 0 18px 48px rgba(0, 0, 0, 0.5),
@@ -1541,22 +1547,67 @@ button.danger {
   text-shadow: none;
 }
 
-.tab-bar {
+/* --- The drawer: the log or the stats, slid in over the table from the right ------ */
+/* Above everything on the felt (the cut-in is 7) and the phone's action bar (19), below the
+   dialogs (30) and the Turnstile challenge (40). */
+.drawer-backdrop {
   position: fixed;
-  left: 0;
+  inset: 0;
+  z-index: 24;
+  background: rgba(8, 7, 16, 0.4);
+  animation: drawer-fade 180ms ease-out;
+}
+.drawer {
+  position: fixed;
+  top: 0;
   right: 0;
   bottom: 0;
-  z-index: 20;
+  z-index: 25;
   display: flex;
-  gap: 6px;
-  padding: 6px 8px;
-  padding-bottom: calc(6px + env(safe-area-inset-bottom, 0px));
+  flex-direction: column;
+  gap: 8px;
+  width: min(420px, 100vw);
+  box-sizing: border-box;
+  padding: 12px;
+  padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+  overflow: auto;
   background: var(--kitan-yoiyami);
-  border-top: 1px solid var(--kitan-line-quiet);
+  border-left: 1px solid var(--kitan-line-quiet);
+  box-shadow: -16px 0 40px rgba(0, 0, 0, 0.6);
+  animation: drawer-in 220ms var(--kitan-ease);
 }
-.tab-bar button {
-  flex: 1;
-  min-height: 44px;
+.drawer:focus {
+  outline: none;
+}
+.drawer-head {
+  display: flex;
+  justify-content: flex-end;
+}
+.drawer-close {
+  min-width: 44px;
+  font-size: 1.1rem;
+}
+/* The drawer scrolls as a whole; the panels inside it need no height cap of their own. */
+.drawer .history,
+.drawer .stats {
+  max-height: none;
+  overflow: visible;
+}
+@keyframes drawer-in {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: none;
+  }
+}
+@keyframes drawer-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 @media (max-width: 720px) {
   .table-screen {
@@ -1568,17 +1619,18 @@ button.danger {
     --board-card-width: 28px;
     --callout-reach: 26px;
     gap: 8px;
-    /* Room for the fixed tab bar and the action bar above it, plus the gesture area. */
-    padding-bottom: calc(72px + var(--turn-bar-height, 0px) + env(safe-area-inset-bottom, 0px));
+    /* Room for the fixed action bar, plus the gesture area. */
+    padding-bottom: calc(16px + var(--turn-bar-height, 0px) + env(safe-area-inset-bottom, 0px));
   }
   .felt {
     aspect-ratio: 3 / 4;
+    width: auto;
     /* The top seat leans out over the rail by most of its own height: room above keeps it
        off the header, now that the header is a single row. */
     margin: 44px 0 12px;
     /* Where a turn scrolls the felt to: its bottom edge resting on top of the action bar. */
     scroll-margin-bottom: calc(
-      72px +
+      16px +
       var(--turn-bar-height, 0px) +
       env(safe-area-inset-bottom, 0px)
     );
@@ -1587,16 +1639,31 @@ button.danger {
   .table-header select {
     min-height: 40px;
   }
-  .stats,
-  .history {
-    max-height: none;
+  /* A side seat's bubble is centred a little inside its seat: at the desktop width a line
+     ran past the right edge of a 412px page and widened it. */
+  .speech {
+    max-width: 160px;
   }
-  /* The action bar outranks the tabs: it stays put whichever panel is showing. */
+  /* Tighter buttons, so the five controls share one row at 412px. */
+  .table-header-actions {
+    gap: 6px;
+  }
+  .table-header-actions button {
+    padding: 6px 8px;
+    letter-spacing: 0.04em;
+  }
+  .drawer {
+    /* The whole width of a phone (100vw would count the scrollbar gutter too). */
+    left: 0;
+    width: auto;
+    border-left: none;
+  }
+  /* The action bar is fixed to the bottom edge, over the page below the felt. */
   .your-turn {
     position: fixed;
     left: 0;
     right: 0;
-    bottom: calc(56px + env(safe-area-inset-bottom, 0px));
+    bottom: 0;
     z-index: 19;
     margin: 0;
     max-height: 45vh;
@@ -1604,6 +1671,7 @@ button.danger {
     border-radius: 0;
     background: var(--kitan-yoiyami);
     padding: 8px 10px;
+    padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px));
     border-width: 1px 0 0;
   }
   /* The heading costs a row the felt needs more; the bar lighting up says it just as well. */
@@ -1901,7 +1969,7 @@ body.showcase .app {
 .table-screen.showcase-mode .table-header:focus-within {
   opacity: 1;
 }
-.table-screen.showcase-mode .table-header > span:first-child {
+.table-screen.showcase-mode .table-header-info {
   margin-right: auto;
   opacity: 0.8;
 }

@@ -80,6 +80,8 @@ describe("App", () => {
     fireEvent.click(screen.getByRole("button", { name: "Watch" }));
 
     await waitFor(() => expect(screen.getByText("Spectator mode")).toBeInTheDocument());
+    // The record opens from the header, as a drawer over the table.
+    fireEvent.click(screen.getByRole("button", { name: "Log" }));
     expect(screen.getByRole("heading", { name: "Hand history" })).toBeInTheDocument();
     // Every CPU action carries the decision (its "read") the history panel expands.
     await waitFor(() => expect(screen.getAllByText("Read").length).toBeGreaterThan(0), {
@@ -95,6 +97,8 @@ describe("App", () => {
     expect(urls.slice(1).every((url) => url === "/api/jev/decide")).toBe(true);
     expect(urls.length).toBeGreaterThan(1);
     expect(screen.queryByText(/could not decide/)).not.toBeInTheDocument();
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     // No recording mode unless the page was opened for it.
     expect(screen.queryByRole("button", { name: "Recording mode" })).not.toBeInTheDocument();
 

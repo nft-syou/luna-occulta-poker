@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import "@testing-library/jest-dom/vitest";
 import type { HandSnapshot, LegalActions } from "@jev-poker/engine";
-import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { SoundPlayer } from "../characters/sound";
 import type { VoicePlayer } from "../characters/voice";
@@ -154,28 +154,23 @@ function renderTable(
 }
 
 describe("TableView", () => {
-  it("shows one panel at a time behind a tab bar on a phone", () => {
+  it("keeps the felt up on a phone and opens the log and stats from the header", () => {
     stubViewport(true);
     const { container } = renderTable();
 
-    expect(container.querySelector(".tab-bar")).not.toBeNull();
+    // No bottom tab bar and no side column: the felt is the page.
+    expect(container.querySelector(".tab-bar")).toBeNull();
+    expect(container.querySelector(".table-side")).toBeNull();
     expect(container.querySelector(".felt")).not.toBeNull();
-    expect(screen.queryByRole("heading", { name: "Hand history" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("heading", { name: "Statistics" })).not.toBeInTheDocument();
-    // The action bar sits above the tabs and does not belong to any one panel.
-    expect(screen.getByText("Your turn")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Table" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "Stats" }));
-    expect(screen.getByRole("heading", { name: "Statistics" })).toBeInTheDocument();
-    expect(container.querySelector(".felt")).toBeNull();
-    expect(screen.getByText("Your turn")).toBeInTheDocument();
-
-    fireEvent.click(screen.getByRole("button", { name: "Log" }));
-    expect(screen.getByRole("heading", { name: "Hand history" })).toBeInTheDocument();
-    expect(screen.queryByRole("heading", { name: "Statistics" })).not.toBeInTheDocument();
-
-    fireEvent.click(screen.getByRole("button", { name: "Table" }));
+    const dialog = screen.getByRole("dialog", { name: "Statistics" });
+    expect(within(dialog).getByRole("heading", { name: "Statistics" })).toBeInTheDocument();
+    // The felt and the action bar stay where they were, under the drawer.
     expect(container.querySelector(".felt")).not.toBeNull();
+    expect(screen.getByText("Your turn")).toBeInTheDocument();
   });
 
   it("swaps the side column for the recording layout and leaves it on Escape", () => {
@@ -217,19 +212,69 @@ describe("TableView", () => {
     expect(bubble).toHaveTextContent("Thinking…");
   });
 
-  it("keeps the felt and one side panel on a wide screen", () => {
+  it("gives the felt the full width on a wide screen, with no side column", () => {
     stubViewport(false);
     const { container } = renderTable();
-
-    expect(container.querySelector(".tab-bar")).toBeNull();
-    expect(screen.queryByRole("button", { name: "Table" })).not.toBeInTheDocument();
+    expect(container.querySelector(".table-side")).toBeNull();
     expect(container.querySelector(".felt")).not.toBeNull();
-    expect(screen.getByRole("heading", { name: "Hand history" })).toBeInTheDocument();
-
-    fireEvent.click(screen.getByRole("button", { name: "Stats" }));
-    expect(container.querySelector(".felt")).not.toBeNull();
-    expect(screen.getByRole("heading", { name: "Statistics" })).toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "Hand history" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Statistics" })).not.toBeInTheDocument();
+  });
+
+  it("opens the log as a drawer, one panel at a time, and closes it again", () => {
+    stubViewport(false);
+    renderTable();
+    const log = screen.getByRole("button", { name: "Log" });
+    const stats = screen.getByRole("button", { name: "Stats" });
+    expect(log).toHaveAttribute("aria-expanded", "false");
+
+    fireEvent.click(log);
+    const dialog = screen.getByRole("dialog", { name: "Hand history" });
+    expect(dialog).toHaveAttribute("aria-modal", "true");
+    expect(log).toHaveAttribute("aria-expanded", "true");
+    // Focus goes into the drawer.
+    expect(dialog.contains(document.activeElement)).toBe(true);
+
+    // The other button swaps the panel: never two drawers.
+    fireEvent.click(stats);
+    expect(screen.getAllByRole("dialog")).toHaveLength(1);
+    expect(screen.getByRole("dialog", { name: "Statistics" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Hand history" })).not.toBeInTheDocument();
+
+    // The same button again closes it.
+    fireEvent.click(stats);
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("closes the drawer with Escape, its close button or a click beside it", () => {
+    stubViewport(false);
+    const { container } = renderTable();
+    const log = screen.getByRole("button", { name: "Log" });
+
+    fireEvent.click(log);
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    // Focus comes back to the button that opened it.
+    expect(document.activeElement).toBe(log);
+
+    fireEvent.click(log);
+    fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Close" }));
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+
+    fireEvent.click(log);
+    fireEvent.click(container.querySelector(".drawer-backdrop") as Element);
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("groups the hand and badges on the left and the buttons together on the right", () => {
+    stubViewport(false);
+    const { container } = renderTable({}, { recording: true });
+    const info = container.querySelector(".table-header-info");
+    const actions = container.querySelector(".table-header-actions");
+    expect(info).toHaveTextContent("Hand #1");
+    const names = [...(actions?.querySelectorAll("button") ?? [])].map((b) => b.textContent);
+    expect(names).toEqual(["Pause", "Log", "Stats", "Settings", "Recording mode", "Leave table"]);
+    expect(info?.querySelector("button")).toBeNull();
   });
 
   it("offers no recording button unless the page was opened for recording", () => {
