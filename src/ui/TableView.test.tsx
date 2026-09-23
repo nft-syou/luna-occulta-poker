@@ -221,11 +221,10 @@ describe("TableView", () => {
     expect(screen.queryByRole("heading", { name: "Statistics" })).not.toBeInTheDocument();
   });
 
-  it("opens the log as a drawer, one panel at a time, and closes it again", () => {
+  it("opens the log as a drawer and switches panels from inside it", () => {
     stubViewport(false);
-    renderTable();
+    const { container } = renderTable();
     const log = screen.getByRole("button", { name: "Log" });
-    const stats = screen.getByRole("button", { name: "Stats" });
     expect(log).toHaveAttribute("aria-expanded", "false");
 
     fireEvent.click(log);
@@ -235,15 +234,37 @@ describe("TableView", () => {
     // Focus goes into the drawer.
     expect(dialog.contains(document.activeElement)).toBe(true);
 
-    // The other button swaps the panel: never two drawers.
-    fireEvent.click(stats);
+    // The backdrop covers the header, so the drawer carries its own switch: one click swaps
+    // the panel, and there is never a second drawer.
+    const logTab = within(dialog).getByRole("button", { name: "Log" });
+    expect(logTab).toHaveAttribute("aria-pressed", "true");
+    fireEvent.click(within(dialog).getByRole("button", { name: "Stats" }));
     expect(screen.getAllByRole("dialog")).toHaveLength(1);
-    expect(screen.getByRole("dialog", { name: "Statistics" })).toBeInTheDocument();
+    const stats = screen.getByRole("dialog", { name: "Statistics" });
+    expect(within(stats).getByRole("button", { name: "Stats" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
     expect(screen.queryByRole("heading", { name: "Hand history" })).not.toBeInTheDocument();
+    expect(container.querySelectorAll(".drawer")).toHaveLength(1);
+  });
 
-    // The same button again closes it.
-    fireEvent.click(stats);
-    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  it("makes the rest of the table inert while the drawer is open", () => {
+    stubViewport(false);
+    const { container } = renderTable();
+    const main = container.querySelector(".table-main") as HTMLElement;
+    expect(main).not.toHaveAttribute("inert");
+
+    const log = screen.getByRole("button", { name: "Log" });
+    fireEvent.click(log);
+    // Tab cannot reach the header, the felt or the action bar behind the drawer.
+    expect(main).toHaveAttribute("inert");
+    expect(main.contains(screen.getByRole("dialog"))).toBe(false);
+
+    fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Close" }));
+    expect(main).not.toHaveAttribute("inert");
+    // The opener is focusable again, and has the focus back.
+    expect(document.activeElement).toBe(log);
   });
 
   it("closes the drawer with Escape, its close button or a click beside it", () => {
@@ -264,6 +285,44 @@ describe("TableView", () => {
     fireEvent.click(log);
     fireEvent.click(container.querySelector(".drawer-backdrop") as Element);
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("leaves the drawer open when Escape belongs to a dialog above it", () => {
+    stubViewport(false);
+    renderTable();
+    fireEvent.click(screen.getByRole("button", { name: "Log" }));
+    // The night's dialog (or the settings) opens over the drawer, outside the table.
+    const above = document.createElement("div");
+    above.className = "modal-backdrop";
+    document.body.append(above);
+    try {
+      fireEvent.keyDown(document, { key: "Escape" });
+      expect(screen.getByRole("dialog", { name: "Hand history" })).toBeInTheDocument();
+    } finally {
+      above.remove();
+    }
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("closes the drawer when it becomes the player's turn, so the action bar shows", () => {
+    stubViewport(true);
+    const props = {
+      speed: "normal" as const,
+      startingStack: 200,
+      language: "en" as const,
+      onLeave: () => {},
+      onOpenSettings: () => {},
+      recording: false,
+    };
+    const waiting = { ...controller(), legalForHuman: null };
+    const { rerender } = render(<TableView game={waiting} {...props} />);
+    fireEvent.click(screen.getByRole("button", { name: "Log" }));
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+
+    rerender(<TableView game={controller()} {...props} />);
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(screen.getByText("Your turn")).toBeInTheDocument();
   });
 
   it("groups the hand and badges on the left and the buttons together on the right", () => {

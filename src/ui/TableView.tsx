@@ -163,23 +163,36 @@ export function TableView({
   const drawerRef = useRef<HTMLDivElement>(null);
   /** The header button that opened the drawer, which gets the focus back when it closes. */
   const openerRef = useRef<HTMLElement | null>(null);
+  /** Set by a close the player asked for; a turn closing the drawer leaves the focus be. */
+  const refocusRef = useRef(false);
   const closeDrawer = () => {
+    refocusRef.current = true;
     setDrawer(null);
-    openerRef.current?.focus();
   };
   const toggleDrawer = (key: Drawer, opener: HTMLElement) => {
     openerRef.current = opener;
     if (drawer === key) closeDrawer();
     else setDrawer(key);
   };
-  // Focus goes into the drawer as it opens (or changes panel), and Escape closes it.
+  // Focus goes into the drawer as it opens (or changes panel). On close it goes back to the
+  // opener — after the render that lifts `inert` from the header, or it would not take it.
+  useEffect(() => {
+    if (drawer !== null) {
+      drawerRef.current?.focus();
+      return;
+    }
+    if (refocusRef.current) openerRef.current?.focus();
+    refocusRef.current = false;
+  }, [drawer]);
+  // Escape closes the drawer, unless a dialog above it (the settings, the night's end) is
+  // what the key is meant for: those live outside the table, over the drawer.
   useEffect(() => {
     if (drawer === null) return;
-    drawerRef.current?.focus();
     const onKey = (event: KeyboardEvent) => {
       if (event.key !== "Escape") return;
+      if (document.querySelector(".modal-backdrop") !== null) return;
+      refocusRef.current = true;
       setDrawer(null);
-      openerRef.current?.focus();
     };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
@@ -213,6 +226,10 @@ export function TableView({
   const feltRef = useRef<HTMLDivElement>(null);
   const turnRef = useRef<HTMLDivElement>(null);
   const legalForHuman = game.legalForHuman;
+  // The player's turn closes the drawer: it covers the action bar, on a phone all of it.
+  useEffect(() => {
+    if (legalForHuman !== null) setDrawer(null);
+  }, [legalForHuman]);
   // biome-ignore lint/correctness/useExhaustiveDependencies: a new turn is a new `legalForHuman`, and the bar is as tall as what it offers.
   useLayoutEffect(() => {
     const bar = turnRef.current;
@@ -414,7 +431,8 @@ export function TableView({
 
   return (
     <section ref={screenRef} className={showcase ? "table-screen showcase-mode" : "table-screen"}>
-      <div className="table-main">
+      {/* Behind an open drawer the table is inert: Tab cannot wander under the backdrop. */}
+      <div className="table-main" inert={drawer !== null && !showcase}>
         {/* The hand and its badges on the left; every control together on the right. */}
         <div className="table-header">
           <div className="table-header-info row">
@@ -625,6 +643,20 @@ export function TableView({
             tabIndex={-1}
           >
             <div className="drawer-head">
+              {/* The backdrop covers the header, so the drawer switches panels itself. */}
+              <div className="row drawer-tabs">
+                {(["log", "stats"] as const).map((key) => (
+                  <button
+                    key={key}
+                    type="button"
+                    className={drawer === key ? "" : "secondary"}
+                    aria-pressed={drawer === key}
+                    onClick={() => setDrawer(key)}
+                  >
+                    {t(`tabs.${key}`)}
+                  </button>
+                ))}
+              </div>
               <button
                 type="button"
                 className="secondary drawer-close"

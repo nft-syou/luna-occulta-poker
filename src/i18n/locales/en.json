@@ -159,7 +159,7 @@
     "award": "{{name}} wins {{amount}}",
     "rebuy": "{{name}} rebuys for {{amount}}",
     "handEnded": "Hand #{{number}} over",
-    "jev": "Read",
+    "jev": "Reasoning",
     "prefetched": "⚡ prefetched",
     "probabilities": "Probabilities",
     "sizing": "Sizing",

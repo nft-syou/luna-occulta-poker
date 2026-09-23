@@ -84,7 +84,7 @@ describe("App", () => {
     fireEvent.click(screen.getByRole("button", { name: "Log" }));
     expect(screen.getByRole("heading", { name: "Hand history" })).toBeInTheDocument();
     // Every CPU action carries the decision (its "read") the history panel expands.
-    await waitFor(() => expect(screen.getAllByText("Read").length).toBeGreaterThan(0), {
+    await waitFor(() => expect(screen.getAllByText("Reasoning").length).toBeGreaterThan(0), {
       timeout: 15_000,
     });
     // A pass first, then the decisions from the Worker's decide endpoint, not from the
