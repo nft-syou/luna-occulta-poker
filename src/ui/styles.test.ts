@@ -53,6 +53,16 @@ describe("action bar guards", () => {
     expect(phone).toMatch(/scroll-margin-bottom:\s*calc\([^;]*var\(--turn-bar-height, 0px\)/);
   });
 
+  it("pins the bar to the bottom of a wide screen, so no height needs a scroll to reach it", () => {
+    const wide = css.slice(css.indexOf("@media (min-width: 721px)"));
+    const bar = /\.your-turn \{([^}]*)\}/.exec(wide)?.[1] ?? "";
+    expect(bar).toMatch(/position:\s*sticky/);
+    expect(bar).toMatch(/bottom:\s*0/);
+    const z = Number(/z-index:\s*(\d+)/.exec(bar)?.[1] ?? 0);
+    expect(z).toBeGreaterThan(Number(/z-index:\s*(\d+)/.exec(rule(".cutin"))?.[1]));
+    expect(z).toBeLessThan(Number(/z-index:\s*(\d+)/.exec(rule(".drawer"))?.[1]));
+  });
+
   it("gives fold, call and raise a fixed slot each, whichever of them are on offer", () => {
     expect(rule(".action-main")).toMatch(/grid-template-columns:\s*repeat\(3, minmax\(0, 1fr\)\)/);
     expect(rule(".action-main .passive")).toMatch(/grid-column:\s*2/);
@@ -117,6 +127,22 @@ describe("bubble stacking", () => {
 
   it("gives the bubble no z-index of its own, which would only count inside a seat", () => {
     expect(rule(".callout-spot")).not.toMatch(/z-index/);
+  });
+});
+
+describe("bubble placement", () => {
+  it("grows a side seat's bubble inwards from its seat rather than centring it", () => {
+    // Centred on a side seat, a long line ran off a 360px page on the outer side.
+    expect(rule(".callout-spot")).toMatch(
+      /translate\(\s*calc\(-50% \+ var\(--in-x, 0\) \* 50%\),\s*-50%\s*\)/,
+    );
+  });
+
+  it("keeps a phone's bubble within its max-width, padding included", () => {
+    const phone = css.slice(css.indexOf("@media (max-width: 720px) {\n  .table-screen"));
+    const speech = /\n {2}\.speech \{([^}]*)\}/.exec(phone)?.[1] ?? "";
+    expect(speech).toMatch(/box-sizing:\s*border-box/);
+    expect(speech).toMatch(/max-width:\s*min\(160px, 42vw\)/);
   });
 });
 

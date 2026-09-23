@@ -493,10 +493,11 @@ a {
   border: 1px solid var(--kitan-line);
   /* The seats sit on the rail and lean out over it; the room above and below is theirs, so
      the top seat never meets the header and the bottom one never meets the feed. */
-  margin: 72px auto 64px;
+  margin: 56px auto 64px;
   /* The full width, as long as the felt, the feed and a player's buttons still fit the
-     screen's height: a 16:10 oval 1100px wide pushed the action bar below the fold. */
-  width: min(100%, max(640px, calc((100vh - 380px) * 1.6)));
+     screen's height: a 16:10 oval 1100px wide pushed the action bar below the fold. With
+     the bar pinned to the bottom (below), this keeps the player's own seat clear of it. */
+  width: min(100%, max(640px, calc((100vh - 390px) * 1.6)));
   box-shadow:
     inset 0 0 0 1px rgba(0, 0, 0, 0.6),
     inset 0 18px 48px rgba(0, 0, 0, 0.5),
@@ -573,7 +574,9 @@ a {
   left: 50%;
   top: 50%;
   pointer-events: none;
-  transform: translate(-50%, -50%)
+  /* Anchored on its inner side: a side seat's bubble grows inwards over the felt, never out
+     past the rail, while a top or bottom seat's (no sideways pull) stays centred. */
+  transform: translate(calc(-50% + var(--in-x, 0) * 50%), -50%)
     translate(
       calc(var(--in-x, 0) * var(--callout-reach, 34px)),
       calc(var(--in-y, -1) * var(--callout-reach, 34px))
@@ -1407,6 +1410,43 @@ table.seats .seat-pick select {
     linear-gradient(180deg, #e0562f, var(--kitan-shokko), #7a2119) border-box;
   color: #f0a08a;
 }
+/* A short wide screen (a 1280x720 or 1366x768 laptop) gets a 400px-tall felt: smaller
+   式札, so the side seats one above the other do not run into each other. */
+@media (min-width: 721px) and (max-height: 860px) {
+  .table-screen {
+    --seat-width: 108px;
+    --seat-font: 0.78rem;
+    --seat-face: 36px;
+    --card-width: 26px;
+    --card-height: 36px;
+  }
+}
+/* On a wide screen the bar is pinned to the bottom edge while it is up, so every control is
+   on screen without scrolling at any height; sizing on the left and the three buttons that
+   end the turn on the right keep it short enough not to cover the player's own seat. */
+@media (min-width: 721px) {
+  .your-turn {
+    position: sticky;
+    bottom: 0;
+    /* Over the felt's bubbles and cut-in (7), under the drawer (24) and the dialogs (30). */
+    z-index: 8;
+    margin-bottom: 0;
+    padding: 10px 12px;
+    background: var(--kitan-yoiyami);
+    box-shadow: 0 -12px 28px rgba(0, 0, 0, 0.5);
+  }
+  .your-turn > strong {
+    display: none;
+  }
+  .your-turn .action-bar {
+    margin-top: 0;
+  }
+  .your-turn .action-bar:has(.action-sizing) {
+    grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+    align-items: end;
+    column-gap: 16px;
+  }
+}
 /* Panels beside the table are 羽二重 too: no frame, a shadow and a lifted face. */
 .history,
 .stats,
@@ -1581,7 +1621,9 @@ button.danger {
 }
 .drawer-head {
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
 }
 .drawer-close {
   min-width: 44px;
@@ -1623,8 +1665,14 @@ button.danger {
     padding-bottom: calc(16px + var(--turn-bar-height, 0px) + env(safe-area-inset-bottom, 0px));
   }
   .felt {
-    aspect-ratio: 3 / 4;
+    /* As wide as the phone and 3:4, but no taller than leaves the player's own seat above
+       the action bar with the page unscrolled: 420px is the top bar, the header, the bar and
+       the seat leaning out below the rail. A shorter oval keeps its width, so the side seats
+       keep clear of the top and bottom ones — which is why this is a height, not a ratio
+       (a ratio would narrow the felt instead). 32px is the page's side padding. */
+    aspect-ratio: auto;
     width: auto;
+    height: min(calc((100vw - 32px) * 4 / 3), max(300px, calc(100vh - 420px)));
     /* The top seat leans out over the rail by most of its own height: room above keeps it
        off the header, now that the header is a single row. */
     margin: 44px 0 12px;
@@ -1639,18 +1687,19 @@ button.danger {
   .table-header select {
     min-height: 40px;
   }
-  /* A side seat's bubble is centred a little inside its seat: at the desktop width a line
-     ran past the right edge of a 412px page and widened it. */
+  /* Narrow enough, padding included, that a side seat's line fits between its seat and the
+     middle: at the desktop width it ran past the edge of a 360px page and widened it. */
   .speech {
-    max-width: 160px;
+    box-sizing: border-box;
+    max-width: min(160px, 42vw);
   }
-  /* Tighter buttons, so the five controls share one row at 412px. */
+  /* Tighter buttons, so the five controls share one row down to 360px. */
   .table-header-actions {
-    gap: 6px;
+    gap: 4px;
   }
   .table-header-actions button {
-    padding: 6px 8px;
-    letter-spacing: 0.04em;
+    padding: 6px 6px;
+    letter-spacing: 0;
   }
   .drawer {
     /* The whole width of a phone (100vw would count the scrollbar gutter too). */
@@ -1706,6 +1755,9 @@ button.danger {
   }
   .action-main button {
     min-height: 56px;
+    /* A third of 360px has no room for フォールド at the desktop tracking and padding. */
+    letter-spacing: 0.02em;
+    padding-inline: 4px;
     font-size: 1rem;
   }
 }
