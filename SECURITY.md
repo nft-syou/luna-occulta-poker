@@ -12,30 +12,44 @@ impact is. If you are unsure whether something counts, report it anyway.
 
 ## What is in scope
 
-- The proxy (`src/proxy/handler.ts`, `functions/api/jev/[[path]].ts`): anything
-  that makes it contact a host other than the fixed upstreams in
-  `src/jev/connection.ts`, forward a request it should refuse, or leak a
-  caller's credentials or headers.
-- Credential handling in the browser (`src/ui/storage.ts`,
-  `src/ui/ConnectionModal.tsx`): anything that sends a stored key somewhere
-  other than this site's `/api/jev/*` proxy, or exposes it to another origin.
+- The Worker (`src/worker/`): anything that lets a request skip a guard, reach
+  the operator's Jev key, or make the Worker contact a host other than the
+  fixed upstreams in `src/worker/upstream.ts`. In particular:
+  - Forging or replaying a session token, or getting one verified for an IP
+    other than the one it was issued to (`src/worker/session.ts`).
+  - Getting free-form prose (rather than an allow-listed string) into the
+    request the Worker sends to Jev, or getting an unknown/out-of-range field
+    past the schema check (`src/worker/schema.ts`, `src/worker/prose.ts`,
+    `src/worker/prose-allowlist.json`).
+  - Evading the per-IP burst limit or the daily budget
+    (`src/worker/budget.ts`, `src/worker/budgetObject.ts`).
+  - Leaking the operator's key, a caller's IP, or another caller's session
+    token in a response, a log, or an error.
 - Dependency vulnerabilities that are reachable from the deployed site.
 
 ## What is out of scope
 
-- The security of TypeSafe, Vercel, Lolipop or Cloudflare themselves. Report
-  those to the respective provider.
-- Rate limiting or abuse of your own upstream account through your own key: the
-  proxy forwards whatever a browser holding a valid key sends, by design.
+- The security of TypeSafe, Vercel, Lolipop, Cloudflare or Turnstile
+  themselves. Report those to the respective provider.
+- Hitting the daily budget or the burst limit as an ordinary player — those
+  are the abuse controls working as designed, not a vulnerability.
 - Issues that require a compromised browser or a malicious browser extension.
 
 ## How the app is meant to behave
 
-Players bring their own API key. It lives in the browser's `localStorage` and is
-sent only to this site's proxy, which turns it into an `Authorization` header
-for one of four fixed upstream hosts and stores and logs nothing. The proxy
-never accepts an upstream URL from the request. Details are in the "Security"
-section of the [README](README.md#security).
+Players bring nothing. The operator's Jev key lives only as a Worker secret and
+never reaches the browser. Before the browser can ask for a decision it must
+pass an invisible Turnstile check and exchange that for a signed, IP-bound
+session token (`POST /api/session`); every `POST /api/jev/decide` is then
+checked in order — session, then the closed-vocabulary shape of the request,
+then a per-IP burst limit, then a daily budget — before the Worker builds the
+actual Jev request itself (the spirit's persona and the typed questions; the
+two free-text fields the request may carry are accepted only when they match
+`src/worker/prose-allowlist.json` word for word) and forwards it upstream with
+the operator's key. Nothing about the key or the upstream URL is ever taken
+from the browser, and the Worker stores nothing beyond the day's per-IP and
+total call counts. Details are in the "Security" section of the
+[README](README.md#security).
 
 ## Supported versions
 
