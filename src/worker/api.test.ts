@@ -106,4 +106,43 @@ describe("handleApi", () => {
   it("is unavailable without an operator key", async () => {
     expect((await handleApi(decide(VALID), deps({ env: { DEV_OPEN: "1" } }))).status).toBe(503);
   });
+
+  it("refuses a production request without cf-connecting-ip before touching sessions or budget", async () => {
+    const sessions = { ...OPEN_SESSIONS, verify: vi.fn(async () => true) };
+    const budget = new MemoryBudget();
+    const takeSpy = vi.spyOn(budget, "take");
+    const d = deps({
+      env: { JEV_API_KEY: "sk-op", TURNSTILE_SECRET: "ts", SESSION_SECRET: "ss" },
+      sessions,
+      budget,
+    });
+    const res = await handleApi(decide(VALID), d);
+    expect(res.status).toBe(400);
+    expect(await res.json()).toEqual({ error: "bad_request" });
+    expect(sessions.verify).not.toHaveBeenCalled();
+    expect(takeSpy).not.toHaveBeenCalled();
+
+    const sessionRes = await handleApi(
+      new Request("http://x/api/session", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ turnstileToken: "tok" }),
+      }),
+      d,
+    );
+    expect(sessionRes.status).toBe(400);
+  });
+
+  it("treats an empty cf-connecting-ip header the same as a missing one in production", async () => {
+    const d = deps({ env: { JEV_API_KEY: "sk-op", TURNSTILE_SECRET: "ts", SESSION_SECRET: "ss" } });
+    const res = await handleApi(decide(VALID, { "cf-connecting-ip": "" }), d);
+    expect(res.status).toBe(400);
+  });
+
+  it("still falls back to a loopback IP for the dev server without the header", async () => {
+    // DEV_OPEN deps() already omits cf-connecting-ip on every other test in this file; this one
+    // makes the fallback explicit rather than incidental.
+    const res = await handleApi(decide(VALID), deps());
+    expect(res.status).toBe(200);
+  });
 });

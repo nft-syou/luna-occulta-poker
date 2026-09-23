@@ -1,0 +1,11 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["ES2023"],
+    "types": ["@cloudflare/workers-types"],
+    "noEmit": true,
+    "allowImportingTsExtensions": true
+  },
+  "include": ["src/worker", "src/characters/spirits.ts"],
+  "exclude": ["src/worker/**/*.test.ts"]
+}

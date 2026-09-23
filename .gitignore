@@ -5,6 +5,7 @@ dist
 .worktrees/
 .env
 .env.*
+.dev.vars
 *.local
 .packs/
 

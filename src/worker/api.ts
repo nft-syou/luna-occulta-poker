@@ -90,8 +90,16 @@ function guarded(env: ApiEnv): boolean {
   return env.DEV_OPEN === "1" || (Boolean(env.TURNSTILE_SECRET) && Boolean(env.SESSION_SECRET));
 }
 
-function ipOf(request: Request): string {
-  return request.headers.get("cf-connecting-ip") ?? "127.0.0.1";
+/**
+ * `null` means "refuse": in production every request carries `cf-connecting-ip` (Cloudflare
+ * sets it), so a missing or empty header is never a real player — and a token issued to a
+ * placeholder IP would verify for any header-less request. The Vite dev server never sets this
+ * header, so `DEV_OPEN` falls back to a fixed loopback address instead of refusing everything.
+ */
+function ipOf(request: Request, devOpen: boolean): string | null {
+  const ip = request.headers.get("cf-connecting-ip");
+  if (ip) return ip;
+  return devOpen ? "127.0.0.1" : null;
 }
 
 async function readJson(request: Request): Promise<unknown | undefined> {
@@ -110,7 +118,8 @@ export async function handleApi(request: Request, deps: ApiDeps): Promise<Respon
     return json(404, { error: "not_found" });
   if (request.method !== "POST") return json(405, { error: "method_not_allowed" });
   if (!guarded(deps.env)) return json(503, { error: "unavailable" });
-  const ip = ipOf(request);
+  const ip = ipOf(request, deps.env.DEV_OPEN === "1");
+  if (ip === null) return json(400, { error: "bad_request" });
 
   if (pathname === "/api/session") {
     const body = await readJson(request);
