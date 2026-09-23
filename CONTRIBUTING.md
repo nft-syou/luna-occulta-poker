@@ -1,4 +1,4 @@
-# Contributing to jev-poker
+# Contributing to 宵闇の賭場 (Yoiyami Poker)
 
 Thanks for taking the time. This page covers how to get a working checkout, what
 a change needs before it can be merged, and where things live.
@@ -15,14 +15,14 @@ Node.js 24 and pnpm 12 (`corepack enable` picks the pnpm version from
 Playing locally against the real Jev needs an operator key: `JEV_API_KEY=sk-... pnpm dev`
 (see the README's "Run locally" for `pnpm dev:worker`, which runs the real Worker, Durable
 Object and rate limit against a git-ignored `.dev.vars`). Nothing in the repo needs a key to
-build or test: the engine, the Worker and the UI are all tested without one.
+build or test: the Worker and the UI are tested without one.
 
 ## Before opening a pull request
 
 - `pnpm check` passes. It is the same command CI runs.
 - New behaviour comes with a test next to the code (`*.test.ts` / `*.test.tsx`).
-  The engine is tested with seeded random play, the proxy against a fake `fetch`,
-  the UI with Testing Library in jsdom.
+  The Worker is tested against a fake `fetch`, the UI with Testing Library in jsdom,
+  and `src/jev/realGames.test.ts` plays seeded games through the real agent.
 - Layout changes were looked at in a browser. jsdom computes no layout, so a CSS
   fix that is only reasoned about is not verified; measure it (phone width and
   desktop width) before saying it is fixed.
@@ -30,7 +30,7 @@ build or test: the engine, the Worker and the UI are all tested without one.
   keeps every text file on LF.
 - User-facing strings go through i18n: add the key to both
   `src/i18n/locales/en.json` and `ja.json`.
-- Commit messages follow Conventional Commits (`feat(ui): …`, `fix(proxy): …`,
+- Commit messages follow Conventional Commits (`feat(ui): …`, `fix(worker): …`,
   `docs: …`, `chore: …`), and the PR description explains why, not just what.
 
 ## Things to keep true
@@ -50,7 +50,8 @@ build or test: the engine, the Worker and the UI are all tested without one.
 - **Every request is checked in order** — session, then shape, then burst, then daily budget,
   then upstream — and production refuses to run without `TURNSTILE_SECRET` and
   `SESSION_SECRET` configured (`src/worker/api.ts`'s `guarded`).
-- **The engine has no dependencies** and no knowledge of the UI or of Jev.
+- **`@jev-poker/engine` and `@jev-poker/agent` are libraries**: take them from npm, never
+  patch them here.
 - **Every CPU decision fails open**: if Jev cannot be reached the CPU checks or
   folds and the history says why.
 
@@ -63,7 +64,7 @@ build or test: the engine, the Worker and the UI are all tested without one.
 
 See the "Project layout" section of the [README](README.md#project-layout). The
 design spec lives in `docs/superpowers/specs/` and is updated alongside changes
-that alter the design (routes, proxy rules, persistence).
+that alter the design (the API, its checks, persistence).
 
 ## License
 

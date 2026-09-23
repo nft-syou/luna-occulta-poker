@@ -48,8 +48,40 @@ two free-text fields the request may carry are accepted only when they match
 `src/worker/prose-allowlist.json` word for word) and forwards it upstream with
 the operator's key. Nothing about the key or the upstream URL is ever taken
 from the browser, and the Worker stores nothing beyond the day's per-IP and
-total call counts. Details are in the "Security" section of the
-[README](README.md#security).
+total call counts.
+
+"Per IP" below means per IPv4 address, or per IPv6 /64.
+
+`POST /api/session` takes `{ turnstileToken }`. It passes its own burst limit
+(`429 slow_down`, keyed apart from the decides so they can never starve it),
+then asks Cloudflare's siteverify about the token; anything but a pass is
+`403 turnstile_failed`.
+
+Every `POST /api/jev/decide` is checked in order, stopping at the first failure:
+
+1. **Session** — `Authorization: Bearer <token>`, an HMAC-SHA256 token issued by
+   `/api/session`, valid 2 hours and bound to the caller's IP. Bad, expired or
+   foreign-IP tokens get `401 session_expired`.
+2. **Shape** — at most 16 KB of JSON matching the closed-vocabulary schema in
+   `src/worker/schema.ts`: enums from fixed lists, numbers in range, card codes
+   matching a regex, arrays capped in length, unknown keys rejected. Otherwise
+   `400 bad_request`.
+3. **Burst** — 20 requests per 10 seconds per IP (`JEV_BURST`). Over that,
+   `429 slow_down` with `retry-after: 2`.
+4. **Daily budget** — the `JEV_BUDGET` Durable Object counts calls per IP and in
+   total, resetting at midnight Japan time (`DAILY_CALLS_PER_PLAYER=600`,
+   `DAILY_CALLS_TOTAL=20000` by default). Over either, `429 tonight_is_over` with
+   `{ resumesAt }`.
+5. **Upstream** — the Worker assembles the Jev request itself and calls one of
+   four fixed hosts chosen by `JEV_ROUTE` (`src/worker/upstream.ts`). Upstream
+   402 (the operator's credit is spent) becomes `429 tonight_is_over`; 401/403
+   (a key problem) becomes `503 unavailable`; anything else `502 upstream_error`.
+
+Every other path is `404 not_found`, and anything but `POST` is
+`405 method_not_allowed`. In production, if `TURNSTILE_SECRET` or
+`SESSION_SECRET` is missing, the Worker answers every request with
+`503 unavailable` instead of running open; only the Vite dev server sets
+`DEV_OPEN=1` to skip this.
 
 ## Known limits and follow-ups
 
