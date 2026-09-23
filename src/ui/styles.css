@@ -2544,33 +2544,304 @@ body.showcase .app {
   outline: 1px solid var(--kitan-line);
   outline-offset: 2px;
 }
-.rules-panel h3 {
-  margin: 14px 0 6px;
-  font-size: 0.95rem;
-  color: var(--kitan-kindei);
-}
-.rules-list {
+/* Diagrams, not paragraphs: each is a figure with a gold title and at most a line under it. */
+.rules-fig,
+.rules-tile {
   margin: 0;
-  padding-left: 1.2em;
+  min-width: 0;
 }
-.rules-list li + li {
-  margin-top: 6px;
+.rules-panel .rules-fig-title {
+  margin: 0 0 6px;
+  font-size: 0.85rem;
+  letter-spacing: 0.1em;
 }
-.rules-terms {
-  margin: 0;
+.rules-caption {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.82rem;
+  color: var(--kitan-geppaku);
+  text-align: center;
 }
-.rules-terms div {
-  display: grid;
-  grid-template-columns: 6.5em 1fr;
-  gap: 8px;
-  padding: 3px 0;
+.rules-subcaption {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--kitan-sublabel);
+  line-height: 1.4;
 }
-.rules-terms dt {
-  color: var(--kitan-kindei-hi);
+.rules-num {
+  font-family: var(--kitan-num);
+  font-variant-numeric: tabular-nums;
   font-weight: 800;
+  font-size: 0.75rem;
+  color: var(--kitan-kindei-hi);
 }
-.rules-terms dd {
+/* The felt's own cards, smaller; a card that makes the hand is lit in gold, the rest recede. */
+.rules-cards {
+  display: inline-flex;
+  flex: none;
+  gap: 3px;
+}
+.rules-card {
+  display: inline-flex;
+  border-radius: var(--kitan-rounded-sm);
+}
+.rules .rules-card .card {
+  --card-width: 24px;
+  --card-height: 33px;
+  font-size: 0.72rem;
+}
+.rules-card.is-made {
+  box-shadow: 0 0 0 1.5px var(--kitan-kindei);
+}
+.rules-card.is-dim {
+  opacity: 0.38;
+}
+/* 1. The flow: five streets in a row, each a tiny board with the dealt cards lit. */
+.rules-flow {
+  display: grid;
+  gap: 14px;
+}
+.rules-strip {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 4px 6px;
   margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.rules-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-width: 78px;
+}
+.rules-step-name {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--kitan-kindei-hi);
+  white-space: nowrap;
+}
+.rules-strip-arrow {
+  align-self: center;
+  color: var(--kitan-kindei);
+  font-size: 0.85rem;
+}
+.rules-mini-board,
+.rules-mini-hole {
+  display: flex;
+  gap: 2px;
+}
+.rules-mini-hole {
+  min-height: 18px;
+}
+.rules-slot {
+  width: 11px;
+  height: 16px;
+  border-radius: 2px;
+  border: 1px dashed var(--kitan-line-quiet);
+  box-sizing: border-box;
+}
+.rules-slot.lit {
+  border: 1px solid var(--kitan-kindei);
+  background: linear-gradient(180deg, #f1ede2, var(--kitan-geppaku));
+}
+.rules .rules-mini-hole .card {
+  --card-width: 13px;
+  --card-height: 18px;
+  box-shadow: none;
+}
+.rules-flow-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 16px;
+  align-items: start;
+}
+.rules-best,
+.rules-table {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.rules-best-cards {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+}
+.rules-best-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+}
+.rules-best-tag {
+  font-size: 0.72rem;
+  color: var(--kitan-sublabel);
+}
+.rules .rules-best .rules-card .card {
+  --card-width: 28px;
+  --card-height: 38px;
+  font-size: 0.8rem;
+}
+.rules-best-hand {
+  margin-top: 8px;
+  font-weight: 800;
+  font-size: 0.85rem;
+  color: var(--kitan-kindei-hi);
+}
+.rules-table svg {
+  max-width: 100%;
+  height: auto;
+}
+.rules-svg-felt {
+  fill: var(--kitan-panel);
+  stroke: var(--kitan-kindei);
+  stroke-width: 1.2;
+}
+.rules-svg-seat {
+  fill: var(--kitan-yoiyami-hi);
+  stroke: var(--kitan-line);
+}
+.rules-svg-button {
+  fill: var(--kitan-panel);
+  stroke: var(--kitan-kindei);
+}
+.rules-svg-chip {
+  fill: var(--kitan-panel);
+  stroke: var(--kitan-kindei-hi);
+  stroke-width: 1.5;
+}
+.rules-svg-arrow {
+  fill: none;
+  stroke: var(--kitan-kindei);
+  stroke-width: 1.2;
+  stroke-dasharray: 3 3;
+}
+.rules-svg-gold-fill {
+  fill: var(--kitan-kindei);
+}
+.rules-svg-label {
+  fill: var(--kitan-kindei-hi);
+  font-family: var(--kitan-num);
+  font-weight: 800;
+  font-size: 11px;
+}
+/* 2. Actions: the felt's callouts, each with its meaning; then the bar with numbered pins. */
+.rules-actions {
+  display: grid;
+  gap: 14px;
+}
+.rules-acts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 12px;
+  margin: 0;
+}
+.rules-act {
+  display: grid;
+  grid-template-columns: 6em minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+}
+.rules-act dt {
+  margin: 0;
+}
+.rules-act dd {
+  margin: 0;
+  font-size: 0.8rem;
+  line-height: 1.4;
+  color: var(--kitan-geppaku);
+}
+.rules-acts .callout {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  text-align: center;
+  letter-spacing: 0.04em;
+  padding: 2px 4px;
+  font-size: 0.8rem;
+  animation: none;
+  box-shadow: none;
+}
+.rules-bar-mock {
+  margin: 0;
+  padding: 10px;
+  border-radius: var(--kitan-rounded-lg);
+  border: 1px solid var(--kitan-line-quiet);
+  background: var(--kitan-panel);
+}
+/* A phone's third of the mock is narrower than the real bar's: the labels keep their width. */
+.rules-bar-mock .action-main button {
+  padding-inline: 4px;
+  letter-spacing: 0.02em;
+  font-size: 0.85rem;
+}
+.rules-bar-row {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+}
+.rules-pin {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 1px solid var(--kitan-kindei);
+  color: var(--kitan-kindei-hi);
+  font-family: var(--kitan-num);
+  font-weight: 800;
+  font-size: 0.72rem;
+  line-height: 1;
+}
+.rules-pins {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px 18px;
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.8rem;
+}
+.rules-pins li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+/* 3. Hand rankings: a gold bar down the side, bright at the strong end. */
+.rules-ladder {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 10px;
+}
+.rules-scale {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--kitan-kindei-hi);
+}
+.rules-scale span:last-child {
+  color: var(--kitan-sublabel);
+}
+.rules-scale-bar {
+  flex: 1 1 auto;
+  width: 3px;
+  border-radius: 2px;
+  background: linear-gradient(
+    180deg,
+    var(--kitan-kindei-hi),
+    var(--kitan-kindei) 40%,
+    rgba(217, 169, 76, 0.12)
+  );
 }
 .rules-hands {
   list-style: none;
@@ -2581,38 +2852,150 @@ body.showcase .app {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 5px 0;
+  padding: 4px 0;
   border-bottom: 1px solid var(--kitan-line-quiet);
-}
-/* The felt's own cards, smaller. */
-.rules-hand-cards {
-  display: inline-flex;
-  flex: none;
-  gap: 2px;
-}
-.rules .rules-hand-cards .card {
-  --card-width: 24px;
-  --card-height: 33px;
-  font-size: 0.72rem;
 }
 .rules-hand-text {
   display: flex;
-  flex-direction: column;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: 10px;
   min-width: 0;
   line-height: 1.35;
 }
 .rules-hand-desc {
   color: var(--kitan-sublabel);
   margin: 0;
-  font-size: 0.82rem;
+  font-size: 0.8rem;
 }
 .rules-hand-name {
   color: var(--kitan-kindei-hi);
+  font-size: 0.88rem;
 }
 .rules-note {
-  margin: 8px 0 0;
-  font-size: 0.85rem;
+  margin: 6px 0 0;
+  font-size: 0.8rem;
+  line-height: 1.45;
   color: var(--kitan-sublabel);
+}
+/* 4. House rules: four tiles two by two, the tell of Sakuya across the foot. */
+.rules-house {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+.rules-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 12px;
+  border-radius: var(--kitan-rounded-lg);
+  border: 1px solid var(--kitan-line-quiet);
+  background: rgba(16, 14, 28, 0.6);
+  text-align: center;
+}
+.rules-tile-icon {
+  flex-direction: row;
+  gap: 12px;
+  text-align: left;
+}
+.rules-tile-icon .rules-caption {
+  text-align: left;
+}
+.rules-tile-icon svg,
+.rules-face {
+  flex: none;
+}
+.rules-tell {
+  grid-column: 1 / -1;
+}
+.rules-face {
+  border-radius: 50%;
+  border: 1px solid var(--kitan-line);
+  background: var(--kitan-yoiyami-hi);
+}
+.rules-stakes,
+.rules-refill {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 14px;
+}
+.rules-stake {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+.rules-stake-name {
+  font-size: 0.75rem;
+  color: var(--kitan-geppaku);
+}
+.rules-refill-arrow {
+  align-self: center;
+  color: var(--kitan-kindei);
+  font-size: 1.1rem;
+}
+.rules-svg-disc {
+  fill: var(--kitan-panel);
+  stroke: var(--kitan-kindei);
+  stroke-width: 1.2;
+}
+.rules-svg-empty {
+  fill: none;
+  stroke: var(--kitan-line-quiet);
+  stroke-dasharray: 3 2;
+}
+.rules-svg-moon {
+  fill: var(--kitan-kindei-hi);
+}
+.rules-svg-ring {
+  fill: none;
+  stroke: var(--kitan-line);
+}
+.rules-svg-speaker {
+  fill: none;
+  stroke: var(--kitan-kindei);
+  stroke-width: 2;
+  stroke-linejoin: round;
+}
+.rules-svg-wave {
+  fill: none;
+  stroke: var(--kitan-kindei);
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+@media (max-width: 520px) {
+  .rules-flow-row,
+  .rules-acts,
+  .rules-house {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  /* Three streets over two: an arrow would be left hanging at the end of the first row. */
+  .rules-strip {
+    gap: 10px 16px;
+  }
+  .rules-strip-arrow {
+    display: none;
+  }
+  .rules-step {
+    min-width: 70px;
+  }
+  .rules .rules-hands .rules-card .card {
+    --card-width: 22px;
+    --card-height: 31px;
+  }
+  .rules-hands .rules-cards {
+    gap: 2px;
+  }
+  .rules-hand-text {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .rules-hand-name {
+    font-size: 0.82rem;
+  }
 }
 .rules-foot {
   justify-content: flex-end;

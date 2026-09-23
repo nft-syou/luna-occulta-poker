@@ -1,7 +1,6 @@
-import { type Card, parseCards } from "@jev-poker/engine";
 import { type KeyboardEvent, useEffect, useId, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { CardView } from "./CardView";
+import { ActionsTab, FlowTab, HandsTab, HouseTab } from "./RulesDiagrams";
 
 interface Props {
   open: boolean;
@@ -13,26 +12,8 @@ interface Props {
 const TABS = ["flow", "actions", "hands", "house"] as const;
 type Tab = (typeof TABS)[number];
 
-/** The nine hands, strongest first, each with an example drawn as it would be on the felt. */
-export const HAND_RANKINGS: readonly { id: string; cards: readonly Card[] }[] = [
-  ["straight_flush", "9h 8h 7h 6h 5h"],
-  ["four_of_a_kind", "Qs Qh Qd Qc 7s"],
-  ["full_house", "Ks Kh Kd 4c 4s"],
-  ["flush", "Ad Jd 8d 5d 2d"],
-  ["straight", "Tc 9d 8s 7h 6c"],
-  ["three_of_a_kind", "7c 7d 7s Kh 2c"],
-  ["two_pair", "Jh Js 5c 5d Ac"],
-  ["pair", "Ah Ad Ks 9c 4h"],
-  ["high_card", "As Qd 9h 6c 3s"],
-].map(([id, cards]) => ({ id: id as string, cards: parseCards(cards as string) }));
-
-const FLOW = ["cards", "streets", "showdown", "blinds", "order", "headsUp"] as const;
-const ACTIONS = ["fold", "check", "call", "bet", "raise", "allin"] as const;
-const BAR = ["bar", "barSizes", "barFine", "barCommit"] as const;
-const HOUSE = ["stakes", "rebuy", "spirits", "sakuya", "tonight", "voices"] as const;
-
 /**
- * How to play, in four short tabs: from the title screen, from the table's 「？」, and once by
+ * How to play, in four tabs of diagrams: from the title screen, from the table's 「？」, and once by
  * itself at a first table. Escape and the close button shut it; the focus comes back to
  * whatever had it before.
  */
@@ -118,59 +99,10 @@ function RulesBody({ auto, onClose }: { auto: boolean; onClose: () => void }) {
           // biome-ignore lint/a11y/noNoninteractiveTabindex: a tab panel takes the focus so its text can be scrolled by keyboard.
           tabIndex={0}
         >
-          {tab === "flow" && (
-            <ul className="rules-list">
-              {FLOW.map((key) => (
-                <li key={key}>{t(`rules.flow.${key}`)}</li>
-              ))}
-            </ul>
-          )}
-          {tab === "actions" && (
-            <>
-              <dl className="rules-terms">
-                {ACTIONS.map((key) => (
-                  <div key={key}>
-                    <dt>{t(`rules.terms.${key}`)}</dt>
-                    <dd>{t(`rules.actions.${key}`)}</dd>
-                  </div>
-                ))}
-              </dl>
-              <h3>{t("rules.actions.barTitle")}</h3>
-              <ul className="rules-list">
-                {BAR.map((key) => (
-                  <li key={key}>{t(`rules.actions.${key}`)}</li>
-                ))}
-              </ul>
-            </>
-          )}
-          {tab === "hands" && (
-            <>
-              <ol className="rules-hands" aria-label={t("rules.tabs.hands")}>
-                {HAND_RANKINGS.map(({ id: hand, cards }) => (
-                  <li key={hand} className="rules-hand">
-                    <span className="rules-hand-cards" aria-hidden="true">
-                      {cards.map((card) => (
-                        <CardView key={`${card.rank}${card.suit}`} card={card} />
-                      ))}
-                    </span>
-                    <span className="rules-hand-text">
-                      <strong className="rules-hand-name">{t(`hands.${hand}`)}</strong>
-                      <span className="rules-hand-desc">{t(`rules.hands.${hand}`)}</span>
-                    </span>
-                  </li>
-                ))}
-              </ol>
-              <p className="rules-note">{t("rules.hands.royal")}</p>
-              <p className="rules-note">{t("rules.hands.ties")}</p>
-            </>
-          )}
-          {tab === "house" && (
-            <ul className="rules-list">
-              {HOUSE.map((key) => (
-                <li key={key}>{t(`rules.house.${key}`)}</li>
-              ))}
-            </ul>
-          )}
+          {tab === "flow" && <FlowTab />}
+          {tab === "actions" && <ActionsTab />}
+          {tab === "hands" && <HandsTab />}
+          {tab === "house" && <HouseTab />}
         </div>
         <div className="row rules-foot">
           {auto && (
