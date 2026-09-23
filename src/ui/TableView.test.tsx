@@ -409,7 +409,7 @@ describe("TableView", () => {
 
   it("shows the billing pause notice only while paused for billing", () => {
     stubViewport(false);
-    renderTable({ paused: true, pauseReason: "billing" });
+    renderTable({ paused: true, pauseReason: "tonight" });
     expect(screen.getByText("Paused: TypeSafe credit exhausted")).toBeInTheDocument();
   });
 
@@ -422,7 +422,7 @@ describe("TableView", () => {
   it("hides the prefetch toggle and the billing notice in recording mode", () => {
     stubViewport(false);
     const onPrefetchChange = vi.fn();
-    renderTable({ paused: true, pauseReason: "billing" }, { prefetch: true, onPrefetchChange });
+    renderTable({ paused: true, pauseReason: "tonight" }, { prefetch: true, onPrefetchChange });
 
     // Both controls are present in the normal header...
     expect(screen.getByRole("button", { name: "⚡ Prefetch on" })).toBeInTheDocument();

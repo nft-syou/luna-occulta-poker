@@ -9,7 +9,10 @@ export interface ProseAllowlist {
 /** Every sentence the library can put in front of Jev; see scripts/prose-allowlist.ts. */
 export const PROSE = allowlist as ProseAllowlist;
 
-const MAX_LINES = 20;
+// The unified task's 17 fixed lines, plus the opponent-types intro and a guidance line for
+// each of the three types that carry one (calling_station, nit, maniac — regular has none):
+// a real six-max table with every type present sends 21. Measured by `realGames.test.ts`.
+const MAX_LINES = 21;
 
 export function styleOfTask(task: string, prose: ProseAllowlist = PROSE): PromptStyle | null {
   return Object.hasOwn(prose.tasks, task) ? (prose.tasks[task] as PromptStyle) : null;

@@ -1,4 +1,3 @@
-import type { JevBackend } from "@jev-poker/agent";
 import type { SeatId } from "@jev-poker/engine";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -7,8 +6,7 @@ import { createSoundPlayer } from "../characters/sound";
 import { spirit, spiritPersonas } from "../characters/spirits";
 import { createVoicePlayer } from "../characters/voice";
 import type { Language } from "../i18n";
-import { createProxyBackend } from "../jev/backend";
-import { type Connection, modelFor } from "../jev/connection";
+import { createGameBackend, DEV_SESSION, type StopReason } from "../jev/gameBackend";
 import { BillingModal } from "./BillingModal";
 import { SoundSettings } from "./SoundSettings";
 import type { Settings } from "./storage";
@@ -17,7 +15,6 @@ import { useGame } from "./useGame";
 
 interface Props {
   settings: Settings;
-  connection: Connection | null;
   language: Language;
   onSettingsChange: (settings: Settings) => void;
   onLeave: () => void;
@@ -27,28 +24,13 @@ interface Props {
 /** One persona per 御霊, built once: the same object every sitting. */
 const PERSONAS = spiritPersonas();
 
-export function GameScreen({
-  settings,
-  connection,
-  language,
-  onSettingsChange,
-  onLeave,
-  onAuthFailed,
-}: Props) {
+export function GameScreen({ settings, language, onSettingsChange, onLeave, onAuthFailed }: Props) {
   const { t } = useTranslation();
-  const backend: JevBackend | null = useMemo(
-    () =>
-      connection === null
-        ? null
-        : createProxyBackend({
-            connection,
-            baseURL: `${window.location.origin}/api/jev`,
-            model: settings.model,
-          }),
-    [connection, settings.model],
+  const [stopReason, setStopReason] = useState<StopReason | null>(null);
+  const [backend] = useState(() =>
+    createGameBackend({ session: DEV_SESSION, onStop: setStopReason }),
   );
-  // The Vercel gateway answers as `typesafe-ai/jev`, so that is what the table should say.
-  const model = connection === null ? settings.model : modelFor(connection, settings.model);
+  const model = settings.model;
   // One player per sitting; the settings' switch and slider reach it through effects.
   // The gate the loop waits at: held by a line being said and by a cut-in on screen.
   const [gate] = useState(() => createGate());
@@ -83,15 +65,14 @@ export function GameScreen({
   useEffect(() => voice.setEnabled(settings.voice), [voice, settings.voice]);
   useEffect(() => voice.setVolume(settings.voiceVolume), [voice, settings.voiceVolume]);
   useEffect(() => () => voice.stopAll(), [voice]);
-  const [billingModalOpen, setBillingModalOpen] = useState(false);
-  const onBillingFailed = useCallback(() => setBillingModalOpen(true), []);
   const game = useGame({
     settings,
     personas: PERSONAS,
     backend,
     model,
     onAuthFailed,
-    onBillingFailed,
+    // The dialog is driven by `stopReason`, which `onStop` above already set.
+    onTonightOver: () => {},
     gate: waitForTable,
   });
   // A 御霊's seat is named after her in the current language; a human keeps their own name.
@@ -140,13 +121,13 @@ export function GameScreen({
         </div>
       )}
       <BillingModal
-        open={billingModalOpen}
-        route={connection?.route ?? "typesafe"}
+        open={stopReason !== null}
+        route="typesafe"
         onResume={() => {
           if (game.state.paused) game.togglePause();
-          setBillingModalOpen(false);
+          setStopReason(null);
         }}
-        onClose={() => setBillingModalOpen(false)}
+        onClose={() => setStopReason(null)}
       />
     </>
   );

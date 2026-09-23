@@ -27,7 +27,7 @@ export function App() {
   const [language, setLanguage] = useState<Language>(initialLanguage);
   const [connection, setConnection] = useState<Connection | null>(() => loadConnection());
   const [keyError, setKeyError] = useState<string | null>(null);
-  const [keyModalOpen, setKeyModalOpen] = useState(connection === null);
+  const [keyModalOpen, setKeyModalOpen] = useState(false);
   const [settings, setSettings] = useState<Settings>(() => loadSettings());
   const [screen, setScreen] = useState<Screen>("setup");
 
@@ -75,7 +75,7 @@ export function App() {
           <Setup
             settings={settings}
             language={language}
-            hasConnection={connection !== null}
+            hasConnection={true}
             onChange={changeSettings}
             onStart={() => setScreen("table")}
             onOpenConnection={() => setKeyModalOpen(true)}
@@ -84,7 +84,6 @@ export function App() {
         {screen === "table" && (
           <GameScreen
             settings={settings}
-            connection={connection}
             language={language}
             onSettingsChange={changeSettings}
             onLeave={() => setScreen("setup")}

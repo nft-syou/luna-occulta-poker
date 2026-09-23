@@ -35,8 +35,8 @@ function authFailingBackend(): JevBackend {
   };
 }
 
-/** Mock whose every call fails the way an out-of-credit account does. */
-function billingFailingBackend(): JevBackend {
+/** Mock whose every call fails the way an out-of-credit account does (the server's word for it). */
+function tonightFailingBackend(): JevBackend {
   return {
     kind: "typesafe",
     systemOne: () =>
@@ -97,7 +97,7 @@ describe("useGame", () => {
         personas: spiritPersonas(),
         backend: createMockBackend(),
         onAuthFailed: () => {},
-        onBillingFailed: () => {},
+        onTonightOver: () => {},
         seed: 3,
       }),
     );
@@ -127,7 +127,7 @@ describe("useGame", () => {
         personas: spiritPersonas(),
         backend: createMockBackend(),
         onAuthFailed: () => {},
-        onBillingFailed: () => {},
+        onTonightOver: () => {},
         seed: 7,
       }),
     );
@@ -176,7 +176,7 @@ describe("useGame", () => {
         personas: spiritPersonas(),
         backend: createMockBackend(),
         onAuthFailed: () => {},
-        onBillingFailed: () => {},
+        onTonightOver: () => {},
         seed: 3,
       }),
     );
@@ -208,7 +208,7 @@ describe("useGame", () => {
         personas: spiritPersonas(),
         backend: createMockBackend(),
         onAuthFailed: () => {},
-        onBillingFailed: () => {},
+        onTonightOver: () => {},
         seed: 3,
       }),
     );
@@ -262,7 +262,7 @@ describe("useGame", () => {
         personas: spiritPersonas(),
         backend: createMockBackend(),
         onAuthFailed: () => {},
-        onBillingFailed: () => {},
+        onTonightOver: () => {},
         seed: 4,
       }),
     );
@@ -285,7 +285,7 @@ describe("useGame", () => {
         personas: spiritPersonas(),
         backend: createMockBackend(),
         onAuthFailed: () => {},
-        onBillingFailed: () => {},
+        onTonightOver: () => {},
         seed: 5,
       }),
     );
@@ -313,7 +313,7 @@ describe("useGame", () => {
         personas: spiritPersonas(),
         backend: slowBackend(seen),
         onAuthFailed: () => {},
-        onBillingFailed: () => {},
+        onTonightOver: () => {},
         seed: 3,
       }),
     );
@@ -338,7 +338,7 @@ describe("useGame", () => {
         personas: spiritPersonas(),
         backend: countingBackend(seen),
         onAuthFailed: () => {},
-        onBillingFailed: () => {},
+        onTonightOver: () => {},
         seed: 3,
       }),
     );
@@ -365,7 +365,7 @@ describe("useGame", () => {
         personas: spiritPersonas(),
         backend: createMockBackend(),
         onAuthFailed: () => {},
-        onBillingFailed: () => {},
+        onTonightOver: () => {},
         seed: 9,
       }),
     );
@@ -396,7 +396,7 @@ describe("useGame", () => {
         personas: spiritPersonas(),
         backend: createMockBackend(),
         onAuthFailed: () => {},
-        onBillingFailed: () => {},
+        onTonightOver: () => {},
         // Seed 7 puts the button on the human, who therefore opens the first hand.
         seed: 7,
       }),
@@ -427,7 +427,7 @@ describe("useGame", () => {
           personas,
           backend,
           onAuthFailed,
-          onBillingFailed: () => {},
+          onTonightOver: () => {},
           seed: 11,
         }),
       { initialProps: { backend: authFailingBackend() } },
@@ -453,7 +453,7 @@ describe("useGame", () => {
   });
 
   it("pauses on a billing failure (402), notifies, and only resumes when toggled", async () => {
-    const onBillingFailed = vi.fn();
+    const onTonightOver = vi.fn();
     const personas = spiritPersonas();
     const { result, rerender, unmount } = renderHook(
       ({ backend }: { backend: JevBackend }) =>
@@ -462,16 +462,16 @@ describe("useGame", () => {
           personas,
           backend,
           onAuthFailed: () => {},
-          onBillingFailed,
+          onTonightOver,
           seed: 11,
         }),
-      { initialProps: { backend: billingFailingBackend() } },
+      { initialProps: { backend: tonightFailingBackend() } },
     );
     await waitFor(
       () => {
-        expect(onBillingFailed).toHaveBeenCalledTimes(1);
+        expect(onTonightOver).toHaveBeenCalledTimes(1);
         expect(result.current.state.paused).toBe(true);
-        expect(result.current.state.pauseReason).toBe("billing");
+        expect(result.current.state.pauseReason).toBe("tonight");
       },
       { timeout: 5000 },
     );
@@ -484,7 +484,7 @@ describe("useGame", () => {
     rerender({ backend: createMockBackend() });
     await new Promise((r) => setTimeout(r, 80));
     expect(result.current.state.paused).toBe(true);
-    expect(result.current.state.pauseReason).toBe("billing");
+    expect(result.current.state.pauseReason).toBe("tonight");
     expect(result.current.state.handsPlayed).toBe(0);
 
     act(() => result.current.togglePause());
@@ -493,7 +493,7 @@ describe("useGame", () => {
     await waitFor(() => expect(result.current.state.handsPlayed).toBeGreaterThanOrEqual(1), {
       timeout: 5000,
     });
-    expect(onBillingFailed).toHaveBeenCalledTimes(1);
+    expect(onTonightOver).toHaveBeenCalledTimes(1);
     unmount();
   });
 
@@ -505,7 +505,7 @@ describe("useGame", () => {
         personas: spiritPersonas(),
         backend: recordingBackend(seen),
         onAuthFailed: () => {},
-        onBillingFailed: () => {},
+        onTonightOver: () => {},
         seed: 3,
       }),
     );
@@ -544,7 +544,7 @@ describe("useGame", () => {
         personas: spiritPersonas(),
         backend: createMockBackend(),
         onAuthFailed: () => {},
-        onBillingFailed: () => {},
+        onTonightOver: () => {},
         seed: 3,
       }),
     );
@@ -575,7 +575,7 @@ describe("useGame at the gate", () => {
         personas: spiritPersonas(),
         backend: createMockBackend(),
         onAuthFailed: () => {},
-        onBillingFailed: () => {},
+        onTonightOver: () => {},
         seed: 5,
         gate,
       }),

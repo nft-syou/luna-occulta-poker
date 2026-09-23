@@ -407,7 +407,7 @@ export function TableView({
           >
             {state.paused ? t("table.resume") : t("table.pause")}
           </button>
-          {state.pauseReason === "billing" && !showcase && (
+          {state.pauseReason === "tonight" && !showcase && (
             <span className="badge">{t("table.pausedBilling")}</span>
           )}
           {showcase ? (

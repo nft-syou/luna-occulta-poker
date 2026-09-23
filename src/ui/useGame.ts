@@ -107,7 +107,7 @@ export interface GameState {
   thinkingSeat: SeatId | null;
   paused: boolean;
   /** Why the table is paused, when it paused itself; null for a manual pause or when running. */
-  pauseReason: "auth" | "billing" | null;
+  pauseReason: "auth" | "tonight" | null;
   handsPlayed: number;
   gameOver: boolean;
   error: string | null;
@@ -141,7 +141,7 @@ export interface UseGameOptions {
   /** Model id to ask for; defaults to `settings.model` (the Vercel route pins its own). */
   model?: string;
   onAuthFailed: () => void;
-  onBillingFailed: () => void;
+  onTonightOver: () => void;
   seed?: number;
   /**
    * Waited on before every CPU turn and before the next hand is dealt: the table's chance
@@ -161,7 +161,7 @@ type Msg =
     }
   | { type: "sync"; snapshot: HandSnapshot | null; seats: GameSeat[]; handsPlayed: number }
   | { type: "thinking"; seat: SeatId | null }
-  | { type: "paused"; paused: boolean; reason?: "auth" | "billing" }
+  | { type: "paused"; paused: boolean; reason?: "auth" | "tonight" }
   | { type: "gameOver"; error: string | null }
   | { type: "stats"; deltas: ReadonlyMap<SeatId, PlayerStats> }
   | { type: "prefetch"; stats: PrefetchStats }
@@ -281,7 +281,7 @@ function toConfig(settings: Settings, seed: number): GameConfig {
 }
 
 export function useGame(options: UseGameOptions): GameController {
-  const { settings, personas, backend, onAuthFailed, onBillingFailed } = options;
+  const { settings, personas, backend, onAuthFailed, onTonightOver } = options;
   const gateRef = useRef(options.gate);
   gateRef.current = options.gate;
   const model = options.model ?? settings.model;
@@ -315,10 +315,11 @@ export function useGame(options: UseGameOptions): GameController {
   const authPausedRef = useRef(false);
   /**
    * Set when the loop stopped itself because TypeSafe returned 402 Payment Required. Mirrors
-   * `authPausedRef` for symmetry, but nothing branches on it: unlike an auth pause, a billing
-   * pause never auto-resumes, so the UI is driven entirely by `state.pauseReason` instead.
+   * `authPausedRef` for symmetry, but nothing branches on it: unlike an auth pause, a "tonight
+   * is over" pause never auto-resumes, so the UI is driven entirely by `state.pauseReason`
+   * instead.
    */
-  const billingPausedRef = useRef(false);
+  const tonightPausedRef = useRef(false);
   /** Set when the loop gave up because there was no backend to ask. */
   const noBackendRef = useRef(false);
   const actionsRef = useRef<ActionTakenEvent[]>([]);
@@ -537,15 +538,18 @@ export function useGame(options: UseGameOptions): GameController {
           // A stale or paused run may still receive the (aborted) record; never act on it.
           if (!run.alive || pausedRef.current) return;
           if (record.errorKind === "auth" || record.errorKind === "billing") {
+            // "billing" is the agent's own word for an HTTP 402 (see @jev-poker/agent's
+            // `decide.js`); this table calls that pause "tonight" instead.
+            const reason: "auth" | "tonight" = record.errorKind === "auth" ? "auth" : "tonight";
             pausedRef.current = true;
-            if (record.errorKind === "auth") authPausedRef.current = true;
-            else billingPausedRef.current = true;
+            if (reason === "auth") authPausedRef.current = true;
+            else tonightPausedRef.current = true;
             stopRun(run);
             cache.clear();
-            dispatch({ type: "paused", paused: true, reason: record.errorKind });
+            dispatch({ type: "paused", paused: true, reason });
             dispatch({ type: "thinking", seat: null });
-            if (record.errorKind === "auth") onAuthFailed();
-            else onBillingFailed();
+            if (reason === "auth") onAuthFailed();
+            else onTonightOver();
             return;
           }
           pendingRef.current = { record, features };
@@ -572,7 +576,7 @@ export function useGame(options: UseGameOptions): GameController {
       model,
       opponentTypeFor,
       onAuthFailed,
-      onBillingFailed,
+      onTonightOver,
       personas,
       reportPrefetch,
       rngFor,
@@ -715,10 +719,10 @@ export function useGame(options: UseGameOptions): GameController {
       cacheRef.current?.clear();
       reportPrefetch();
     } else {
-      // A manual resume clears whatever self-pause was in effect (billing never clears
+      // A manual resume clears whatever self-pause was in effect ("tonight" never clears
       // itself, and an auth pause resumed this way needn't wait for a fresh backend too).
       authPausedRef.current = false;
-      billingPausedRef.current = false;
+      tonightPausedRef.current = false;
       startLoop();
     }
   }, [reportPrefetch, startLoop, stopCurrentRun]);
