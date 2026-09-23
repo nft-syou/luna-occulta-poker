@@ -54,13 +54,20 @@ describe("action bar guards", () => {
   });
 
   it("pins the bar to the bottom of a wide screen, so no height needs a scroll to reach it", () => {
-    const wide = css.slice(css.indexOf("@media (min-width: 721px)"));
+    const wide = css.slice(css.indexOf("On a wide screen the bar is pinned"));
     const bar = /\.your-turn \{([^}]*)\}/.exec(wide)?.[1] ?? "";
     expect(bar).toMatch(/position:\s*sticky/);
     expect(bar).toMatch(/bottom:\s*0/);
     const z = Number(/z-index:\s*(\d+)/.exec(bar)?.[1] ?? 0);
     expect(z).toBeGreaterThan(Number(/z-index:\s*(\d+)/.exec(rule(".cutin"))?.[1]));
     expect(z).toBeLessThan(Number(/z-index:\s*(\d+)/.exec(rule(".drawer"))?.[1]));
+  });
+
+  it("budgets a computer screen's height: the felt gets what the rest leaves", () => {
+    expect(rule(".felt")).toMatch(/calc\(\(100vh - var\(--felt-room, 390px\)\) \* 1\.6\)/);
+    const wide = css.slice(css.indexOf("A computer screen does not scroll"));
+    expect(wide).toMatch(/--felt-room:\s*350px/);
+    expect(wide).toMatch(/\.footer \{[^}]*font-size:\s*0\.72rem/);
   });
 
   it("gives fold, call and raise a fixed slot each, whichever of them are on offer", () => {

@@ -145,8 +145,9 @@ export function App() {
           </a>
           {" · "}
           {t("app.hashtag")}
+          {" · "}
+          {t("app.poweredBy")}
         </p>
-        <p>{t("app.poweredBy")}</p>
       </footer>
 
       <SettingsDialog

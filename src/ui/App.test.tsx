@@ -173,6 +173,19 @@ describe("App", () => {
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 
+  it("keeps the fan-work notice, its links and the credit on one compact footer line", async () => {
+    const { container } = await renderApp();
+    const lines = container.querySelectorAll(".footer p");
+    expect(lines).toHaveLength(1);
+    const line = lines[0] as HTMLElement;
+    expect(line).toHaveTextContent(/unofficial fan work/);
+    expect(
+      within(line).getByRole("link", { name: "Luna Occulta fan-work guidelines" }),
+    ).toBeInTheDocument();
+    expect(within(line).getByRole("link", { name: "CryptoNinja guidelines" })).toBeInTheDocument();
+    expect(line).toHaveTextContent("The spirits think with TypeSafe Jev.");
+  });
+
   it("stores a language only when the player picks one in the settings", async () => {
     await renderApp();
     // A first visit follows the browser and writes nothing down.
