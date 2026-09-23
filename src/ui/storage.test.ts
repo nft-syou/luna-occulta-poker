@@ -1,96 +1,34 @@
 // @vitest-environment jsdom
 import { beforeEach, describe, expect, it } from "vitest";
-import type { Connection } from "../jev/connection";
 import { EMPTY_STATS, type PlayerStats } from "./stats";
 import {
-  CONNECTION_STORAGE_KEY,
-  clearConnection,
   clearCumulativeStats,
   DEFAULT_SEATS,
   DEFAULT_SETTINGS,
-  LEGACY_API_KEY_STORAGE_KEY,
-  loadConnection,
+  forgetOldCredentials,
   loadCumulativeStats,
   loadSettings,
   SETTINGS_STORAGE_KEY,
   STATS_STORAGE_KEY,
-  saveConnection,
   saveCumulativeStats,
   saveSettings,
   validateSettings,
 } from "./storage";
 
-const CF: Connection = {
-  route: "cloudflare",
-  apiKey: "sk-cf",
-  accountId: "0123456789abcdef0123456789abcdef",
-  gatewayId: "my-gateway",
-  providerSlug: "typesafe",
-  gatewayToken: "tok-1",
-};
-
 describe("storage", () => {
   beforeEach(() => localStorage.clear());
 
-  it("round-trips a connection on every route", () => {
-    expect(loadConnection()).toBeNull();
-    for (const connection of [
-      { route: "typesafe", apiKey: "sk-1" } as const,
-      { route: "vercel", apiKey: "vck_1" } as const,
-      CF,
-    ]) {
-      saveConnection(connection);
-      expect(loadConnection()).toEqual(connection);
-    }
-    clearConnection();
-    expect(loadConnection()).toBeNull();
-  });
-
-  it("migrates a legacy api key to the typesafe route exactly once", () => {
-    localStorage.setItem(LEGACY_API_KEY_STORAGE_KEY, "  sk-old ");
-    expect(loadConnection()).toEqual({ route: "typesafe", apiKey: "sk-old" });
-    // The migration persisted under the new key and removed the old one.
-    expect(localStorage.getItem(LEGACY_API_KEY_STORAGE_KEY)).toBeNull();
-    expect(JSON.parse(localStorage.getItem(CONNECTION_STORAGE_KEY) ?? "null")).toEqual({
-      route: "typesafe",
-      apiKey: "sk-old",
-    });
-    expect(loadConnection()).toEqual({ route: "typesafe", apiKey: "sk-old" });
-  });
-
-  it("leaves a stored connection alone when a legacy key is also present", () => {
-    saveConnection({ route: "vercel", apiKey: "vck_1" });
-    localStorage.setItem(LEGACY_API_KEY_STORAGE_KEY, "sk-old");
-    expect(loadConnection()).toEqual({ route: "vercel", apiKey: "vck_1" });
-    clearConnection();
-    expect(loadConnection()).toBeNull();
-  });
-
-  it("treats corrupt, empty or no-longer-valid records as no connection", () => {
-    for (const raw of [
-      "{bad",
-      "null",
-      "[]",
-      '"sk-1"',
-      JSON.stringify({ route: "openai", apiKey: "sk-1" }),
-      JSON.stringify({ route: "typesafe", apiKey: "" }),
-      JSON.stringify({ route: "cloudflare", apiKey: "k", accountId: "../", gatewayId: "gw" }),
-    ]) {
-      localStorage.setItem(CONNECTION_STORAGE_KEY, raw);
-      expect(loadConnection(), raw).toBeNull();
-    }
-    localStorage.setItem(LEGACY_API_KEY_STORAGE_KEY, "   ");
-    localStorage.removeItem(CONNECTION_STORAGE_KEY);
-    expect(loadConnection()).toBeNull();
-  });
-
-  it("drops a legacy key that cannot be migrated instead of leaving the secret behind", () => {
-    for (const legacy of ["   ", "sk with spaces", "~".repeat(513)]) {
-      localStorage.setItem(LEGACY_API_KEY_STORAGE_KEY, legacy);
-      expect(loadConnection(), legacy).toBeNull();
-      expect(localStorage.getItem(LEGACY_API_KEY_STORAGE_KEY), legacy).toBeNull();
-      expect(localStorage.getItem(CONNECTION_STORAGE_KEY)).toBeNull();
-    }
+  it("forgets the keys older versions stored, and nothing else", () => {
+    localStorage.setItem(
+      "jev-poker.connection",
+      JSON.stringify({ route: "typesafe", apiKey: "sk-1" }),
+    );
+    localStorage.setItem("jev-poker.apiKey", "sk-old");
+    localStorage.setItem(SETTINGS_STORAGE_KEY, "{}");
+    forgetOldCredentials();
+    expect(localStorage.getItem("jev-poker.connection")).toBeNull();
+    expect(localStorage.getItem("jev-poker.apiKey")).toBeNull();
+    expect(localStorage.getItem(SETTINGS_STORAGE_KEY)).toBe("{}");
   });
 
   it("returns defaults for missing or broken settings", () => {

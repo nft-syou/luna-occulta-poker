@@ -78,9 +78,10 @@ h3,
   color: var(--kitan-kindei-hi);
   filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.6));
 }
+/* Past the title screen the name stays on as a small mark, not a banner. */
 .topbar h1 {
-  margin: 0;
-  font-size: 1.6rem;
+  margin: 0 0 8px;
+  font-size: 1.05rem;
 }
 .muted {
   color: var(--kitan-sublabel);
@@ -1541,7 +1542,9 @@ button.danger {
   }
   .felt {
     aspect-ratio: 3 / 4;
-    margin: 12px 0;
+    /* The top seat leans out over the rail by most of its own height: room above keeps it
+       off the header, now that the header is a single row. */
+    margin: 44px 0 12px;
     /* Where a turn scrolls the felt to: its bottom edge resting on top of the action bar. */
     scroll-margin-bottom: calc(
       72px +

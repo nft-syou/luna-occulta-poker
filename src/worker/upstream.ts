@@ -1,8 +1,7 @@
 /**
- * The one place an upstream Jev URL is built, shared by the UI, the backend, the proxy and the
- * worker. It must stay dependency-free: `tsconfig.functions.json` compiles it (via
- * `src/jev/connection.ts`, which re-exports these names) for the Cloudflare Pages Function, so
- * it may not import React, the SDK or any node/browser API.
+ * The one place an upstream Jev URL is built, used by the Worker alone. It stays
+ * dependency-free (no React, no SDK, no node or browser API) so the Worker bundle carries
+ * nothing it does not need.
  *
  * The security rule this module exists to enforce: nothing here ever accepts a free-form
  * upstream URL. `upstreamUrl` picks one of four fixed hosts by route id and interpolates only
@@ -27,10 +26,9 @@ export const VERCEL_MODEL = "typesafe-ai/jev";
 /** The Lolipop AI Gateway lists Jev under this id. */
 export const LOLIPOP_MODEL = "typesafe/jev-latest";
 
-/** The only paths the proxy will ever forward, with the method each one allows. */
+/** The only paths the Worker will ever call upstream, with the method each one allows. */
 export const ALLOWED_PATHS: Readonly<Record<string, "GET" | "POST">> = {
   "v1/systemone": "POST",
-  "v1/models": "GET",
 };
 
 export interface CloudflareGatewayInput {

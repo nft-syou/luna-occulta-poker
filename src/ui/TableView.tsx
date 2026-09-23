@@ -1,5 +1,5 @@
 import type { SeatId } from "@jev-poker/engine";
-import { type CSSProperties, useEffect, useId, useLayoutEffect, useRef, useState } from "react";
+import { type CSSProperties, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { Gate } from "../characters/gate";
 import { pickLine, rollFrom } from "../characters/lines";
@@ -7,6 +7,7 @@ import type { SoundPlayer } from "../characters/sound";
 import { CPU_SPIRIT_IDS, spirit } from "../characters/spirits";
 import type { VoicePlayer } from "../characters/voice";
 import type { Language } from "../i18n";
+import type { StopReason } from "../jev/gameBackend";
 import { ActionBar } from "./ActionBar";
 import { ActionFeed } from "./ActionFeed";
 import { CardView } from "./CardView";
@@ -20,7 +21,7 @@ import { SeatView } from "./SeatView";
 import { ShowcasePanel } from "./ShowcasePanel";
 import { StatsPanel } from "./StatsPanel";
 import { compactBubble } from "./showcase";
-import { SPEEDS, type Speed } from "./storage";
+import type { Speed } from "./storage";
 import { TableFxLayer } from "./TableFxLayer";
 import { Ticker } from "./Ticker";
 import { presentationTimings } from "./timings";
@@ -32,23 +33,23 @@ interface Props {
   speed: Speed;
   startingStack: number;
   language: Language;
-  onSpeedChange: (speed: Speed) => void;
   onLeave: () => void;
+  /** Opens the settings dialog (sound and language), which lives above the table. */
+  onOpenSettings: () => void;
+  /** Whether the recording-mode button is offered: only on a `?rec` URL. */
+  recording: boolean;
+  /** Why the server stopped the table, if it did; names the paused badge. */
+  stopReason?: StopReason | null;
   /** Persona name per seat, for the recording overlays; the seat's own name otherwise. */
   personaNames?: Record<SeatId, string>;
   /** Model the table asks for, shown when no decision has named one yet. */
   model?: string;
-  /** Whether CPU turns are speculatively prefetched; the header toggle mirrors it. */
-  prefetch?: boolean;
-  onPrefetchChange?: (prefetch: boolean) => void;
   /** Says the 御霊's lines aloud. Absent, the table is silent and the bubbles still show. */
   voice?: VoicePlayer;
   /** The table's own sounds: cards, 勾玉, the cut-in. */
   sound?: SoundPlayer;
   /** Held by the cut-in while it is up. */
   gate?: Gate;
-  /** Opens the voice settings; the header shows the button only when given. */
-  onOpenVoice?: () => void;
 }
 
 /** How long a bubble with a spoken line stays: long enough to read and to hear it out. */
@@ -130,19 +131,17 @@ export function TableView({
   speed,
   startingStack,
   language,
-  onSpeedChange,
   onLeave,
+  onOpenSettings,
+  recording,
+  stopReason = null,
   personaNames,
   model,
-  prefetch,
-  onPrefetchChange,
   voice,
   sound,
   gate,
-  onOpenVoice,
 }: Props) {
   const { t } = useTranslation();
-  const speedId = useId();
   const phone = useMediaQuery(PHONE_QUERY);
   const reducedMotion = useMediaQuery(REDUCED_MOTION_QUERY);
   const timings = presentationTimings(speed);
@@ -385,20 +384,6 @@ export function TableView({
           {game.spectator && !phone && rate !== null && (
             <span className="badge">{t("table.handsPerMin", { rate })}</span>
           )}
-          <label className="visually-hidden" htmlFor={speedId}>
-            {t("setup.speed")}
-          </label>
-          <select
-            id={speedId}
-            value={speed}
-            onChange={(e) => onSpeedChange(e.target.value as Speed)}
-          >
-            {SPEEDS.map((s) => (
-              <option key={s} value={s}>
-                {t(`setup.speed_${s}`)}
-              </option>
-            ))}
-          </select>
           <button
             type="button"
             className="secondary"
@@ -408,7 +393,9 @@ export function TableView({
             {state.paused ? t("table.resume") : t("table.pause")}
           </button>
           {state.pauseReason === "tonight" && !showcase && (
-            <span className="badge">{t("table.pausedBilling")}</span>
+            <span className="badge">
+              {stopReason === "unavailable" ? t("table.paused") : t("tonight.title")}
+            </span>
           )}
           {showcase ? (
             <button
@@ -421,23 +408,14 @@ export function TableView({
             </button>
           ) : (
             <>
-              {onPrefetchChange !== undefined && (
-                <button
-                  type="button"
-                  className="secondary"
-                  onClick={() => onPrefetchChange(!(prefetch ?? true))}
-                >
-                  {(prefetch ?? true) ? t("table.prefetchOn") : t("table.prefetchOff")}
-                </button>
-              )}
-              {onOpenVoice !== undefined && (
-                <button type="button" className="secondary" onClick={onOpenVoice}>
-                  {t("voice.button")}
-                </button>
-              )}
-              <button type="button" className="secondary" onClick={() => setShowcase(true)}>
-                {t("showcase.toggle")}
+              <button type="button" className="secondary" onClick={onOpenSettings}>
+                {t("title.settings")}
               </button>
+              {recording && (
+                <button type="button" className="secondary" onClick={() => setShowcase(true)}>
+                  {t("showcase.toggle")}
+                </button>
+              )}
               <button type="button" className="secondary" onClick={onLeave}>
                 {t("table.leave")}
               </button>

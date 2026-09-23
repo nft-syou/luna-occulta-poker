@@ -6,6 +6,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import type { SoundPlayer } from "../characters/sound";
 import type { VoicePlayer } from "../characters/voice";
 import { initI18n } from "../i18n";
+import type { StopReason } from "../jev/gameBackend";
 import { EMPTY_FX, type TableFx } from "./fx";
 import { TableView } from "./TableView";
 import type { GameController, GameSeat } from "./useGame";
@@ -106,6 +107,7 @@ function controller(overrides: Partial<GameController["state"]> = {}): GameContr
     legalForHuman: LEGAL,
     humanAct: () => {},
     togglePause: () => {},
+    halt: () => {},
     cumulative: {},
     statsKeys: { 0: "human:You", 1: "persona:rock" },
     resetCumulative: () => {},
@@ -129,8 +131,9 @@ function stubViewport(phone: boolean): void {
 function renderTable(
   overrides: Partial<GameController["state"]> = {},
   extraProps: Partial<{
-    prefetch: boolean;
-    onPrefetchChange: (prefetch: boolean) => void;
+    recording: boolean;
+    onOpenSettings: () => void;
+    stopReason: StopReason | null;
     voice: VoicePlayer;
     sound: SoundPlayer;
   }> = {},
@@ -141,8 +144,9 @@ function renderTable(
       speed="normal"
       startingStack={200}
       language="en"
-      onSpeedChange={() => {}}
       onLeave={() => {}}
+      onOpenSettings={() => {}}
+      recording={false}
       {...extraProps}
     />,
   );
@@ -175,7 +179,7 @@ describe("TableView", () => {
 
   it("swaps the side column for the recording layout and leaves it on Escape", () => {
     stubViewport(false);
-    const { container } = renderTable();
+    const { container } = renderTable({}, { recording: true });
     expect(document.body.classList.contains("showcase")).toBe(false);
 
     fireEvent.click(screen.getByRole("button", { name: "Recording mode" }));
@@ -189,8 +193,7 @@ describe("TableView", () => {
     expect(screen.queryByRole("heading", { name: "Hand history" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Leave table" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Stats" })).not.toBeInTheDocument();
-    // The speed and pause controls survive, because a recording still needs steering.
-    expect(screen.getByLabelText("Speed")).toBeInTheDocument();
+    // The pause control survives, because a recording still needs steering.
     expect(screen.getByRole("button", { name: "Pause" })).toBeInTheDocument();
 
     fireEvent.keyDown(document, { key: "Escape" });
@@ -201,7 +204,7 @@ describe("TableView", () => {
 
   it("bubbles the thinking seat only while recording", () => {
     stubViewport(false);
-    const { container } = renderTable({ thinkingSeat: 1 });
+    const { container } = renderTable({ thinkingSeat: 1 }, { recording: true });
     expect(container.querySelector(".showcase-bubble")).toBeNull();
 
     fireEvent.click(screen.getByRole("button", { name: "Recording mode" }));
@@ -226,31 +229,23 @@ describe("TableView", () => {
     expect(screen.queryByRole("heading", { name: "Hand history" })).not.toBeInTheDocument();
   });
 
-  it("shows the prefetch-on toggle and flips the setting off when clicked", () => {
-    stubViewport(false);
-    const onPrefetchChange = vi.fn();
-    renderTable({}, { prefetch: true, onPrefetchChange });
-
-    const button = screen.getByRole("button", { name: "⚡ Prefetch on" });
-    fireEvent.click(button);
-    expect(onPrefetchChange).toHaveBeenCalledWith(false);
-  });
-
-  it("shows the prefetch-off toggle and flips the setting on when clicked", () => {
-    stubViewport(false);
-    const onPrefetchChange = vi.fn();
-    renderTable({}, { prefetch: false, onPrefetchChange });
-
-    const button = screen.getByRole("button", { name: "Prefetch off" });
-    fireEvent.click(button);
-    expect(onPrefetchChange).toHaveBeenCalledWith(true);
-  });
-
-  it("hides the prefetch toggle when no onPrefetchChange is supplied", () => {
+  it("offers no recording button unless the page was opened for recording", () => {
     stubViewport(false);
     renderTable();
-    expect(screen.queryByRole("button", { name: "⚡ Prefetch on" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Prefetch off" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Recording mode" })).not.toBeInTheDocument();
+    cleanup();
+    renderTable({}, { recording: true });
+    expect(screen.getByRole("button", { name: "Recording mode" })).toBeInTheDocument();
+  });
+
+  it("opens the settings from the header, with no speed or prefetch controls left", () => {
+    stubViewport(false);
+    const onOpenSettings = vi.fn();
+    renderTable({}, { onOpenSettings });
+    fireEvent.click(screen.getByRole("button", { name: "Settings" }));
+    expect(onOpenSettings).toHaveBeenCalledOnce();
+    expect(screen.queryByRole("combobox")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Prefetch/ })).not.toBeInTheDocument();
   });
 
   it("draws each seat's bet as chips out on the felt", () => {
@@ -400,42 +395,47 @@ describe("TableView", () => {
 
   it("keeps the feed off a phone until the table is being recorded", () => {
     stubViewport(true);
-    const { container } = renderTable({ fx: FEED_FX });
+    const { container } = renderTable({ fx: FEED_FX }, { recording: true });
     expect(container.querySelector(".action-feed")).toBeNull();
 
     fireEvent.click(screen.getByRole("button", { name: "Recording mode" }));
     expect(container.querySelector(".action-feed")).not.toBeNull();
   });
 
-  it("shows the billing pause notice only while paused for billing", () => {
+  it("names a table the server stopped for the night in the night's own words", () => {
     stubViewport(false);
-    renderTable({ paused: true, pauseReason: "tonight" });
-    expect(screen.getByText("Paused: TypeSafe credit exhausted")).toBeInTheDocument();
+    renderTable({ paused: true, pauseReason: "tonight" }, { stopReason: "tonight" });
+    expect(screen.getByText("That's all for tonight")).toBeInTheDocument();
+    expect(screen.queryByText(/credit|TypeSafe/)).not.toBeInTheDocument();
   });
 
-  it("hides the billing pause notice when there is no pause reason", () => {
+  it("calls a table the server could not reach merely paused", () => {
+    stubViewport(false);
+    renderTable({ paused: true, pauseReason: "tonight" }, { stopReason: "unavailable" });
+    expect(screen.getByText("Paused")).toBeInTheDocument();
+    expect(screen.queryByText("That's all for tonight")).not.toBeInTheDocument();
+    expect(screen.queryByText(/credit|TypeSafe/)).not.toBeInTheDocument();
+  });
+
+  it("shows no stop badge when there is no pause reason", () => {
     stubViewport(false);
     renderTable({ paused: false, pauseReason: null });
-    expect(screen.queryByText("Paused: TypeSafe credit exhausted")).not.toBeInTheDocument();
+    expect(screen.queryByText("That's all for tonight")).not.toBeInTheDocument();
+    expect(screen.queryByText("Paused")).not.toBeInTheDocument();
   });
 
-  it("hides the prefetch toggle and the billing notice in recording mode", () => {
+  it("hides the stop badge in recording mode", () => {
     stubViewport(false);
-    const onPrefetchChange = vi.fn();
-    renderTable({ paused: true, pauseReason: "tonight" }, { prefetch: true, onPrefetchChange });
+    renderTable(
+      { paused: true, pauseReason: "tonight" },
+      { stopReason: "tonight", recording: true },
+    );
+    expect(screen.getByText("That's all for tonight")).toBeInTheDocument();
 
-    // Both controls are present in the normal header...
-    expect(screen.getByRole("button", { name: "⚡ Prefetch on" })).toBeInTheDocument();
-    expect(screen.getByText("Paused: TypeSafe credit exhausted")).toBeInTheDocument();
-
-    // ...but recording mode's header only keeps the speed select, the pause/resume button and
-    // the exit control; the prefetch toggle and the billing badge step aside with everything
-    // else that isn't the table itself.
+    // Recording mode's header keeps only the pause/resume button and the exit control; the
+    // badge steps aside with everything else that isn't the table itself.
     fireEvent.click(screen.getByRole("button", { name: "Recording mode" }));
-    expect(screen.queryByRole("button", { name: "⚡ Prefetch on" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Prefetch off" })).not.toBeInTheDocument();
-    expect(screen.queryByText("Paused: TypeSafe credit exhausted")).not.toBeInTheDocument();
-    // The pause/resume control itself survives recording mode, same as before.
+    expect(screen.queryByText("That's all for tonight")).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Resume" })).toBeInTheDocument();
   });
 });
@@ -472,8 +472,9 @@ describe("TableView voices", () => {
         speed="normal"
         startingStack={200}
         language="en"
-        onSpeedChange={() => {}}
         onLeave={() => {}}
+        onOpenSettings={() => {}}
+        recording={false}
         voice={voice}
       />,
     );
@@ -485,8 +486,9 @@ describe("TableView voices", () => {
         speed="normal"
         startingStack={200}
         language="en"
-        onSpeedChange={() => {}}
         onLeave={() => {}}
+        onOpenSettings={() => {}}
+        recording={false}
         voice={voice}
       />,
     );
@@ -498,8 +500,9 @@ describe("TableView voices", () => {
         speed="normal"
         startingStack={200}
         language="en"
-        onSpeedChange={() => {}}
         onLeave={() => {}}
+        onOpenSettings={() => {}}
+        recording={false}
         voice={voice}
       />,
     );
@@ -636,8 +639,9 @@ describe("TableView sounds", () => {
         speed="normal"
         startingStack={200}
         language="en"
-        onSpeedChange={() => {}}
         onLeave={() => {}}
+        onOpenSettings={() => {}}
+        recording={false}
         sound={sound}
       />,
     );
@@ -647,8 +651,9 @@ describe("TableView sounds", () => {
         speed="normal"
         startingStack={200}
         language="en"
-        onSpeedChange={() => {}}
         onLeave={() => {}}
+        onOpenSettings={() => {}}
+        recording={false}
         sound={sound}
       />,
     );

@@ -98,7 +98,7 @@ export async function callJev(
     { TYPESAFE_BASE_URL: cfg.typesafeBaseUrl },
   );
   if (typeof url !== "string") return { kind: "unavailable" };
-  // Every route authenticates the same way the proxy does: the operator's key as a bearer
+  // Every route authenticates the same way: the operator's key as a bearer
   // token. Only an authenticated Cloudflare AI Gateway wants its own token alongside it.
   const headers = new Headers({
     authorization: `Bearer ${cfg.apiKey}`,

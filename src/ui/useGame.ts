@@ -4,6 +4,7 @@ import {
   type DecisionFeatures,
   type DecisionRecord,
   decideAction,
+  type JevBackend,
   type OpponentType,
   type Persona,
   personaPrompt,
@@ -25,7 +26,6 @@ import {
 } from "@jev-poker/engine";
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { isSpiritId, type SpiritId, spirit } from "../characters/spirits";
-import type { JevBackend } from "../jev/backend";
 import {
   DecisionCache,
   type DecisionKey,
@@ -128,6 +128,12 @@ export interface GameController {
   legalForHuman: LegalActions | null;
   humanAct: (action: Action) => void;
   togglePause: () => void;
+  /**
+   * Stops the table for the night because the server said so, whichever request heard it —
+   * a speculated one included, whose answer the loop may never read. Unlike `togglePause`,
+   * calling it on a halted table leaves it halted.
+   */
+  halt: () => void;
   /** Stats kept across sittings, by persona or human name. */
   cumulative: Record<StatsKey, PlayerStats>;
   statsKeys: Record<SeatId, StatsKey>;
@@ -727,6 +733,18 @@ export function useGame(options: UseGameOptions): GameController {
     }
   }, [reportPrefetch, startLoop, stopCurrentRun]);
 
+  const halt = useCallback(() => {
+    if (!pausedRef.current) {
+      pausedRef.current = true;
+      stopCurrentRun();
+      cacheRef.current?.clear();
+      reportPrefetch();
+    }
+    tonightPausedRef.current = true;
+    dispatch({ type: "paused", paused: true, reason: "tonight" });
+    dispatch({ type: "thinking", seat: null });
+  }, [reportPrefetch, stopCurrentRun]);
+
   const humanSeats = useMemo(
     () => settings.seats.flatMap((s, id) => (s.kind === "human" ? [id] : [])),
     [settings.seats],
@@ -748,6 +766,7 @@ export function useGame(options: UseGameOptions): GameController {
     legalForHuman,
     humanAct,
     togglePause,
+    halt,
     cumulative,
     statsKeys,
     resetCumulative,

@@ -1,45 +1,57 @@
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import i18next, { detectLanguage, initI18n, type Language } from "../i18n";
-import type { Connection } from "../jev/connection";
-import { ConnectionModal } from "./ConnectionModal";
+import { DEV_SESSION, type SessionSource } from "../jev/gameBackend";
 import { GameScreen } from "./GameScreen";
-import { LanguageSwitch } from "./LanguageSwitch";
-import { Setup } from "./Setup";
+import { SettingsDialog } from "./SettingsDialog";
 import {
-  clearConnection,
-  loadConnection,
+  forgetOldCredentials,
   loadLanguage,
   loadSettings,
   type Settings,
-  saveConnection,
   saveLanguage,
   saveSettings,
 } from "./storage";
+import { TableSetup } from "./TableSetup";
+import { TitleScreen } from "./TitleScreen";
+import {
+  loadTableChoice,
+  saveTableChoice,
+  settingsFor,
+  type TableChoice,
+  type TableMode,
+} from "./tableChoice";
 
-type Screen = "setup" | "table";
+type Screen = "title" | "setup" | "table";
 
 const initialLanguage = detectLanguage(loadLanguage(), globalThis.navigator?.language);
 initI18n(initialLanguage);
+// Players once brought their own key; the operator holds it now, so none may linger here.
+forgetOldCredentials();
+
+/** Until Turnstile arrives, the pass is the dev server's open one. */
+const session: SessionSource = DEV_SESSION;
 
 export function App() {
   const { t } = useTranslation();
   const [language, setLanguage] = useState<Language>(initialLanguage);
-  const [connection, setConnection] = useState<Connection | null>(() => loadConnection());
-  const [keyError, setKeyError] = useState<string | null>(null);
-  const [keyModalOpen, setKeyModalOpen] = useState(false);
+  const [screen, setScreen] = useState<Screen>("title");
+  const [mode, setMode] = useState<TableMode>("play");
+  const [choice, setChoice] = useState<TableChoice>(() => loadTableChoice());
+  /** The sound settings; the table's own shape comes from `choice` and `mode`. */
   const [settings, setSettings] = useState<Settings>(() => loadSettings());
-  const [screen, setScreen] = useState<Screen>("setup");
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  // One object per change, not per render: the table reads its seats from it.
+  const tableSettings = useMemo(
+    () => settingsFor(choice, mode, settings),
+    [choice, mode, settings],
+  );
 
   useEffect(() => {
     document.documentElement.lang = language;
   }, [language]);
-
-  const onAuthFailed = useCallback(() => {
-    // Deliberately generic: which of the services refused is not ours to guess.
-    setKeyError(t("connection.invalid"));
-    setKeyModalOpen(true);
-  }, [t]);
 
   const changeLanguage = (next: Language) => {
     setLanguage(next);
@@ -52,42 +64,65 @@ export function App() {
     saveSettings(next);
   };
 
+  const openSetup = (next: TableMode) => {
+    setMode(next);
+    setError(null);
+    setScreen("setup");
+  };
+
+  const start = async () => {
+    setBusy(true);
+    setError(null);
+    try {
+      await session.token();
+      setScreen("table");
+    } catch {
+      setError(t("tableSetup.turnstileFailed"));
+    } finally {
+      setBusy(false);
+    }
+  };
+
   return (
     <div className="app">
-      <header className="topbar">
-        <div>
+      {/* The title screen is its own header; elsewhere the name stays, small. */}
+      {screen !== "title" && (
+        <header className="topbar">
           <h1>{t("app.title")}</h1>
-          <p className="muted">{t("app.subtitle")}</p>
-        </div>
-        <nav className="row">
-          <button type="button" className="secondary" onClick={() => setKeyModalOpen(true)}>
-            {connection === null ? t("app.connection") : t(`connection.route_${connection.route}`)}
-          </button>
-          <LanguageSwitch language={language} onChange={changeLanguage} />
-          <a href="https://github.com/nft-syou/luna-occulta-poker" target="_blank" rel="noreferrer">
-            {t("app.source")}
-          </a>
-        </nav>
-      </header>
+        </header>
+      )}
 
       <main>
+        {screen === "title" && (
+          <TitleScreen
+            onPlay={() => openSetup("play")}
+            onWatch={() => openSetup("watch")}
+            onSettings={() => setSettingsOpen(true)}
+          />
+        )}
         {screen === "setup" && (
-          <Setup
-            settings={settings}
+          <TableSetup
+            mode={mode}
+            choice={choice}
             language={language}
-            hasConnection={true}
-            onChange={changeSettings}
-            onStart={() => setScreen("table")}
-            onOpenConnection={() => setKeyModalOpen(true)}
+            busy={busy}
+            error={error}
+            onChange={(next) => {
+              setChoice(next);
+              saveTableChoice(next);
+            }}
+            onStart={() => void start()}
+            onBack={() => setScreen("title")}
           />
         )}
         {screen === "table" && (
           <GameScreen
-            settings={settings}
+            settings={tableSettings}
             language={language}
-            onSettingsChange={changeSettings}
-            onLeave={() => setScreen("setup")}
-            onAuthFailed={onAuthFailed}
+            session={session}
+            recording={new URLSearchParams(location.search).has("rec")}
+            onOpenSettings={() => setSettingsOpen(true)}
+            onLeave={() => setScreen("title")}
           />
         )}
       </main>
@@ -103,31 +138,22 @@ export function App() {
             {t("app.guidelineLink")}
           </a>
           {" · "}
+          <a href="https://github.com/nft-syou/luna-occulta-poker" target="_blank" rel="noreferrer">
+            {t("app.source")}
+          </a>
+          {" · "}
           {t("app.hashtag")}
         </p>
         <p>{t("app.poweredBy")}</p>
       </footer>
 
-      <ConnectionModal
-        open={keyModalOpen}
-        connection={connection}
-        error={keyError}
-        onSave={(next) => {
-          saveConnection(next);
-          setConnection(next);
-          setKeyError(null);
-          setKeyModalOpen(false);
-        }}
-        onRemove={() => {
-          clearConnection();
-          setConnection(null);
-          setKeyError(null);
-          setScreen("setup");
-        }}
-        onClose={() => {
-          setKeyError(null);
-          setKeyModalOpen(false);
-        }}
+      <SettingsDialog
+        open={settingsOpen}
+        settings={settings}
+        language={language}
+        onChange={changeSettings}
+        onLanguage={changeLanguage}
+        onClose={() => setSettingsOpen(false)}
       />
     </div>
   );

@@ -1,35 +1,40 @@
 import type { SeatId } from "@jev-poker/engine";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useTranslation } from "react-i18next";
 import { createGate } from "../characters/gate";
 import { createSoundPlayer } from "../characters/sound";
 import { spirit, spiritPersonas } from "../characters/spirits";
 import { createVoicePlayer } from "../characters/voice";
 import type { Language } from "../i18n";
-import { createGameBackend, DEV_SESSION, type StopReason } from "../jev/gameBackend";
-import { BillingModal } from "./BillingModal";
-import { SoundSettings } from "./SoundSettings";
+import { createGameBackend, type SessionSource, type StopReason } from "../jev/gameBackend";
 import type { Settings } from "./storage";
 import { TableView } from "./TableView";
+import { TonightOverDialog } from "./TonightOverDialog";
 import { useGame } from "./useGame";
 
 interface Props {
   settings: Settings;
   language: Language;
-  onSettingsChange: (settings: Settings) => void;
+  /** The pass the table shows the Worker with every question. */
+  session: SessionSource;
+  /** Whether the page was opened for recording (`?rec`): offers recording mode. */
+  recording: boolean;
+  onOpenSettings: () => void;
   onLeave: () => void;
-  onAuthFailed: () => void;
 }
 
 /** One persona per 御霊, built once: the same object every sitting. */
 const PERSONAS = spiritPersonas();
 
-export function GameScreen({ settings, language, onSettingsChange, onLeave, onAuthFailed }: Props) {
-  const { t } = useTranslation();
+export function GameScreen({
+  settings,
+  language,
+  session,
+  recording,
+  onOpenSettings,
+  onLeave,
+}: Props) {
   const [stopReason, setStopReason] = useState<StopReason | null>(null);
-  const [backend] = useState(() =>
-    createGameBackend({ session: DEV_SESSION, onStop: setStopReason }),
-  );
+  const [backend] = useState(() => createGameBackend({ session, onStop: setStopReason }));
   const model = settings.model;
   // One player per sitting; the settings' switch and slider reach it through effects.
   // The gate the loop waits at: held by a line being said and by a cut-in on screen.
@@ -60,7 +65,6 @@ export function GameScreen({ settings, language, onSettingsChange, onLeave, onAu
     sound.startBgm();
     return () => sound.stopAll();
   }, [sound]);
-  const [voiceModalOpen, setVoiceModalOpen] = useState(false);
   const waitForTable = useCallback(() => gate.wait(), [gate]);
   useEffect(() => voice.setEnabled(settings.voice), [voice, settings.voice]);
   useEffect(() => voice.setVolume(settings.voiceVolume), [voice, settings.voiceVolume]);
@@ -70,11 +74,19 @@ export function GameScreen({ settings, language, onSettingsChange, onLeave, onAu
     personas: PERSONAS,
     backend,
     model,
-    onAuthFailed,
+    // The game backend turns a refused pass into a stop of its own; should the agent still
+    // report one, the table cannot go on either.
+    onAuthFailed: () => setStopReason("unavailable"),
     // The dialog is driven by `stopReason`, which `onStop` above already set.
     onTonightOver: () => {},
     gate: waitForTable,
   });
+  // A stop can arrive on any request, a speculated one included, whose answer the loop may
+  // never read: the table halts on the server's word, not on the loop noticing it.
+  const halt = game.halt;
+  useEffect(() => {
+    if (stopReason !== null) halt();
+  }, [stopReason, halt]);
   // A 御霊's seat is named after her in the current language; a human keeps their own name.
   const personaNames = useMemo(() => {
     const names: Record<SeatId, string> = {};
@@ -93,42 +105,15 @@ export function GameScreen({ settings, language, onSettingsChange, onLeave, onAu
         language={language}
         personaNames={personaNames}
         model={model}
-        prefetch={settings.prefetch}
         voice={voice}
         sound={sound}
         gate={gate}
-        onOpenVoice={() => setVoiceModalOpen(true)}
-        onSpeedChange={(speed) => onSettingsChange({ ...settings, speed })}
-        onPrefetchChange={(prefetch) => onSettingsChange({ ...settings, prefetch })}
+        recording={recording}
+        stopReason={stopReason}
+        onOpenSettings={onOpenSettings}
         onLeave={onLeave}
       />
-      {voiceModalOpen && (
-        <div className="modal-backdrop" role="presentation">
-          <div
-            className="modal"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="voice-modal-title"
-          >
-            <h2 id="voice-modal-title">{t("voice.title")}</h2>
-            <SoundSettings settings={settings} onChange={onSettingsChange} />
-            <div className="row">
-              <button type="button" className="secondary" onClick={() => setVoiceModalOpen(false)}>
-                {t("voice.close")}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-      <BillingModal
-        open={stopReason !== null}
-        route="typesafe"
-        onResume={() => {
-          if (game.state.paused) game.togglePause();
-          setStopReason(null);
-        }}
-        onClose={() => setStopReason(null)}
-      />
+      <TonightOverDialog reason={stopReason} onLeave={onLeave} />
     </>
   );
 }

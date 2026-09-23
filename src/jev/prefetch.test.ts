@@ -1,4 +1,9 @@
-import { buildFeatures, type DecisionRecord, decideAction } from "@jev-poker/agent";
+import {
+  buildFeatures,
+  type DecisionRecord,
+  decideAction,
+  type JevBackend,
+} from "@jev-poker/agent";
 import {
   type Action,
   createDeck,
@@ -10,7 +15,6 @@ import {
 } from "@jev-poker/engine";
 import type { Questions, SystemOneRequest, SystemOneResult } from "@typesafe-ai/sdk";
 import { describe, expect, it } from "vitest";
-import type { JevBackend } from "./backend";
 import {
   DecisionCache,
   decisionKey,

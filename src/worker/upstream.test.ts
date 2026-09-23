@@ -10,31 +10,23 @@ const CF_CONFIG = {
 };
 
 describe("upstreamUrl", () => {
-  it("builds the exact url for every route and both paths", () => {
+  it("builds the exact url for every route", () => {
     expect(upstreamUrl("typesafe", "v1/systemone", null, {})).toBe(
       "https://api.typesafe.ai/v1/systemone",
-    );
-    expect(upstreamUrl("typesafe", "v1/models", null, {})).toBe(
-      "https://api.typesafe.ai/v1/models",
     );
     expect(upstreamUrl("vercel", "v1/systemone", null, {})).toBe(
       "https://ai-gateway.vercel.sh/typesafe/v1/systemone",
     );
-    expect(upstreamUrl("vercel", "v1/models", null, {})).toBe(
-      "https://ai-gateway.vercel.sh/typesafe/v1/models",
-    );
     expect(upstreamUrl("lolipop", "v1/systemone", null, {})).toBe(
       "https://ai-gateway.lolipop.jp/v1/systemone",
-    );
-    expect(upstreamUrl("lolipop", "v1/models", null, {})).toBe(
-      "https://ai-gateway.lolipop.jp/v1/models",
     );
     expect(upstreamUrl("cloudflare", "v1/systemone", CF_CONFIG, {})).toBe(
       "https://gateway.ai.cloudflare.com/v1/0123456789abcdef0123456789abcdef/my-gateway/custom-typesafe/v1/systemone",
     );
-    expect(upstreamUrl("cloudflare", "v1/models", CF_CONFIG, {})).toBe(
-      "https://gateway.ai.cloudflare.com/v1/0123456789abcdef0123456789abcdef/my-gateway/custom-typesafe/v1/models",
-    );
+  });
+
+  it("calls nothing upstream but the decision endpoint", () => {
+    expect(upstreamUrl("typesafe", "v1/models", null, {})).toEqual({ error: "invalid_path" });
   });
 
   it("ignores a TYPESAFE_BASE_URL that is not an https (or local http) origin", () => {
@@ -61,20 +53,22 @@ describe("upstreamUrl", () => {
       "http://localhost:8787",
       "http://127.0.0.1:1234/base",
     ]) {
-      expect(upstreamUrl("typesafe", "v1/models", null, { TYPESAFE_BASE_URL: base }), base).toBe(
-        `${base}/v1/models`,
+      expect(upstreamUrl("typesafe", "v1/systemone", null, { TYPESAFE_BASE_URL: base }), base).toBe(
+        `${base}/v1/systemone`,
       );
     }
   });
 
   it("honours TYPESAFE_BASE_URL on the typesafe route only", () => {
     const env = { TYPESAFE_BASE_URL: "https://example.test/" };
-    expect(upstreamUrl("typesafe", "v1/models", null, env)).toBe("https://example.test/v1/models");
-    expect(upstreamUrl("vercel", "v1/models", null, env)).toBe(
-      "https://ai-gateway.vercel.sh/typesafe/v1/models",
+    expect(upstreamUrl("typesafe", "v1/systemone", null, env)).toBe(
+      "https://example.test/v1/systemone",
     );
-    expect(upstreamUrl("cloudflare", "v1/models", CF_CONFIG, env)).toBe(
-      "https://gateway.ai.cloudflare.com/v1/0123456789abcdef0123456789abcdef/my-gateway/custom-typesafe/v1/models",
+    expect(upstreamUrl("vercel", "v1/systemone", null, env)).toBe(
+      "https://ai-gateway.vercel.sh/typesafe/v1/systemone",
+    );
+    expect(upstreamUrl("cloudflare", "v1/systemone", CF_CONFIG, env)).toBe(
+      "https://gateway.ai.cloudflare.com/v1/0123456789abcdef0123456789abcdef/my-gateway/custom-typesafe/v1/systemone",
     );
   });
 

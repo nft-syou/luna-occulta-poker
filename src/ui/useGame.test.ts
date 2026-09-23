@@ -1,12 +1,16 @@
 // @vitest-environment jsdom
 import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
-import { createMockBackend, type DecisionFeatures, OPPONENT_TYPES_INTRO } from "@jev-poker/agent";
+import {
+  createMockBackend,
+  type DecisionFeatures,
+  type JevBackend,
+  OPPONENT_TYPES_INTRO,
+} from "@jev-poker/agent";
 import { act, cleanup, renderHook, waitFor } from "@testing-library/react";
 import { APIError, AuthenticationError } from "@typesafe-ai/sdk";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { spiritPersonas } from "../characters/spirits";
-import type { JevBackend } from "../jev/backend";
 import { MAX_CHIP_MOVES } from "./fx";
 import { opponentTypeOf, type PlayerStats } from "./stats";
 import { DEFAULT_SETTINGS, type Settings, STATS_STORAGE_KEY } from "./storage";
@@ -494,6 +498,34 @@ describe("useGame", () => {
       timeout: 5000,
     });
     expect(onTonightOver).toHaveBeenCalledTimes(1);
+    unmount();
+  });
+
+  it("halts for the night on the server's word, whichever request carried it", async () => {
+    const { result, unmount } = renderHook(() =>
+      useGame({
+        settings: cpuOnly,
+        personas: spiritPersonas(),
+        backend: createMockBackend(),
+        onAuthFailed: () => {},
+        onTonightOver: () => {},
+        seed: 5,
+      }),
+    );
+    await waitFor(() => expect(result.current.state.handsPlayed).toBeGreaterThanOrEqual(1), {
+      timeout: 5000,
+    });
+    // No decision of the loop's own saw the stop (a speculated one did): the table still halts.
+    act(() => result.current.halt());
+    expect(result.current.state.paused).toBe(true);
+    expect(result.current.state.pauseReason).toBe("tonight");
+    // Halting twice is still halted: it is not a toggle.
+    act(() => result.current.halt());
+    expect(result.current.state.paused).toBe(true);
+    await new Promise((r) => setTimeout(r, 50));
+    const frozen = result.current.state.handsPlayed;
+    await new Promise((r) => setTimeout(r, 150));
+    expect(result.current.state.handsPlayed).toBe(frozen);
     unmount();
   });
 

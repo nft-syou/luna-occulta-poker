@@ -2,12 +2,13 @@ import type { SeatKind } from "@jev-poker/engine";
 import { SITUATIONS, type Situation } from "../characters/lines";
 import { isSpiritId, type SpiritId } from "../characters/spirits";
 import { LANGUAGE_STORAGE_KEY, type Language } from "../i18n";
-import { type Connection, validateConnection } from "../jev/connection";
 import { EMPTY_STATS, type PlayerStats, type StatsKey } from "./stats";
 
-export const CONNECTION_STORAGE_KEY = "jev-poker.connection";
-/** Versions before the gateway routes stored a bare TypeSafe key here. */
-export const LEGACY_API_KEY_STORAGE_KEY = "jev-poker.apiKey";
+/**
+ * Where versions that asked players for their own key kept it: a connection record, and
+ * before that a bare TypeSafe key. The key is the operator's now; these are only ever removed.
+ */
+const OLD_CREDENTIAL_KEYS = ["jev-poker.connection", "jev-poker.apiKey"] as const;
 export const SETTINGS_STORAGE_KEY = "jev-poker.settings";
 export const STATS_STORAGE_KEY = "jev-poker.stats";
 
@@ -122,39 +123,9 @@ function remove(key: string): void {
   }
 }
 
-/**
- * The saved connection, or `null` when there is none. A record written by an older version
- * (a bare TypeSafe key) is migrated to the TypeSafe route once, then the old key is dropped.
- * Anything unparseable or no longer valid is treated as absent rather than trusted.
- */
-export function loadConnection(): Connection | null {
-  const raw = read(CONNECTION_STORAGE_KEY);
-  if (raw !== null) {
-    try {
-      const result = validateConnection(JSON.parse(raw));
-      if (result.ok) return result.connection;
-    } catch {
-      // Corrupt JSON: the modal asks for the credentials again.
-    }
-    return null;
-  }
-  const legacy = read(LEGACY_API_KEY_STORAGE_KEY);
-  if (legacy === null) return null;
-  const migrated = validateConnection({ route: "typesafe", apiKey: legacy });
-  // Either way the old record goes: a key that cannot be migrated is a secret with no use
-  // left, and keeping it would only leave it lying in storage.
-  if (migrated.ok) saveConnection(migrated.connection);
-  remove(LEGACY_API_KEY_STORAGE_KEY);
-  return migrated.ok ? migrated.connection : null;
-}
-
-export function saveConnection(connection: Connection): void {
-  write(CONNECTION_STORAGE_KEY, JSON.stringify(connection));
-}
-
-export function clearConnection(): void {
-  remove(CONNECTION_STORAGE_KEY);
-  remove(LEGACY_API_KEY_STORAGE_KEY);
+/** Removes any key an older version stored, so no player's secret lingers in this browser. */
+export function forgetOldCredentials(): void {
+  for (const key of OLD_CREDENTIAL_KEYS) remove(key);
 }
 
 export function loadSettings(): Settings {
