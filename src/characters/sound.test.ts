@@ -68,6 +68,14 @@ describe("createSoundPlayer", () => {
     expect(made[0].currentTime).toBe(0);
   });
 
+  it("plays a sound quieter when asked, never louder than the effects' volume", () => {
+    const { p, made } = player();
+    p.se("cutin", 0.5);
+    expect(made[0]?.volume).toBeCloseTo(0.3, 5);
+    p.se("cutin", 4);
+    expect(made[0]?.volume).toBeCloseTo(0.6, 5);
+  });
+
   it("says nothing while the effects are off", () => {
     const { p, made } = player({ se: false });
     p.se("deal");

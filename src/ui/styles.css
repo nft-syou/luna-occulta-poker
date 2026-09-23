@@ -2275,6 +2275,165 @@ body.showcase .app {
     opacity: 0;
   }
 }
+/* --- 開帳: the table opening as the player sits down ------------------------ */
+/* The screen goes dark, the logo's eclipse rises, a gold light runs once round its rim,
+   「開帳」 is brushed across the moon, and two lacquer doors part onto the table. Above the
+   table, its bars (20) and the drawer (25); below the dialogs (30) and Turnstile (40). Fixed
+   and clipped to the viewport, so the doors sliding out can never make the page scroll. */
+.opening {
+  position: fixed;
+  inset: 0;
+  z-index: 28;
+  overflow: hidden;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+}
+.opening-door {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 50.5%;
+  background:
+    radial-gradient(ellipse 120% 70% at 50% 50%, rgba(36, 28, 52, 0.55), transparent 70%),
+    linear-gradient(180deg, #0d0b16, #07060d);
+  transition: transform var(--opening-doors-ms, 420ms) cubic-bezier(0.65, 0, 0.35, 1);
+}
+.opening-door.left {
+  left: 0;
+  box-shadow: inset -1px 0 0 rgba(217, 169, 76, 0.28);
+}
+.opening-door.right {
+  right: 0;
+  box-shadow: inset 1px 0 0 rgba(217, 169, 76, 0.28);
+}
+.opening-doors .opening-door.left {
+  transform: translateX(-101%);
+}
+.opening-doors .opening-door.right {
+  transform: translateX(101%);
+}
+.opening-eclipse {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: min(72vmin, 320px);
+  aspect-ratio: 1;
+  animation: opening-rise 520ms var(--kitan-ease) var(--opening-eclipse-at, 120ms) both;
+}
+.opening-doors .opening-eclipse {
+  animation: opening-sink 220ms ease-in both;
+}
+.opening-moon {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+/* The crescent of light on the right comes first; the ring then closes it round. */
+.opening-crescent {
+  animation: opening-fade-in 360ms ease-out calc(var(--opening-eclipse-at, 120ms) + 200ms) both;
+}
+.opening-ring {
+  stroke-dasharray: 100;
+  stroke-dashoffset: 100;
+  stroke-linecap: round;
+  animation: opening-ring var(--opening-ring-ms, 620ms) cubic-bezier(0.45, 0, 0.25, 1)
+    var(--opening-ring-at, 480ms) forwards;
+}
+.opening-word {
+  position: relative;
+  font-family: var(--kitan-font);
+  font-weight: 800;
+  font-size: min(15vmin, 84px);
+  letter-spacing: 0.12em;
+  /* The tracking pads the right; the same on the left keeps the pair on the moon's centre. */
+  padding-left: 0.12em;
+  line-height: 1;
+  white-space: nowrap;
+  background: linear-gradient(180deg, #fff9e6, #f2d88e 38%, #cfa040 70%, #96692a);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: var(--kitan-kindei-hi);
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.85));
+  /* Brushed on left to right: the clip opens with the stroke. */
+  clip-path: inset(0 100% 0 0);
+  animation: opening-brush var(--opening-word-ms, 460ms) cubic-bezier(0.55, 0, 0.3, 1)
+    var(--opening-word-at, 900ms) forwards;
+}
+/* Where motion is not wanted: no eclipse, no doors, only the dark lifting. */
+.opening.reduced {
+  background: #07060d;
+  animation: opening-lift 300ms linear forwards;
+}
+@keyframes opening-rise {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes opening-sink {
+  from {
+    opacity: 1;
+    transform: none;
+  }
+  to {
+    opacity: 0;
+    transform: scale(1.06);
+  }
+}
+@keyframes opening-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes opening-ring {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes opening-brush {
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+@keyframes opening-lift {
+  to {
+    opacity: 0;
+  }
+}
+/* The seats wait in the dark under the veil, then light one after another as the doors
+   part. Only the start is held (`backwards`), so a folded seat keeps its own look after. */
+.felt.seats-dim .seat {
+  filter: brightness(0.3) saturate(0.4);
+}
+.felt.seats-lit .seat {
+  animation: seat-light 240ms ease-out var(--lit-delay, 0ms) backwards;
+}
+@keyframes seat-light {
+  from {
+    filter: brightness(0.3) saturate(0.4);
+  }
+  60% {
+    border-color: var(--kitan-kindei-hi);
+    box-shadow:
+      0 0 14px 2px rgba(240, 206, 126, 0.4),
+      var(--kitan-shadow-sm);
+  }
+  to {
+    filter: none;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .chip-fly {
     display: none;

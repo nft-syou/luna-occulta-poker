@@ -17,6 +17,7 @@ import { DecisionBubble } from "./DecisionBubble";
 import { cardText } from "./format";
 import { handsPerMinute, type Speech } from "./fx";
 import { HistoryPanel } from "./HistoryPanel";
+import { OpeningLayer, SEAT_LIT_STAGGER_MS } from "./OpeningLayer";
 import { SeatSpeech, SeatView } from "./SeatView";
 import { ShowcasePanel } from "./ShowcasePanel";
 import { StatsPanel } from "./StatsPanel";
@@ -48,8 +49,13 @@ interface Props {
   voiceWhenOut?: boolean;
   /** The table's own sounds: cards, 勾玉, the cut-in. */
   sound?: SoundPlayer;
-  /** Held by the cut-in while it is up. */
+  /** Held by the cut-in while it is up, and by the opening. */
   gate?: Gate;
+  /**
+   * Plays 開帳 as the table mounts: the veil, the eclipse, the doors, the seats lighting one
+   * by one. Once per mount, so once per sitting; the greetings and the music wait for it.
+   */
+  opening?: boolean;
 }
 
 /** How long a bubble with a spoken line stays: long enough to read and to hear it out. */
@@ -57,6 +63,12 @@ const SPEECH_MS = 4200;
 
 /** The gap between one 御霊's greeting and the next as the table opens. */
 const GREET_GAP_MS = 600;
+
+/**
+ * How the seats are lit as the table opens: dark under the veil, lit one after another as
+ * the doors part, or simply as they always are.
+ */
+type SeatLight = "dim" | "lit" | null;
 
 /** What the drawer beside the table is showing, if it is open. */
 type Drawer = "stats" | "log";
@@ -154,6 +166,7 @@ export function TableView({
   voiceWhenOut = false,
   sound,
   gate,
+  opening = false,
 }: Props) {
   const { t } = useTranslation();
   const phone = useMediaQuery(PHONE_QUERY);
@@ -255,8 +268,12 @@ export function TableView({
   const [greetings, setGreetings] = useState<ReadonlyMap<SeatId, Speech>>(new Map());
   const seatsRef = useRef(state.seats);
   seatsRef.current = state.seats;
-  // biome-ignore lint/correctness/useExhaustiveDependencies: once per sitting, on mount
+  const [seatLight, setSeatLight] = useState<SeatLight>(opening ? "dim" : null);
+  // The table is open once the veil is gone; `seatLight` never goes back to "dim".
+  const opened = seatLight !== "dim";
+  // biome-ignore lint/correctness/useExhaustiveDependencies: once per sitting, as the table opens
   useEffect(() => {
+    if (!opened) return;
     const timers: ReturnType<typeof setTimeout>[] = [];
     const seated = seatsRef.current.filter((s) => s.kind === "cpu" && !spirit(s.spiritId).silent);
     seated.forEach((seat, i) => {
@@ -278,7 +295,7 @@ export function TableView({
     return () => {
       for (const t of timers) clearTimeout(t);
     };
-  }, []);
+  }, [opened]);
 
   // The table's own sounds follow the same effects, each played once: a street dealt, chips
   // out to a bet, a pot coming home, and the cut-in's own strike.
@@ -525,9 +542,22 @@ export function TableView({
         </div>
 
         {/* The felt is always up, on a phone too: the log and stats open over it. */}
-        <div ref={feltRef} className="felt" style={feltVars}>
-          {layout.map(({ seat, player, x, y, inward }) => {
-            const style = { left: `${x}%`, top: `${y}%` };
+        <div
+          ref={feltRef}
+          className={seatLight === null ? "felt" : `felt seats-${seatLight}`}
+          style={feltVars}
+        >
+          {layout.map(({ seat, player, x, y, inward }, index) => {
+            // Lit round the table from the player's own seat, one after another.
+            const order = (index - anchorIndex + count) % count;
+            const style =
+              seatLight === "lit"
+                ? ({
+                    left: `${x}%`,
+                    top: `${y}%`,
+                    "--lit-delay": `${order * SEAT_LIT_STAGGER_MS}ms`,
+                  } as CSSProperties)
+                : { left: `${x}%`, top: `${y}%` };
             const thinking = state.thinkingSeat === seat.id;
             // A seat is narrated while it thinks, and for a moment after it has decided.
             const decided = last !== null && last.seat === seat.id ? last : null;
@@ -706,6 +736,16 @@ export function TableView({
             )}
           </div>
         </>
+      )}
+
+      {opening && (
+        <OpeningLayer
+          gate={gate}
+          sound={sound}
+          seatCount={count}
+          reducedMotion={reducedMotion}
+          onOpened={(instant) => setSeatLight(instant ? null : "lit")}
+        />
       )}
 
       {showcase && (

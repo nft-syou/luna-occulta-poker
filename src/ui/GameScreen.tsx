@@ -36,7 +36,7 @@ export function GameScreen({
   const [stopReason, setStopReason] = useState<StopReason | null>(null);
   const [backend] = useState(() => createGameBackend({ session, onStop: setStopReason }));
   // One player per sitting; the settings' switch and slider reach it through effects.
-  // The gate the loop waits at: held by a line being said and by a cut-in on screen.
+  // The gate the loop waits at: held by the opening, by a line being said and by a cut-in.
   const [gate] = useState(() => createGate());
   const [voice] = useState(() =>
     createVoicePlayer({
@@ -59,11 +59,9 @@ export function GameScreen({
   useEffect(() => sound.setBgmVolume(settings.bgmVolume), [sound, settings.bgmVolume]);
   useEffect(() => sound.setSe(settings.se), [sound, settings.se]);
   useEffect(() => sound.setSeVolume(settings.seVolume), [sound, settings.seVolume]);
-  // The table was opened by a click, so the browser lets the loop start.
-  useEffect(() => {
-    sound.startBgm();
-    return () => sound.stopAll();
-  }, [sound]);
+  // The music starts as the opening's doors part (the table was reached by a click, so the
+  // browser lets it); leaving the table stops everything.
+  useEffect(() => () => sound.stopAll(), [sound]);
   const waitForTable = useCallback(() => gate.wait(), [gate]);
   useEffect(() => voice.setEnabled(settings.voice), [voice, settings.voice]);
   useEffect(() => voice.setVolume(settings.voiceVolume), [voice, settings.voiceVolume]);
@@ -106,6 +104,7 @@ export function GameScreen({
         voiceWhenOut={settings.voiceWhenOut}
         sound={sound}
         gate={gate}
+        opening
         recording={recording}
         stopReason={stopReason}
         onOpenSettings={onOpenSettings}

@@ -590,6 +590,30 @@ describe("useGame", () => {
 });
 
 describe("useGame at the gate", () => {
+  it("waits at the gate before dealing the very first hand", async () => {
+    let release: () => void = () => {};
+    const closed = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const { result, unmount } = renderHook(() =>
+      useGame({
+        settings: cpuOnly,
+        personas: spiritPersonas(),
+        backend: createMockBackend(),
+        onAuthFailed: () => {},
+        onTonightOver: () => {},
+        seed: 5,
+        gate: () => closed,
+      }),
+    );
+    await new Promise((r) => setTimeout(r, 200));
+    expect(result.current.state.snapshot).toBeNull();
+    expect(result.current.state.log).toHaveLength(0);
+    release();
+    await waitFor(() => expect(result.current.state.snapshot).not.toBeNull(), { timeout: 2000 });
+    unmount();
+  });
+
   it("waits at the gate before every CPU turn and before each new hand", async () => {
     let waits = 0;
     let open = true;

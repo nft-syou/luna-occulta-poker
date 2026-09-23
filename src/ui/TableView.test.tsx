@@ -3,11 +3,13 @@ import "@testing-library/jest-dom/vitest";
 import type { HandSnapshot, LegalActions } from "@jev-poker/engine";
 import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { createGate, type Gate } from "../characters/gate";
 import type { SoundPlayer } from "../characters/sound";
 import type { VoicePlayer } from "../characters/voice";
 import { initI18n } from "../i18n";
 import type { StopReason } from "../jev/gameBackend";
 import { EMPTY_FX, type TableFx } from "./fx";
+import { OPENING_DOORS_AT_MS, OPENING_DOORS_MS, openingHoldMs } from "./OpeningLayer";
 import { TableView } from "./TableView";
 import type { GameController, GameSeat } from "./useGame";
 
@@ -137,6 +139,8 @@ function renderTable(
     voice: VoicePlayer;
     sound: SoundPlayer;
     voiceWhenOut: boolean;
+    opening: boolean;
+    gate: Gate;
   }> = {},
 ) {
   return render(
@@ -959,5 +963,94 @@ describe("TableView sounds", () => {
       />,
     );
     expect(played).toEqual(["chip"]);
+  });
+});
+
+describe("TableView opening", () => {
+  const THREE: GameSeat[] = [
+    ...SEATS,
+    { id: 2, name: "Mami", kind: "cpu", stack: 200, spiritId: "mami" },
+  ];
+
+  it("keeps the seats dark under the veil, then lights them one after another", () => {
+    vi.useFakeTimers();
+    try {
+      stubViewport(false);
+      const gate = createGate();
+      const { container } = renderTable({ snapshot: null, seats: THREE }, { opening: true, gate });
+      const felt = container.querySelector(".felt");
+      expect(container.querySelector(".opening")).not.toBeNull();
+      expect(felt).toHaveClass("seats-dim");
+      expect(gate.busy()).toBe(true);
+
+      act(() => {
+        vi.advanceTimersByTime(OPENING_DOORS_AT_MS + OPENING_DOORS_MS);
+      });
+      expect(container.querySelector(".opening")).toBeNull();
+      expect(felt).not.toHaveClass("seats-dim");
+      expect(felt).toHaveClass("seats-lit");
+      // Round the table from the player's own seat, a beat apart.
+      const delays = [...container.querySelectorAll<HTMLElement>(".seat")].map((seat) =>
+        seat.style.getPropertyValue("--lit-delay"),
+      );
+      expect(delays).toEqual(["0ms", "80ms", "160ms"]);
+
+      act(() => {
+        vi.advanceTimersByTime(openingHoldMs(3));
+      });
+      expect(gate.busy()).toBe(false);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("lights every seat at once when the opening is skipped", () => {
+    vi.useFakeTimers();
+    try {
+      stubViewport(false);
+      const gate = createGate();
+      const { container } = renderTable({ snapshot: null, seats: THREE }, { opening: true, gate });
+      fireEvent.keyDown(window, { key: " " });
+      expect(gate.busy()).toBe(false);
+      expect(container.querySelector(".opening")).toBeNull();
+      const felt = container.querySelector(".felt");
+      expect(felt).not.toHaveClass("seats-dim");
+      expect(felt).not.toHaveClass("seats-lit");
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("greets only once the doors are open", () => {
+    vi.useFakeTimers();
+    try {
+      stubViewport(false);
+      const calls: string[] = [];
+      const voice: VoicePlayer = {
+        play: (_spirit, line) => {
+          calls.push(line.id);
+        },
+        preload: () => {},
+        setEnabled: () => {},
+        setVolume: () => {},
+        setSituations: () => {},
+        stopAll: () => {},
+      };
+      renderTable({ snapshot: null }, { opening: true, voice });
+      act(() => {
+        vi.advanceTimersByTime(OPENING_DOORS_AT_MS);
+      });
+      expect(calls).toEqual([]);
+      act(() => {
+        vi.advanceTimersByTime(OPENING_DOORS_MS);
+      });
+      expect(calls).toEqual([]);
+      act(() => {
+        vi.advanceTimersByTime(600);
+      });
+      expect(calls[0]).toMatch(/^sakuya\.greet\./);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

@@ -182,3 +182,22 @@ describe("dialog stacking", () => {
     expect(rule(".drawer")).toMatch(/right:\s*0/);
   });
 });
+
+describe("opening guards", () => {
+  const z = (selector: string) => Number(/z-index:\s*(\d+)/.exec(rule(selector))?.[1]);
+
+  it("veils the table, its bars and the drawer, and stays under the dialogs and Turnstile", () => {
+    const opening = z(".opening");
+    expect(opening).toBeGreaterThan(z(".cutin"));
+    expect(opening).toBeGreaterThan(z(".drawer"));
+    expect(opening).toBeLessThan(z(".modal-backdrop"));
+    expect(opening).toBeLessThan(z(".turnstile-challenge"));
+  });
+
+  it("covers the viewport without letting the parting doors make the page scroll", () => {
+    const opening = rule(".opening");
+    expect(opening).toMatch(/position:\s*fixed/);
+    expect(opening).toMatch(/inset:\s*0/);
+    expect(opening).toMatch(/overflow:\s*hidden/);
+  });
+});

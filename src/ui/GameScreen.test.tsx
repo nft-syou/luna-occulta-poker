@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import "@testing-library/jest-dom/vitest";
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { initI18n } from "../i18n";
 import { DEV_SESSION } from "../jev/gameBackend";
@@ -68,5 +68,30 @@ describe("GameScreen", () => {
     // ...and yet the table is halted, with the stop named in the header.
     expect(await screen.findByRole("button", { name: "Resume" })).toBeInTheDocument();
     expect(screen.getAllByText("That's all for tonight").length).toBeGreaterThan(1);
+  });
+
+  it("deals the first hand only once the opening is over, or skipped", async () => {
+    // Nobody answers: all this test needs is the first deal, which asks nothing.
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() => new Promise<Response>(() => {})),
+    );
+    const { container } = render(
+      <GameScreen
+        settings={{ ...HUMAN_FIRST, seats: HUMAN_FIRST.seats.slice(1) }}
+        language="en"
+        session={DEV_SESSION}
+        recording={false}
+        onOpenSettings={() => {}}
+        onLeave={() => {}}
+      />,
+    );
+    expect(container.querySelector(".opening")).not.toBeNull();
+    await new Promise((r) => setTimeout(r, 400));
+    expect(screen.queryByText("Hand #1")).not.toBeInTheDocument();
+
+    fireEvent.keyDown(window, { key: "Enter" });
+    expect(container.querySelector(".opening")).toBeNull();
+    expect(await screen.findByText("Hand #1", {}, { timeout: 500 })).toBeInTheDocument();
   });
 });

@@ -148,8 +148,9 @@ export interface UseGameOptions {
   onTonightOver: () => void;
   seed?: number;
   /**
-   * Waited on before every CPU turn and before the next hand is dealt: the table's chance
-   * to finish a line or a cut-in before the game moves on. Absent, nothing waits.
+   * Waited on before every CPU turn and before every hand is dealt, the first included: the
+   * table's chance to finish its opening, a line or a cut-in before the game moves on.
+   * Absent, nothing waits.
    */
   gate?: () => Promise<void>;
 }
@@ -471,7 +472,14 @@ export function useGame(options: UseGameOptions): GameController {
         while (run.alive && !pausedRef.current) {
           const hand = table.currentHand;
           if (hand === null || hand.isComplete) {
-            if (hand !== null) {
+            if (hand === null) {
+              // The table is still being opened as the player sits down: the first deal
+              // waits for it like any other.
+              if (gateRef.current !== undefined) {
+                await gateRef.current();
+                if (!run.alive || pausedRef.current) return;
+              }
+            } else {
               await sleep(BETWEEN_HANDS_MS[speedRef.current]);
               if (!run.alive || pausedRef.current) return;
               // The words after the hand — and a bust's cut-in — finish before the next deal.

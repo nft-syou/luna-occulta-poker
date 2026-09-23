@@ -22,8 +22,11 @@ export interface LoopingAudio extends AudioLike {
 }
 
 export interface SoundPlayer {
-  /** Plays a one-shot. A sound already ringing is restarted rather than layered. */
-  se(id: SoundId): void;
+  /**
+   * Plays a one-shot. A sound already ringing is restarted rather than layered. `gain`
+   * (0–1, default 1) scales it below the effects' own volume, for a quieter use of a sound.
+   */
+  se(id: SoundId, gain?: number): void;
   /** Starts the loop if music is on; safe to call again while it is already playing. */
   startBgm(): void;
   setBgm(on: boolean): void;
@@ -121,7 +124,7 @@ export function createSoundPlayer(init: SoundPlayerInit): SoundPlayer {
   };
 
   return {
-    se(id) {
+    se(id, gain = 1) {
       if (!seOn) return;
       let audio = shots.get(id);
       if (audio === undefined) {
@@ -133,7 +136,7 @@ export function createSoundPlayer(init: SoundPlayerInit): SoundPlayer {
         }
         shots.set(id, audio);
       }
-      audio.volume = seVolume;
+      audio.volume = seVolume * clamp(gain);
       try {
         audio.currentTime = 0;
       } catch {
