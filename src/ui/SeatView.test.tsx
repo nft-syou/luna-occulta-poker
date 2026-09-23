@@ -5,7 +5,7 @@ import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import { initI18n } from "../i18n";
 import type { Callout, CalloutKind } from "./fx";
-import { SeatView } from "./SeatView";
+import { SeatSpeech, SeatView } from "./SeatView";
 import type { GameSeat } from "./useGame";
 
 initI18n("en");
@@ -33,19 +33,31 @@ function callout(kind: CalloutKind, amount = 0): Callout {
   return { id: 7, seat: 1, kind, amount, at: 1000, line: null };
 }
 
-function renderSeat(props: Partial<Parameters<typeof SeatView>[0]> = {}) {
+/** A seat and its bubble, as the table draws them: the bubble in its own layer. */
+function renderSeat(
+  props: Partial<Parameters<typeof SeatView>[0]> & Partial<Parameters<typeof SeatSpeech>[0]> = {},
+) {
+  const { speech, bigBlind = 2, inward, ...seatProps } = props;
   return render(
-    <SeatView
-      seat={SEAT}
-      player={PLAYER}
-      isButton={false}
-      isActing={false}
-      isThinking={false}
-      revealCards={true}
-      style={{}}
-      bigBlind={2}
-      {...props}
-    />,
+    <>
+      <SeatView
+        seat={SEAT}
+        player={PLAYER}
+        isButton={false}
+        isActing={false}
+        isThinking={false}
+        revealCards={true}
+        style={{}}
+        {...seatProps}
+      />
+      <SeatSpeech
+        style={{}}
+        callout={props.callout ?? null}
+        speech={speech ?? null}
+        bigBlind={bigBlind}
+        inward={inward}
+      />
+    </>,
   );
 }
 
@@ -83,18 +95,7 @@ describe("SeatView callouts", () => {
   it("throws the callout towards the middle, never below the seat", () => {
     // A seat on the bottom rail: the middle is up.
     const bottom = render(
-      <SeatView
-        seat={SEAT}
-        player={PLAYER}
-        isButton={false}
-        isActing={false}
-        isThinking={false}
-        revealCards={true}
-        style={{}}
-        bigBlind={2}
-        callout={callout("bet", 12)}
-        inward={{ x: 0, y: -1 }}
-      />,
+      <SeatSpeech style={{}} bigBlind={2} callout={callout("bet", 12)} inward={{ x: 0, y: -1 }} />,
     );
     const bottomSpot = bottom.container.querySelector(".callout-spot") as HTMLElement | null;
     expect(bottomSpot).not.toBeNull();
@@ -105,18 +106,7 @@ describe("SeatView callouts", () => {
 
     // A seat on the top rail: the middle is down.
     const top = render(
-      <SeatView
-        seat={SEAT}
-        player={PLAYER}
-        isButton={false}
-        isActing={false}
-        isThinking={false}
-        revealCards={true}
-        style={{}}
-        bigBlind={2}
-        callout={callout("bet", 12)}
-        inward={{ x: 0, y: 1 }}
-      />,
+      <SeatSpeech style={{}} bigBlind={2} callout={callout("bet", 12)} inward={{ x: 0, y: 1 }} />,
     );
     const topSpot = top.container.querySelector(".callout-spot") as HTMLElement | null;
     expect(Number(topSpot?.style.getPropertyValue("--in-y"))).toBeGreaterThan(0);
@@ -143,7 +133,6 @@ describe("SeatView callouts", () => {
         isThinking={false}
         revealCards={true}
         style={{}}
-        bigBlind={2}
         winnerAt={1234}
       />,
     );
@@ -163,7 +152,6 @@ describe("SeatView callouts", () => {
         isThinking={false}
         revealCards={true}
         style={{}}
-        bigBlind={2}
         flipAt={999}
       />,
     );

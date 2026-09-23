@@ -17,7 +17,7 @@ import { DecisionBubble } from "./DecisionBubble";
 import { cardText } from "./format";
 import { handsPerMinute, type Speech } from "./fx";
 import { HistoryPanel } from "./HistoryPanel";
-import { SeatView } from "./SeatView";
+import { SeatSpeech, SeatView } from "./SeatView";
 import { ShowcasePanel } from "./ShowcasePanel";
 import { StatsPanel } from "./StatsPanel";
 import { compactBubble } from "./showcase";
@@ -478,11 +478,8 @@ export function TableView({
                   style={style}
                   overlay={bubble}
                   callout={calloutBySeat.get(seat.id) ?? null}
-                  speech={speechBySeat.get(seat.id) ?? greetings.get(seat.id) ?? null}
-                  bigBlind={bigBlind}
                   winnerAt={fx.winners.includes(seat.id) ? fx.winnersAt : 0}
                   flipAt={revealAll ? fx.flipAt : 0}
-                  inward={inward}
                 />
               );
             })}
@@ -503,6 +500,20 @@ export function TableView({
                 style={{ left: `${betX}%`, top: `${betY}%` }}
               />
             ))}
+
+            {/* Every seat's bubble, in one layer above the chips and below the cut-in. */}
+            <div className="speech-layer">
+              {layout.map(({ seat, x, y, inward }) => (
+                <SeatSpeech
+                  key={seat.id}
+                  style={{ left: `${x}%`, top: `${y}%` }}
+                  callout={calloutBySeat.get(seat.id) ?? null}
+                  speech={speechBySeat.get(seat.id) ?? greetings.get(seat.id) ?? null}
+                  bigBlind={bigBlind}
+                  inward={inward}
+                />
+              ))}
+            </div>
 
             <div className="board">
               <div className="board-cards">

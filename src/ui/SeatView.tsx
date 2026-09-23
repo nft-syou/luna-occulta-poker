@@ -17,17 +17,12 @@ interface Props {
   style: CSSProperties;
   /** Rendered inside the seat, which is the positioning context for a decision bubble. */
   overlay?: ReactNode;
-  /** The seat's most recent shout, if it still has one. */
+  /** The seat's most recent shout, if it still has one: the seat flashes in its colour. */
   callout?: Callout | null;
-  /** The seat's most recent line outside an action (a pot won or lost, a bust). */
-  speech?: Speech | null;
-  bigBlind?: number;
   /** When this seat last won a pot; a new value restarts its glow. Zero for never. */
   winnerAt?: number;
   /** When cards were last revealed at showdown; a new value restarts the flip. */
   flipAt?: number;
-  /** Which way the middle of the felt is, so the callout can be thrown that way. */
-  inward?: Inward;
 }
 
 export function SeatView({
@@ -40,11 +35,8 @@ export function SeatView({
   style,
   overlay,
   callout = null,
-  speech = null,
-  bigBlind = 0,
   winnerAt = 0,
   flipAt = 0,
-  inward = INWARD_UP,
 }: Props) {
   const { t, i18n } = useTranslation();
   const folded = player?.folded ?? false;
@@ -84,22 +76,55 @@ export function SeatView({
         {player?.allIn && t("table.allIn")}
         {folded && t("table.folded")}
       </div>
-      {/* Whichever is newer speaks: the shout that came with an action, or the word after. */}
-      {speech !== null && (callout === null || speech.at >= callout.at) ? (
-        <SpeechView key={`s${speech.id}`} kind={null} line={speech.line} inward={inward} />
-      ) : (
-        callout !== null && (
-          <SpeechView
-            key={callout.id}
-            kind={callout.kind}
-            amount={callout.amount}
-            bigBlind={bigBlind}
-            line={callout.line}
-            inward={inward}
-          />
-        )
-      )}
       {overlay}
+    </div>
+  );
+}
+
+interface SeatSpeechProps {
+  /** The seat's centre on the felt, as the seat itself is placed. */
+  style: CSSProperties;
+  /** The seat's most recent shout, if it still has one. */
+  callout?: Callout | null;
+  /** The seat's most recent line outside an action (a pot won or lost, a bust). */
+  speech?: Speech | null;
+  bigBlind?: number;
+  /** Which way the middle of the felt is, so the callout can be thrown that way. */
+  inward?: Inward;
+}
+
+/**
+ * A seat's bubble, drawn in the felt's speech layer rather than inside the seat. The seat is
+ * transformed (and a folded one faded and filtered), so it is a stacking context of its own:
+ * a bubble inside it could only ever rise above the seat's own contents, and every chip stack
+ * and chip flight — placed in the felt, above the seats — was painted over it. Here the
+ * bubble is anchored to the same point as the seat, in a layer above the chips.
+ */
+export function SeatSpeech({
+  style,
+  callout = null,
+  speech = null,
+  bigBlind = 0,
+  inward = INWARD_UP,
+}: SeatSpeechProps) {
+  // Whichever is newer speaks: the shout that came with an action, or the word after.
+  const bubble =
+    speech !== null && (callout === null || speech.at >= callout.at) ? (
+      <SpeechView key={`s${speech.id}`} kind={null} line={speech.line} inward={inward} />
+    ) : callout !== null ? (
+      <SpeechView
+        key={callout.id}
+        kind={callout.kind}
+        amount={callout.amount}
+        bigBlind={bigBlind}
+        line={callout.line}
+        inward={inward}
+      />
+    ) : null;
+  if (bubble === null) return null;
+  return (
+    <div className="speech-anchor" style={style}>
+      {bubble}
     </div>
   );
 }

@@ -339,6 +339,40 @@ describe("TableView", () => {
     }
   });
 
+  it("draws every bubble in one layer above the chips, not inside its seat", () => {
+    // A seat is transformed, so it is a stacking context: a bubble inside it could only rise
+    // above the seat itself, and the felt's chip stacks and flights were painted over it.
+    stubViewport(false);
+    const line = { id: "sakuya.raise.1", text: "レイズ。あたしの番だ" };
+    const { container } = renderTable({
+      fx: {
+        ...EMPTY_FX,
+        chipMoves: [{ id: 1, seat: 1, kind: "toBet", amount: 6, at: 10 }],
+        callouts: [
+          { id: 2, seat: 0, kind: "check", amount: 0, at: 10, line: null },
+          { id: 3, seat: 1, kind: "raise", amount: 12, at: 11, line },
+        ],
+      },
+    });
+    const layers = container.querySelectorAll(".felt > .speech-layer");
+    expect(layers).toHaveLength(1);
+    const spots = container.querySelectorAll(".callout-spot");
+    expect(spots).toHaveLength(2);
+    for (const spot of spots) {
+      expect(spot.closest(".seat")).toBeNull();
+      expect(spot.closest(".speech-layer")).toBe(layers[0]);
+    }
+    // Painted after the chips and their flights, so equal footing could never hide it either.
+    const children = [...(container.querySelector(".felt")?.children ?? [])];
+    const layerAt = children.indexOf(layers[0] as Element);
+    expect(layerAt).toBeGreaterThan(
+      children.indexOf(container.querySelector(".fx-layer") as Element),
+    );
+    for (const stack of container.querySelectorAll(".felt > .bet-stack")) {
+      expect(layerAt).toBeGreaterThan(children.indexOf(stack));
+    }
+  });
+
   it("empties the middle as soon as the pot has been paid out", () => {
     stubViewport(false);
     const { container } = renderTable({

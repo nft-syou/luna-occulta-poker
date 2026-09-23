@@ -103,6 +103,23 @@ describe("tone guards", () => {
   });
 });
 
+describe("bubble stacking", () => {
+  const z = (selector: string) => Number(/z-index:\s*(\d+)/.exec(rule(selector))?.[1] ?? 0);
+
+  it("paints every bubble above the chips and their flights, and below the cut-in", () => {
+    const bubbles = z(".speech-layer");
+    expect(bubbles).toBeGreaterThan(z(".bet-stack"));
+    expect(bubbles).toBeGreaterThan(z(".fx-layer"));
+    expect(bubbles).toBeLessThan(z(".cutin"));
+    expect(rule(".speech-layer")).toMatch(/position:\s*absolute/);
+    expect(rule(".speech-layer")).toMatch(/inset:\s*0/);
+  });
+
+  it("gives the bubble no z-index of its own, which would only count inside a seat", () => {
+    expect(rule(".callout-spot")).not.toMatch(/z-index/);
+  });
+});
+
 describe("dialog stacking", () => {
   it("keeps a dialog above the chips, bubbles and cut-in on the felt and above the bars", () => {
     const z = (selector: string) => Number(/z-index:\s*(\d+)/.exec(rule(selector))?.[1] ?? 0);
@@ -110,7 +127,7 @@ describe("dialog stacking", () => {
     for (const selector of [
       ".bet-stack",
       ".fx-layer",
-      ".callout-spot",
+      ".speech-layer",
       ".cutin",
       ".tab-bar",
       ".your-turn",

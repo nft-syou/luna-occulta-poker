@@ -546,11 +546,26 @@ a {
    the action feed and — for a human — their own buttons; inwards there is always felt.
    `--callout-reach` is short enough to keep the label nearer the seat than its chip stack
    and clear of the recording bubble, which grows the opposite way. */
+/* The bubbles have a layer of their own over the whole felt. A seat is transformed (and a
+   folded one faded), so it is a stacking context: a bubble inside it, whatever its z-index,
+   was painted under every chip stack and chip flight on the felt. Above the chips (3) and
+   their flights (5), below the cut-in (7). */
+.speech-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  pointer-events: none;
+}
+/* A point at the seat's centre, placed exactly as the seat is. */
+.speech-anchor {
+  position: absolute;
+  width: 0;
+  height: 0;
+}
 .callout-spot {
   position: absolute;
   left: 50%;
   top: 50%;
-  z-index: 6;
   pointer-events: none;
   transform: translate(-50%, -50%)
     translate(
