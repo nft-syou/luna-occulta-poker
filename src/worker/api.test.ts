@@ -174,8 +174,45 @@ describe("handleApi", () => {
     expect(res.status).toBe(429);
     expect(res.headers.get("retry-after")).toBe("2");
     expect(await res.json()).toEqual({ error: "slow_down" });
-    expect(limit).toHaveBeenCalledWith({ key: "1.2.3.4" });
+    expect(limit).toHaveBeenCalledWith({ key: "session:1.2.3.4" });
     expect(sessions.issue).not.toHaveBeenCalled();
+  });
+
+  it("keys the session limiter separately from the decide limiter for the same client", async () => {
+    const seen: string[] = [];
+    const limit = vi.fn(async ({ key }: { key: string }) => {
+      seen.push(key);
+      return { success: true };
+    });
+    const d = deps({ burst: { limit } });
+    await handleApi(decide(VALID, { "cf-connecting-ip": "9.9.9.9" }), d);
+    await handleApi(
+      new Request("http://x/api/session", {
+        method: "POST",
+        headers: { "content-type": "application/json", "cf-connecting-ip": "9.9.9.9" },
+        body: JSON.stringify({ turnstileToken: "tok" }),
+      }),
+      d,
+    );
+    expect(seen).toEqual(["9.9.9.9", "session:9.9.9.9"]);
+  });
+
+  it("does not let an exhausted decide bucket make /api/session answer 429", async () => {
+    const limit = vi.fn(async ({ key }: { key: string }) => ({
+      success: key.startsWith("session:"),
+    }));
+    const d = deps({ burst: { limit } });
+    const decideRes = await handleApi(decide(VALID, { "cf-connecting-ip": "9.9.9.9" }), d);
+    expect(decideRes.status).toBe(429);
+    const sessionRes = await handleApi(
+      new Request("http://x/api/session", {
+        method: "POST",
+        headers: { "content-type": "application/json", "cf-connecting-ip": "9.9.9.9" },
+        body: JSON.stringify({ turnstileToken: "tok" }),
+      }),
+      d,
+    );
+    expect(sessionRes.status).toBe(200);
   });
 
   it("refuses a body whose declared length is too large without reading it", async () => {

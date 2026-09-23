@@ -9,6 +9,8 @@ interface Pass {
   expiresAt: number;
 }
 
+const defaultSleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
+
 /**
  * The player's pass to the Worker: Turnstile first, then `POST /api/session`, cached until a
  * minute before it expires. Concurrent callers share one request.
@@ -17,19 +19,31 @@ export function createSessionSource(o: {
   getTurnstileToken: () => Promise<string>;
   fetch?: typeof fetch;
   now?: () => number;
+  sleep?: (ms: number) => Promise<void>;
 }): SessionSource {
   const fetchImpl = o.fetch ?? ((input, init) => fetch(input, init));
   const now = o.now ?? Date.now;
+  const sleep = o.sleep ?? defaultSleep;
   let pass: Pass | null = null;
   let pending: Promise<string> | null = null;
 
   const fetchPass = async (): Promise<string> => {
     const turnstileToken = await o.getTurnstileToken();
-    const res = await fetchImpl("/api/session", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ turnstileToken }),
-    });
+    const post = () =>
+      fetchImpl("/api/session", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ turnstileToken }),
+      });
+    // The session bucket is separate from decide's (see src/worker/api.ts), but it can still be
+    // exhausted on its own (many tabs, a page reload storm); wait the Worker's `retry-after` out
+    // once, the same as gameBackend does for a decide 429, rather than stopping the table.
+    let res = await post();
+    if (res.status === 429) {
+      const seconds = Number(res.headers.get("retry-after") ?? "2");
+      await sleep((Number.isFinite(seconds) ? seconds : 2) * 1000);
+      res = await post();
+    }
     if (res.status !== 200) throw new Error(`session refused (${res.status})`);
     const body = (await res.json()) as { token?: unknown; expiresAt?: unknown };
     const expiresAt = typeof body.expiresAt === "string" ? Date.parse(body.expiresAt) : Number.NaN;

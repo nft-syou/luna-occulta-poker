@@ -71,9 +71,9 @@ The Worker is the only thing that holds the operator's Jev key; it never reaches
 browser. "Per IP" below means per IPv4 address, or per IPv6 /64 (one connection is usually
 handed a whole /64).
 
-`POST /api/session` takes `{ turnstileToken }`. It goes through the same burst limit as below
-(`429 slow_down`), then asks Cloudflare's siteverify about the token; anything but a pass is
-`403 turnstile_failed`.
+`POST /api/session` takes `{ turnstileToken }`. It goes through its own burst limit — the same
+binding as below, keyed separately so a burst of decides can never starve it (`429 slow_down`)
+— then asks Cloudflare's siteverify about the token; anything but a pass is `403 turnstile_failed`.
 
 Every `POST /api/jev/decide` is checked in order, stopping at the first failure:
 

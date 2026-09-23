@@ -93,4 +93,64 @@ describe("session source", () => {
     await expect(s.token()).rejects.toThrow("turnstile");
     expect(f).not.toHaveBeenCalled();
   });
+
+  it("waits out a single 429 from /api/session and succeeds on retry", async () => {
+    let call = 0;
+    const f = vi.fn(async (_url: string, _init?: RequestInit) => {
+      call += 1;
+      if (call === 1) return new Response(null, { status: 429, headers: { "retry-after": "5" } });
+      return new Response(
+        JSON.stringify({ token: "pass-1", expiresAt: new Date(NOW + 2 * HOUR).toISOString() }),
+      );
+    });
+    const sleep = vi.fn(async () => {});
+    const s = createSessionSource({
+      getTurnstileToken: async () => "ts",
+      fetch: f as unknown as typeof fetch,
+      now: () => NOW,
+      sleep,
+    });
+    expect(await s.token()).toBe("pass-1");
+    expect(f).toHaveBeenCalledTimes(2);
+    expect(sleep).toHaveBeenCalledTimes(1);
+    expect(sleep).toHaveBeenCalledWith(5000);
+  });
+
+  it("throws after a second 429 from /api/session", async () => {
+    const f = vi.fn(
+      async (_url: string, _init?: RequestInit) =>
+        new Response(null, { status: 429, headers: { "retry-after": "3" } }),
+    );
+    const sleep = vi.fn(async () => {});
+    const s = createSessionSource({
+      getTurnstileToken: async () => "ts",
+      fetch: f as unknown as typeof fetch,
+      now: () => NOW,
+      sleep,
+    });
+    await expect(s.token()).rejects.toThrow();
+    expect(f).toHaveBeenCalledTimes(2);
+    expect(sleep).toHaveBeenCalledTimes(1);
+    expect(sleep).toHaveBeenCalledWith(3000);
+  });
+
+  it("waits the default 2 seconds when /api/session's 429 has no retry-after", async () => {
+    let call = 0;
+    const f = vi.fn(async (_url: string, _init?: RequestInit) => {
+      call += 1;
+      if (call === 1) return new Response(null, { status: 429 });
+      return new Response(
+        JSON.stringify({ token: "pass-1", expiresAt: new Date(NOW + 2 * HOUR).toISOString() }),
+      );
+    });
+    const sleep = vi.fn(async () => {});
+    const s = createSessionSource({
+      getTurnstileToken: async () => "ts",
+      fetch: f as unknown as typeof fetch,
+      now: () => NOW,
+      sleep,
+    });
+    expect(await s.token()).toBe("pass-1");
+    expect(sleep).toHaveBeenCalledWith(2000);
+  });
 });

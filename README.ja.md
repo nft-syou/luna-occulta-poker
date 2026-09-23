@@ -67,9 +67,9 @@ The engine and the CPU are the npm packages `@jev-poker/engine` and `@jev-poker/
 運営の Jev キーを持つのは Worker だけで、ブラウザには届きません。以下の「IP ごと」は、IPv4 なら
 アドレスごと、IPv6 なら /64 ごとです (1 回線に /64 がまるごと割り当てられることが多いため)。
 
-`POST /api/session` は `{ turnstileToken }` を受け取ります。下と同じ瞬間流量の制限 (429 `slow_down`)
-を通ったあと、Cloudflare の siteverify にトークンを問い合わせ、通らなければ 403 `turnstile_failed`
-を返します。
+`POST /api/session` は `{ turnstileToken }` を受け取ります。下と同じバインディングですが、別枠の
+瞬間流量の制限 (429 `slow_down`) を通ったあと、Cloudflare の siteverify にトークンを問い合わせ、
+通らなければ 403 `turnstile_failed` を返します。decide のバーストがこの別枠を食い潰すことはありません。
 
 `POST /api/jev/decide` は毎回、次の順で検査し、最初に落ちたところで返します。
 

@@ -182,8 +182,11 @@ export async function handleApi(request: Request, deps: ApiDeps): Promise<Respon
   const slowDown = () => json(429, { error: "slow_down" }, { "retry-after": "2" });
 
   if (pathname === "/api/session") {
-    // Every session request costs a Turnstile siteverify call: the same burst limit applies.
-    if (!(await deps.burst.limit({ key })).success) return slowDown();
+    // Every session request costs a Turnstile siteverify call, so it gets its own bucket on the
+    // same binding: a `session:` prefix keeps it separate from the caller's decide bucket, so a
+    // decide burst can never make the routine session refresh (which decides wait in flight for)
+    // answer 429.
+    if (!(await deps.burst.limit({ key: `session:${key}` })).success) return slowDown();
     const body = await readJson(request);
     return deps.sessions.issue(body, ip, key);
   }
