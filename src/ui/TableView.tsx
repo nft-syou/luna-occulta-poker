@@ -61,7 +61,7 @@ interface Props {
 /** How long a bubble with a spoken line stays: long enough to read and to hear it out. */
 const SPEECH_MS = 4200;
 
-/** The gap between one 御霊's greeting and the next as the table opens. */
+/** How long after the table opens its one greeting is said. */
 const GREET_GAP_MS = 600;
 
 /**
@@ -263,8 +263,9 @@ export function TableView({
   const quietRef = useRef(quiet);
   quietRef.current = quiet;
 
-  // Greetings as the table opens: each 御霊 in turn, a beat apart. Local, not an effect
-  // of the game, because no engine event says "we sat down".
+  // A greeting as the table opens: one 御霊, picked at random, a beat after the doors. Six in
+  // a row only talked over each other. Local, not an effect of the game, because no engine
+  // event says "we sat down".
   const [greetings, setGreetings] = useState<ReadonlyMap<SeatId, Speech>>(new Map());
   const seatsRef = useRef(state.seats);
   seatsRef.current = state.seats;
@@ -274,27 +275,17 @@ export function TableView({
   // biome-ignore lint/correctness/useExhaustiveDependencies: once per sitting, as the table opens
   useEffect(() => {
     if (!opened) return;
-    const timers: ReturnType<typeof setTimeout>[] = [];
     const seated = seatsRef.current.filter((s) => s.kind === "cpu" && !spirit(s.spiritId).silent);
-    seated.forEach((seat, i) => {
-      timers.push(
-        setTimeout(
-          () => {
-            const line = pickLine(seat.spiritId, "greet", rollFrom(Date.now() + i));
-            if (line === null) return;
-            const at = Date.now();
-            setGreetings((prev) =>
-              new Map(prev).set(seat.id, { id: -1 - i, seat: seat.id, situation: "win", line, at }),
-            );
-            if (!quietRef.current) voice?.play(seat.spiritId, line, { situation: "greet" });
-          },
-          GREET_GAP_MS * (i + 1),
-        ),
-      );
-    });
-    return () => {
-      for (const t of timers) clearTimeout(t);
-    };
+    const seat = seated[Math.floor(Math.random() * seated.length)];
+    if (seat === undefined) return;
+    const timer = setTimeout(() => {
+      const line = pickLine(seat.spiritId, "greet", rollFrom(Date.now()));
+      if (line === null) return;
+      const at = Date.now();
+      setGreetings(new Map([[seat.id, { id: -1, seat: seat.id, situation: "win", line, at }]]));
+      if (!quietRef.current) voice?.play(seat.spiritId, line, { situation: "greet" });
+    }, GREET_GAP_MS);
+    return () => clearTimeout(timer);
   }, [opened]);
 
   // The table's own sounds follow the same effects, each played once: a street dealt, chips

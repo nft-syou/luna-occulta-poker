@@ -754,6 +754,27 @@ describe("TableView voices", () => {
       vi.useRealTimers();
     }
   });
+
+  it("lets only one 御霊, picked at random, greet when several sit at the table", () => {
+    vi.useFakeTimers();
+    const random = vi.spyOn(Math, "random").mockReturnValue(0.99);
+    try {
+      stubViewport(false);
+      const { voice, calls } = fakeVoice();
+      renderTable(
+        { seats: [...SEATS, { id: 2, name: "Mami", kind: "cpu", stack: 200, spiritId: "mami" }] },
+        { voice },
+      );
+      act(() => {
+        vi.advanceTimersByTime(5000);
+      });
+      expect(calls).toHaveLength(1);
+      expect(calls[0]?.id).toMatch(/^mami\.greet\./);
+    } finally {
+      random.mockRestore();
+      vi.useRealTimers();
+    }
+  });
 });
 
 describe("TableView voices while the player is out of the hand", () => {
