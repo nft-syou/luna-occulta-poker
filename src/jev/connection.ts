@@ -19,11 +19,13 @@ import {
   isProviderSlug,
   JEV_ROUTES,
   type JevRoute,
+  LOLIPOP_MODEL,
   LOLIPOP_UPSTREAM,
   TYPESAFE_UPSTREAM,
   type UpstreamEnv,
   type UpstreamUrlError,
   upstreamUrl,
+  VERCEL_MODEL,
   VERCEL_UPSTREAM,
 } from "../worker/upstream.ts";
 
@@ -38,11 +40,13 @@ export {
   isProviderSlug,
   JEV_ROUTES,
   type JevRoute,
+  LOLIPOP_MODEL,
   LOLIPOP_UPSTREAM,
   TYPESAFE_UPSTREAM,
   type UpstreamEnv,
   type UpstreamUrlError,
   upstreamUrl,
+  VERCEL_MODEL,
   VERCEL_UPSTREAM,
 };
 
@@ -72,11 +76,6 @@ export const CF_TOKEN_HEADER = "X-Jev-CF-Token";
 
 /** Printable ASCII only: anything a header may carry, and nothing that could split one. */
 export const SECRET_PATTERN = /^[\x21-\x7E]{1,512}$/;
-
-/** The Vercel AI Gateway addresses Jev by this id instead of `jev-latest`. */
-export const VERCEL_MODEL = "typesafe-ai/jev";
-/** The Lolipop AI Gateway lists Jev under this id. */
-export const LOLIPOP_MODEL = "typesafe/jev-latest";
 
 export type ConnectionField =
   | "route"

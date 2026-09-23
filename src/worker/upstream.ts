@@ -22,6 +22,11 @@ export const VERCEL_UPSTREAM = "https://ai-gateway.vercel.sh/typesafe";
 export const LOLIPOP_UPSTREAM = "https://ai-gateway.lolipop.jp";
 export const CLOUDFLARE_UPSTREAM = "https://gateway.ai.cloudflare.com";
 
+/** The Vercel AI Gateway addresses Jev by this id instead of `jev-latest`. */
+export const VERCEL_MODEL = "typesafe-ai/jev";
+/** The Lolipop AI Gateway lists Jev under this id. */
+export const LOLIPOP_MODEL = "typesafe/jev-latest";
+
 /** The only paths the proxy will ever forward, with the method each one allows. */
 export const ALLOWED_PATHS: Readonly<Record<string, "GET" | "POST">> = {
   "v1/systemone": "POST",
