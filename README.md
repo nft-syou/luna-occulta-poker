@@ -5,9 +5,9 @@
 [![Node.js 24](https://img.shields.io/badge/node-24-339933?logo=nodedotjs&logoColor=white)](.node-version)
 [![pnpm](https://img.shields.io/badge/pnpm-12-F69220?logo=pnpm&logoColor=white)](https://pnpm.io/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6?logo=typescript&logoColor=white)](tsconfig.json)
-[![Deploys to Cloudflare Workers](https://img.shields.io/badge/deploys%20to-Cloudflare%20Workers-F38020?logo=cloudflare&logoColor=white)](https://jev-poker.syou.io/)
+[![Deploys to Cloudflare Workers](https://img.shields.io/badge/deploys%20to-Cloudflare%20Workers-F38020?logo=cloudflare&logoColor=white)](#deploy-to-cloudflare-workers)
 
-**Play it now: [https://jev-poker.syou.io/](https://jev-poker.syou.io/)** — nothing to set up, just sit down.
+**Nothing to set up to play** — no key, no account: open the site and sit down. To host it yourself, see [Deploy to Cloudflare Workers](#deploy-to-cloudflare-workers).
 
 **日本語版は [README.ja.md](README.ja.md) にあります。**
 
@@ -68,7 +68,14 @@ Cloudflare Worker (`src/worker/`) — see "Security" below.
 ## Security
 
 The Worker is the only thing that holds the operator's Jev key; it never reaches the
-browser. Every `POST /api/jev/decide` is checked in order, stopping at the first failure:
+browser. "Per IP" below means per IPv4 address, or per IPv6 /64 (one connection is usually
+handed a whole /64).
+
+`POST /api/session` takes `{ turnstileToken }`. It goes through the same burst limit as below
+(`429 slow_down`), then asks Cloudflare's siteverify about the token; anything but a pass is
+`403 turnstile_failed`.
+
+Every `POST /api/jev/decide` is checked in order, stopping at the first failure:
 
 1. **Session** — `Authorization: Bearer <token>`, an HMAC-SHA256 token issued by `/api/session` once Turnstile passes, valid 2 hours and bound to the caller's IP. Bad, expired or foreign-IP tokens get `401 session_expired`.
 2. **Shape** — the body is ≤16 KB of JSON matching a closed-vocabulary schema (`src/worker/schema.ts`): enums from a fixed list, numbers in range, card codes matching a regex, arrays capped in length, unknown keys rejected. Otherwise `400 bad_request`.
@@ -112,12 +119,12 @@ for the current pairs — don't reuse a real site's keys locally.
 
 ## Deploy to Cloudflare Workers
 
-The official instance is [jev-poker.syou.io](https://jev-poker.syou.io/), deployed from `main`
-through Cloudflare Workers Builds. To run your own, as the operator:
+The public instance is deployed from `main` through Cloudflare Workers Builds. To run your own,
+as the operator:
 
 1. Fork or push this repo to GitHub.
-2. Cloudflare dashboard → Turnstile → create a widget. Mode **Invisible**; hostnames: your
-   public domain and `localhost`. Note the site key and the secret. For local development, use
+2. Cloudflare dashboard → Turnstile → create a widget. Mode **Invisible**; hostname: your
+   public domain only. Note the site key and the secret. For local development, use
    one of Cloudflare's documented test key pairs instead of a real site's keys — see
    [developers.cloudflare.com/turnstile/troubleshooting/testing](https://developers.cloudflare.com/turnstile/troubleshooting/testing/).
 3. Set the three secrets:

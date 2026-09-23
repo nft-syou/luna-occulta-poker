@@ -5,9 +5,9 @@
 [![Node.js 24](https://img.shields.io/badge/node-24-339933?logo=nodedotjs&logoColor=white)](.node-version)
 [![pnpm](https://img.shields.io/badge/pnpm-12-F69220?logo=pnpm&logoColor=white)](https://pnpm.io/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6?logo=typescript&logoColor=white)](tsconfig.json)
-[![Deploys to Cloudflare Workers](https://img.shields.io/badge/deploys%20to-Cloudflare%20Workers-F38020?logo=cloudflare&logoColor=white)](https://jev-poker.syou.io/)
+[![Deploys to Cloudflare Workers](https://img.shields.io/badge/deploys%20to-Cloudflare%20Workers-F38020?logo=cloudflare&logoColor=white)](#cloudflare-workers-へデプロイ)
 
-**今すぐ遊ぶ: [https://jev-poker.syou.io/](https://jev-poker.syou.io/)** — 準備は要りません。座るだけです。
+**遊ぶのに準備は要りません** — キーもアカウントも不要で、サイトを開いて座るだけです。自分で運営する場合は [Cloudflare Workers へデプロイ](#cloudflare-workers-へデプロイ) を参照してください。
 
 **English version: [README.md](README.md)**
 
@@ -64,8 +64,14 @@ The engine and the CPU are the npm packages `@jev-poker/engine` and `@jev-poker/
 
 ## セキュリティ
 
-運営の Jev キーを持つのは Worker だけで、ブラウザには届きません。`POST /api/jev/decide` は毎回、
-次の順で検査し、最初に落ちたところで返します。
+運営の Jev キーを持つのは Worker だけで、ブラウザには届きません。以下の「IP ごと」は、IPv4 なら
+アドレスごと、IPv6 なら /64 ごとです (1 回線に /64 がまるごと割り当てられることが多いため)。
+
+`POST /api/session` は `{ turnstileToken }` を受け取ります。下と同じ瞬間流量の制限 (429 `slow_down`)
+を通ったあと、Cloudflare の siteverify にトークンを問い合わせ、通らなければ 403 `turnstile_failed`
+を返します。
+
+`POST /api/jev/decide` は毎回、次の順で検査し、最初に落ちたところで返します。
 
 1. **通行証** — `Authorization: Bearer <token>`。Turnstile を通った後に `/api/session` が発行する HMAC-SHA256 の署名付きトークンで、有効 2 時間、呼び出し元の IP に紐づきます。壊れている・期限切れ・IP が違えば 401 `session_expired`。
 2. **形** — 本文は 16KB 以下の JSON で、閉じた語彙のスキーマ (`src/worker/schema.ts`) に合うこと: 列挙値は決まった一覧から、数値は範囲内、カード表記は正規表現に合致、配列は長さに上限、未知のキーは拒否。合わなければ 400 `bad_request`。
@@ -108,12 +114,12 @@ Node.js 24 と pnpm が必要です。
 
 ## Cloudflare Workers へデプロイ
 
-公式インスタンスは [jev-poker.syou.io](https://jev-poker.syou.io/) で、Cloudflare Workers Builds
-により `main` から自動デプロイされます。自分の運営として動かす場合:
+公開インスタンスは Cloudflare Workers Builds により `main` から自動デプロイされます。自分の運営として
+動かす場合:
 
 1. このリポジトリを GitHub にフォークまたはプッシュする。
 2. Cloudflare ダッシュボード → Turnstile → ウィジェットを作成する。モードは「Invisible」、ホスト名は
-   公開ドメインと `localhost`。サイトキーとシークレットを控える。ローカル開発では、確認していない
+   公開ドメインのみ。サイトキーとシークレットを控える。ローカル開発では、確認していない
    鍵を使い回さず、Cloudflare が公開しているテスト用の鍵のペアを使ってください —
    [developers.cloudflare.com/turnstile/troubleshooting/testing](https://developers.cloudflare.com/turnstile/troubleshooting/testing/)。
 3. 3 つのシークレットを設定する。

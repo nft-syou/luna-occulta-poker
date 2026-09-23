@@ -51,6 +51,16 @@ from the browser, and the Worker stores nothing beyond the day's per-IP and
 total call counts. Details are in the "Security" section of the
 [README](README.md#security).
 
+## Known limits and follow-ups
+
+- The Worker does not check the `hostname` that Turnstile's siteverify reports,
+  so a token solved on another site using the same site key would be accepted.
+  The widget's hostname list in the Cloudflare dashboard is the only guard
+  today; checking it server-side is a follow-up.
+- Burst limits, daily budgets and session binding count per IPv4 address or
+  per IPv6 /64. Players behind one shared IPv4 address (carrier-grade NAT, an
+  office) share one budget; someone holding several /64s gets several.
+
 ## Supported versions
 
 Only the `main` branch and the deployment built from it receive fixes.
