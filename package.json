@@ -1,23 +1,24 @@
 {
-  "name": "jev-poker",
+  "name": "luna-occulta-poker",
   "version": "0.1.0",
   "private": true,
-  "description": "No-Limit Texas Hold'em where the CPU players think with TypeSafe Jev. Bring your own API key.",
+  "description": "宵闇の賭場 — an unofficial 月蝕綺譚 fan poker where the spirits think with TypeSafe Jev.",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/nft-syou/jev-poker.git"
+    "url": "git+https://github.com/nft-syou/luna-occulta-poker.git"
   },
-  "homepage": "https://github.com/nft-syou/jev-poker#readme",
+  "homepage": "https://github.com/nft-syou/luna-occulta-poker#readme",
   "bugs": {
-    "url": "https://github.com/nft-syou/jev-poker/issues"
+    "url": "https://github.com/nft-syou/luna-occulta-poker/issues"
   },
   "keywords": [
     "poker",
     "texas-holdem",
     "typesafe",
     "jev",
-    "cloudflare-pages",
+    "luna-occulta",
+    "cloudflare-workers",
     "react",
     "typescript"
   ],
@@ -36,22 +37,14 @@
     "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.functions.json",
     "lint": "biome check .",
     "format": "biome check --write .",
-    "bench": "tsx bench/cli.ts",
-    "bench:report": "tsx bench/report-cli.ts",
-    "bench:slumbot": "tsx bench/slumbot/cli.ts",
-    "bench:slumbot:report": "tsx bench/slumbot/report-cli.ts",
-    "build:packages": "pnpm -r --filter \"./packages/*\" run build",
-    "verify:packages": "pnpm build:packages && node scripts/verify-packages.mjs",
-    "check": "pnpm lint && pnpm typecheck && pnpm test && pnpm build && pnpm verify:packages",
-    "changeset": "changeset",
-    "release": "pnpm build:packages && changeset publish",
+    "check": "pnpm lint && pnpm typecheck && pnpm test && pnpm build",
     "assets:kitan": "node scripts/fetch-kitan-assets.mjs",
     "voice:lines": "tsx scripts/voice/export-lines.ts",
     "assets:sound": "node scripts/fetch-sound.mjs"
   },
   "dependencies": {
-    "@jev-poker/agent": "workspace:*",
-    "@jev-poker/engine": "workspace:*",
+    "@jev-poker/agent": "^0.2.1",
+    "@jev-poker/engine": "^0.2.1",
     "@typesafe-ai/sdk": "^0.6.0",
     "i18next": "^26.4.2",
     "react": "^19.3.0",
@@ -59,10 +52,7 @@
     "react-i18next": "^17.0.14"
   },
   "devDependencies": {
-    "@arethetypeswrong/cli": "^0.18.5",
     "@biomejs/biome": "^2.5.14",
-    "@changesets/changelog-github": "^1.0.1",
-    "@changesets/cli": "^3.0.3",
     "@cloudflare/workers-types": "^5.20260919.1",
     "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/react": "^16.3.3",
@@ -71,7 +61,6 @@
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.1.1",
     "jsdom": "^30.1.0",
-    "publint": "^0.3.24",
     "sharp": "^0.35.4",
     "tsx": "^4.19.0",
     "typescript": "~7.0.2",

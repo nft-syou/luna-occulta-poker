@@ -45,6 +45,8 @@ Vercel AI Gateway / ロリポップ！AIゲートウェイ / Cloudflare AI Gatew
 3. Jev は確率を返す。人格の「ぶれ」で argmax かサンプリングかが決まり、最後に合法なベット額にクランプされる。
 4. Jev に届かない場合は check か fold にし、履歴にその理由が出る。
 
+The engine and the CPU are the npm packages `@jev-poker/engine` and `@jev-poker/agent`, developed in https://github.com/nft-syou/jev-poker.
+
 認証情報はブラウザの localStorage にだけ保存され、このサイトの `/api/jev/*`
 プロキシ (Cloudflare Pages Function) 経由の送信にのみ使われます。プロキシは
 `Authorization: Bearer <key>` に載せ替えて転送し、何も保存しません。
@@ -135,52 +137,14 @@ Node.js 24 と pnpm が必要です。
   「静寂が地」に合わせて鳴らしすぎないようにしています。
 - デザインは公式のトンマナ「宵闇に金」に揃えています (宵闇藍の地、金は線と粒、蝕紅は警告と高揚だけ)。
 
-## ベンチマーク
-
-`pnpm bench` はゲーム本体の Jev CPU を 3 種のベースライン (`random`、`caller`、ルールベースの `rules`) と
-対戦させ、bb/100 と 95% 信頼区間を出します。同じ配牌を Jev の席だけ入れ替えて再生する (ミラーハンド) ので
-カード運の分散が小さく、ヘッズアップと 6-max の両方を測ります。`pnpm bench:slumbot` は本格的な
-ヘッズアップ AI の [Slumbot](https://www.slumbot.com/) と公開 API 経由で対戦します。
-
-    TYPESAFE_API_KEY=... pnpm bench --opponent rules --format all --seeds 1000
-    pnpm bench --backend mock --seeds 100     # ドライラン。キー不要、費用ゼロ
-    pnpm bench:report                         # 保存済みの結果を再描画
-
-計測結果 (`tag` 人格、調整に使っていない 1,000 シード):
-
-| 相手 | ヘッズアップ bb/100 | 6-max bb/100 |
-| --- | --- | --- |
-| `rules` ボット | **+48.8** [+38.4, +59.1] | **+11.3** [-0.2, +22.8] |
-| Slumbot (200 bb、12,000 ハンド) | -49.4 [-65.8, -33.0] | — |
-
-`rules` の行は現在出荷している CPU そのものです。Slumbot の行はエージェントをゲームのエンジンに移植する前の計測で、
-その時点では同じエージェントが `rules` に対して +62.7 [+48.7, +76.8] / +12.9 [+1.3, +24.5] でした。
-
-- このゲームが最初に積んでいた CPU はルールベースに勝てていませんでした (HU -4.5、6-max -24.5)。
-  同じ配牌での直接比較で、現在の CPU は **+53.2 [+31.5, +75.0]** / **+35.8 [+9.9, +61.7]** bb/100 上回ります。
-  勝てるようになったのは「Jev に何を伝えるか」
-  (正確なハンド強度、エクイティと必要エクイティ、自分のベットがレイズされたか、ポットコミット、
-  スティールの機会) と標準的なプリフロップのレイズ額のおかげで、強さはモデルの周りのコードから来ています。
-- 同じ特徴量だけを読む固定ルールは、ヘッズアップで Jev より 30〜50 bb/100 弱く、6-max では互角です。
-  Slumbot には Jev もヒューリスティックもルールベースも約 50 bb/100 負けます。
-- Jev の価値はキャラクターの作りやすさにあります。人格は一段落の文章で、すべての判断に見せられる確率が付き、
-  新しいキャラクターを増やすのにコードは要りません。
-
-詳細: [`bench/README.md`](bench/README.md) (CLI、結果の形式)、
-[`bench/RESULTS.md`](bench/RESULTS.md) (全表)、
-[`bench/EXPERIMENTS.md`](bench/EXPERIMENTS.md) (試したすべての変更とその計測)。
-
 ## 構成
 
-    packages/engine/  @jev-poker/engine — 依存ゼロの TypeScript ポーカーエンジン (シード付きランダムプレイでテスト)
-    packages/agent/   @jev-poker/agent — 特徴量、質問、人格、判断方針、JevAgent、ベースライン、playHand
     src/characters/   御霊のデータ、台本、声の再生
     src/jev/          アプリ専用: プロキシの経路 (connection) と先読みキャッシュ
     src/ui/        React UI、ゲームループ、Jev の確率付き履歴、吹き出しとカットイン
     src/i18n/      en / ja 辞書
     src/proxy/     プロキシハンドラと開発サーバー用アダプタ (ユニットテスト済み)
     functions/     Cloudflare Pages Function のエントリ
-    bench/         ベンチマークランナー、統計、Slumbot クライアント、保存済み結果
     public/kitan/  公式素材 (画像・動画) と生成した声
     scripts/       素材の取り込みと声の生成
     docs/superpowers/specs/  設計書
@@ -189,16 +153,6 @@ Node.js 24 と pnpm が必要です。
 
 - トーナメント形式: `BlindSchedule` がブラインドを抽象化済み。`format` が `tournament` のときは飛んだ席をリバイしない。
 - 質問セットのバージョンを各判断に記録する。
-
-## ライブラリとして使う
-
-エンジンと CPU は npm に公開しています。
-
-- [`@jev-poker/engine`](packages/engine) — 依存ゼロのノーリミットホールデムのエンジン。
-- [`@jev-poker/agent`](packages/agent) — Jev CPU、ベースライン bot、人格、`playHand`。
-
-最小の使い方は各パッケージの README (英語) を参照してください。変更は Changesets でリリースします。
-[CONTRIBUTING.md](CONTRIBUTING.md#changes-to-the-published-packages) を参照してください。
 
 ## コントリビュート
 

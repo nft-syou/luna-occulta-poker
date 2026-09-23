@@ -48,6 +48,8 @@ The personality texts are in `src/characters/spirits.ts` and the script in `src/
 3. Jev returns probabilities. The persona's *variance* decides whether the CPU always takes the most likely action or samples. The result is clamped to a legal bet size.
 4. If Jev is unreachable the CPU checks or folds and the history shows why.
 
+The engine and the CPU are the npm packages `@jev-poker/engine` and `@jev-poker/agent`, developed in https://github.com/nft-syou/jev-poker.
+
 Your credentials never leave your browser except inside requests to this site's
 `/api/jev/*` proxy (a Cloudflare Pages Function), which forwards them with
 `Authorization: Bearer <your key>` and stores nothing.
@@ -146,54 +148,14 @@ work); anything else falls back to the default.
 - The design follows the official tone, 宵闇に金: an indigo ground, gold as lines and grains,
   eclipse red only for warnings and all-ins.
 
-## Benchmark
-
-`pnpm bench` seats the game's own Jev CPU against three baseline bots (`random`, `caller`, a
-rule-based `rules`) and reports bb/100 with a 95% confidence interval. Every deal is replayed with
-the Jev seat rotated (mirrored hands), heads-up and six-handed. `pnpm bench:slumbot` plays
-[Slumbot](https://www.slumbot.com/), a real heads-up poker AI, through its public API.
-
-    TYPESAFE_API_KEY=... pnpm bench --opponent rules --format all --seeds 1000
-    pnpm bench --backend mock --seeds 100     # dry run, no key, no cost
-    pnpm bench:report                         # re-render saved results
-
-What the measurements say (`tag` persona, 1,000 seeds on seeds never used for tuning):
-
-| opponent | heads-up bb/100 | 6-max bb/100 |
-| --- | --- | --- |
-| `rules` bot | **+48.8** [+38.4, +59.1] | **+11.3** [-0.2, +22.8] |
-| Slumbot (200 bb, 12,000 hands) | -49.4 [-65.8, -33.0] | — |
-
-The `rules` row is the game's CPU as shipped. The Slumbot row was measured before the agent was
-ported onto the game's engine, where the same agent scored +62.7 [+48.7, +76.8] and +12.9
-[+1.3, +24.5] against `rules`.
-
-- The CPU this game first shipped with did not beat the rule-based bot (-4.5 heads-up, -24.5
-  six-handed); on the same deals the current one is **+53.2 [+31.5, +75.0]** and
-  **+35.8 [+9.9, +61.7]** bb/100 better. It wins now because of what it is told
-  (exact hand strength, equity against pot odds, whether its bet was raised, pot commitment,
-  blind-stealing spots) and conventional preflop raise sizes. The strength comes from the code
-  around the model.
-- A fixed heuristic over the same features is 30 to 50 bb/100 behind Jev heads-up and level with it
-  six-handed; against Slumbot Jev, the heuristic and the rules bot all lose about 50 bb/100.
-- What Jev adds is authoring: a persona is a paragraph of text, every decision comes with
-  probabilities to show, and a new character costs no new code.
-
-Details: [`bench/README.md`](bench/README.md) (CLI, result format),
-[`bench/RESULTS.md`](bench/RESULTS.md) (all tables),
-[`bench/EXPERIMENTS.md`](bench/EXPERIMENTS.md) (every change that was tried, with its measurement).
-
 ## Project layout
 
-    packages/engine/  @jev-poker/engine — pure TypeScript poker engine (tested with seeded random play)
-    packages/agent/   @jev-poker/agent — features, questions, personas, decision policy, JevAgent, baselines, playHand
     src/characters/   the spirits' data, script and voice player
     src/jev/          app-only: proxy routes (connection) and the speculative prefetch cache
     src/ui/        React UI, game loop, history with Jev probabilities, speech bubbles and cut-ins
     src/i18n/      en / ja dictionaries
     src/proxy/     the proxy handler and its dev-server adapter (unit-tested)
     functions/     Cloudflare Pages Function entry
-    bench/         benchmark runner, statistics, Slumbot client, saved results
     public/kitan/  official assets (images, videos) and the generated voices
     scripts/       asset intake and voice generation
     docs/superpowers/specs/  design specs
@@ -202,16 +164,6 @@ Details: [`bench/README.md`](bench/README.md) (CLI, result format),
 
 - Tournament format: `BlindSchedule` already abstracts blinds; busted seats are not rebought when `format` is `tournament`.
 - Versioned question sets recorded on each decision.
-
-## Use it as a library
-
-The engine and the CPU are published on npm:
-
-- [`@jev-poker/engine`](packages/engine) — the No-Limit Hold'em engine, zero dependencies.
-- [`@jev-poker/agent`](packages/agent) — the Jev CPU, baseline bots, personas and `playHand`.
-
-Each package's README shows the minimal usage. Changes are released with Changesets; see
-[CONTRIBUTING.md](CONTRIBUTING.md#changes-to-the-published-packages).
 
 ## Contributing
 

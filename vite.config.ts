@@ -44,8 +44,6 @@ export default defineConfig({
   test: {
     passWithNoTests: true,
     projects: [
-      { test: { name: "engine", include: ["packages/engine/src/**/*.test.ts"] } },
-      { test: { name: "agent", include: ["packages/agent/src/**/*.test.ts"] } },
       {
         extends: true,
         test: {
@@ -53,7 +51,6 @@ export default defineConfig({
           include: ["src/**/*.test.ts", "src/**/*.test.tsx", "functions/**/*.test.ts"],
         },
       },
-      { test: { name: "bench", include: ["bench/**/*.test.ts"] } },
     ],
   },
 });

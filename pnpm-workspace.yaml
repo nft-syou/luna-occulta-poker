@@ -1,8 +1,9 @@
-packages:
-  - "packages/*"
 allowBuilds:
   esbuild: true
   workerd: true
+minimumReleaseAgeExclude:
+  - '@jev-poker/agent@0.2.1'
+  - '@jev-poker/engine@0.2.1'
 onlyBuiltDependencies:
   - esbuild
   - workerd

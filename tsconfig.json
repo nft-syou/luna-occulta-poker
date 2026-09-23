@@ -7,5 +7,5 @@
     "noEmit": true,
     "allowImportingTsExtensions": true
   },
-  "include": ["src", "bench", "packages/*/src", "scripts", "vite.config.ts"]
+  "include": ["src", "scripts", "vite.config.ts"]
 }

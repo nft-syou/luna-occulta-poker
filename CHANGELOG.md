@@ -6,6 +6,11 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Removed
+
+- The engine and agent packages and the benchmark moved out: the game now takes
+  `@jev-poker/engine` and `@jev-poker/agent` from npm.
+
 ### Changed
 
 - Sound: a quiet CC0 koto loop under the table and a few short effects (a card dealt, 勾玉 out
