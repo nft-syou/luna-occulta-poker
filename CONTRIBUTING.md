@@ -9,12 +9,13 @@ Node.js 24 and pnpm 12 (`corepack enable` picks the pnpm version from
 `package.json`).
 
     pnpm install
-    pnpm dev            # Vite dev server with the proxy handler mounted at /api/jev
+    pnpm dev            # Vite dev server, with the Worker's own handler mounted at /api
     pnpm check          # what CI runs: lint + typecheck + tests + build
 
-Playing locally needs a TypeSafe API key or one of the gateway routes from the
-README. Nothing in the repo needs a key: the engine, the proxy and the UI are all
-tested without one.
+Playing locally against the real Jev needs an operator key: `JEV_API_KEY=sk-... pnpm dev`
+(see the README's "Run locally" for `pnpm dev:worker`, which runs the real Worker, Durable
+Object and rate limit against a git-ignored `.dev.vars`). Nothing in the repo needs a key to
+build or test: the engine, the Worker and the UI are all tested without one.
 
 ## Before opening a pull request
 
@@ -34,15 +35,21 @@ tested without one.
 
 ## Things to keep true
 
-- **The proxy never takes a URL from the browser.** Upstreams are the fixed hosts
-  in `src/jev/connection.ts`, chosen by route id, with every interpolated value
-  matched against an anchored regex first. A new route is a new constant and a
-  new regex, never a pass-through.
-- **The server stores and logs nothing.** No bindings in `wrangler.jsonc`, no
-  `console.*` in `src/proxy` or `functions/`, and `cache-control: no-store` on
-  every proxied response.
-- **`src/jev/connection.ts` stays dependency-free**; `tsconfig.functions.json`
-  compiles it for the Pages Function.
+- **The browser never sends prose.** `POST /api/jev/decide` accepts only the closed-vocabulary
+  structure in `src/worker/schema.ts` (enums, numbers, card codes); the Worker rebuilds the
+  spirit's persona and the typed questions itself, and lets through only the library's own
+  `task` / `importantContext` strings that appear in `src/worker/prose-allowlist.json`. Run
+  `pnpm prose:allowlist` and commit the result if `@jev-poker/agent`'s prose changes.
+- **The Worker never takes an upstream URL from the browser.** Upstreams are the fixed hosts in
+  `src/worker/upstream.ts`, chosen by the operator's `JEV_ROUTE`, with every interpolated value
+  matched against an anchored regex first. A new route is a new constant and a new regex, never
+  a pass-through.
+- **The server stores and logs nothing beyond the daily counts it needs.** No `console.*` in
+  `src/worker`, and `cache-control: no-store` on every API response. The only state is the
+  `JEV_BUDGET` Durable Object's per-day, per-IP call counts, wiped when the day rolls over.
+- **Every request is checked in order** — session, then shape, then burst, then daily budget,
+  then upstream — and production refuses to run without `TURNSTILE_SECRET` and
+  `SESSION_SECRET` configured (`src/worker/api.ts`'s `guarded`).
 - **The engine has no dependencies** and no knowledge of the UI or of Jev.
 - **Every CPU decision fails open**: if Jev cannot be reached the CPU checks or
   folds and the history says why.

@@ -41,7 +41,7 @@ x, y = 64, 372
 frame.paste(chip, (x, y - 8), chip)
 d.text((x + 156, y - 26), "jev-poker", font=title_font, fill=GOLD)
 d.text((x + 4, y + 148), "CPU が TypeSafe Jev で考えるノーリミットホールデム", font=tag_font, fill=WHITE)
-d.text((x + 4, y + 204), "Every CPU decision comes with Jev's probabilities. Bring your own key.", font=sub_font, fill="#cfd8d1")
+d.text((x + 4, y + 204), "Every CPU decision comes with Jev's probabilities. Nothing to set up.", font=sub_font, fill="#cfd8d1")
 
 out = ROOT / "public/og.png"
 frame.save(out, optimize=True)

@@ -13,6 +13,10 @@ All notable changes to this project are documented here. The format follows
 
 ### Changed
 
+- Play without a key: the operator's Jev key lives in the Worker, behind Turnstile, a per-IP
+  burst limit and a daily budget; the browser sends only the structure of a decision. A title
+  screen and a one-screen table setup (six-handed or heads-up, three stakes) replace the
+  settings form.
 - Sound: a quiet CC0 koto loop under the table and a few short effects (a card dealt, 勾玉 out
   and home, the cut-in's strike), with music, effects and voices each switchable mid-hand from
   a 音 dialog in the table header.

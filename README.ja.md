@@ -5,9 +5,9 @@
 [![Node.js 24](https://img.shields.io/badge/node-24-339933?logo=nodedotjs&logoColor=white)](.node-version)
 [![pnpm](https://img.shields.io/badge/pnpm-12-F69220?logo=pnpm&logoColor=white)](https://pnpm.io/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6?logo=typescript&logoColor=white)](tsconfig.json)
-[![Deploys to Cloudflare Pages](https://img.shields.io/badge/deploys%20to-Cloudflare%20Pages-F38020?logo=cloudflare&logoColor=white)](https://jev-poker.syou.io/)
+[![Deploys to Cloudflare Workers](https://img.shields.io/badge/deploys%20to-Cloudflare%20Workers-F38020?logo=cloudflare&logoColor=white)](https://jev-poker.syou.io/)
 
-**今すぐ遊ぶ: [https://jev-poker.syou.io/](https://jev-poker.syou.io/)**(API キーは自分で用意。サーバーには何も保存されません)
+**今すぐ遊ぶ: [https://jev-poker.syou.io/](https://jev-poker.syou.io/)** — 準備は要りません。座るだけです。
 
 **English version: [README.md](README.md)**
 
@@ -19,8 +19,8 @@
 あなたは「あるじどの」として卓に着き、相手は公式設定から性格を写した 5 人の御霊
 — 咲耶・マミ・タルト・孫市・蛇ノ目。御霊たちの一手はすべて
 [TypeSafe Jev](https://typesafe.ai) が考え、席の顔と声、要所のカットインで語ります。
-全席御霊の見物モードもあります。プレイにはあなた自身の TypeSafe API キー、または
-Vercel AI Gateway / ロリポップ！AIゲートウェイ / Cloudflare AI Gateway の設定が必要です。
+全席御霊の見物モードもあります。鍵も準備も不要 — 運営の Jev キーは卓の奥に置かれ、
+あなたのブラウザには来ません。
 
 [jev-poker](https://github.com/nft-syou/jev-poker) を土台に、見た目・キャラクター・声を
 月蝕綺譚の世界に合わせたものです。エンジンと CPU は元のまま (`@jev-poker/engine`、`@jev-poker/agent`)。
@@ -41,84 +41,102 @@ Vercel AI Gateway / ロリポップ！AIゲートウェイ / Cloudflare AI Gatew
 ## 仕組み
 
 1. ゲームエンジン (`src/engine`、依存ゼロ) が配札・ベッティング・サイドポット・役判定を行う。
-2. CPU の手番ごとに `src/jev` が状況を圧縮し (ポジション、完成役、ドロー、正確なハンド強度とエクイティ、ポットオッズ、BB 換算スタック、今ハンドのアクション)、Jev に 3 つの型付き質問を 1 回で投げる: `action` (合法な選択肢からの choice)、`sizing` (0〜5 の score)、`bluff_intent` (yes/no の確率)。
-3. Jev は確率を返す。人格の「ぶれ」で argmax かサンプリングかが決まり、最後に合法なベット額にクランプされる。
-4. Jev に届かない場合は check か fold にし、履歴にその理由が出る。
+2. CPU の手番ごとに `src/jev` が状況を圧縮し (ポジション、完成役、ドロー、正確なハンド強度とエクイティ、ポットオッズ、BB 換算スタック、今ハンドのアクション)、文章を一切含まない閉じた語彙の構造 — 列挙値・数値・カード表記だけ — に変えて、このサイト自身の Worker にだけ送る。
+3. Worker (`src/worker/decide.ts`) はリクエストに乗らない部分を組み立て直す: 御霊の人格文 (`src/characters/spirits.ts` から) と、`@jev-poker/agent` の `buildQuestions` が構造から導く 3 つの型付き質問 (`action`、`sizing`、`bluff_intent`)。ライブラリ自身が組む自由文の 2 項目 (`task`、`importantContext`) は `src/worker/prose-allowlist.json` と一字一句一致したときだけ通す。
+4. Worker は組み立てたリクエストを運営のキーで Jev に転送し、`{ model, action, sizing, bluff_intent }` だけを返す。
+5. 人格の「ぶれ」で argmax かサンプリングかが決まり、最後に合法なベット額にクランプされる。
+6. Jev に届かない、あるいはその日の運営予算を使い切っていれば check か fold にし、履歴にその理由が出る (卓は「今宵はここまで」で止まる — 「遊ぶ」参照)。
 
 The engine and the CPU are the npm packages `@jev-poker/engine` and `@jev-poker/agent`, developed in https://github.com/nft-syou/jev-poker.
 
-認証情報はブラウザの localStorage にだけ保存され、このサイトの `/api/jev/*`
-プロキシ (Cloudflare Pages Function) 経由の送信にのみ使われます。プロキシは
-`Authorization: Bearer <key>` に載せ替えて転送し、何も保存しません。
+あなたのブラウザは文章を一切送らず、運営のキーを見ることもありません。話す相手はこのサイト自身の
+`POST /api/session` と `POST /api/jev/decide` だけで、どちらも 1 つの Cloudflare Worker
+(`src/worker/`) が受け持ちます。詳しくは下の「セキュリティ」を参照してください。
 
 ## 遊ぶ
 
 1. デプロイ済みのサイトを開く (または下記の手順でローカルで起動する)。
-2. 求められたら経路を選び、その認証情報を入力する (後述)。ブラウザにのみ保存されます。
-3. 席数 (2〜6)、あるじどのの席、各席の御霊、ブラインド、スタック、御霊の声のオン/オフを決める。あるじどのの席が無ければ見物モードになります。
-4. ハンド履歴の「Jev」を開くと、各 CPU のアクションの裏にある確率が見られます。
+2. タイトル画面: 「開帳」で着席、「見物」で全席御霊の卓を眺める、「設定」で音と言語を変える。
+3. 卓を整える: 卓の形 (六人卓、または差し向かい — 差し向かいなら相手の御霊も選ぶ)、続けてレート — 宵 100BB・深更 50BB・蝕 25BB。見物は六人卓だけです。
+4. 着席すると見えない Turnstile の判定が入ります。通れば 2 時間その卓にいられます。
+5. ハンド履歴の「Jev」を開くと、各 CPU のアクションの裏にある確率が見られます。
+6. あなたの IP、またはサイト全体の 1 日の予算を使い切ると、卓は「今宵はここまで」で止まります — 日本時間 0 時に再開します。
 
-## 経路
+## セキュリティ
 
-接続モーダルで 4 つの経路から 1 つを選びます。ヘッダのボタンからいつでも変更できます。
+運営の Jev キーを持つのは Worker だけで、ブラウザには届きません。`POST /api/jev/decide` は毎回、
+次の順で検査し、最初に落ちたところで返します。
 
-| 経路 | 用意するもの | リクエストの宛先 | モデル | 課金 |
-| --- | --- | --- | --- | --- |
-| TypeSafe 直結 | TypeSafe API キー | `https://api.typesafe.ai` | `jev-latest` | TypeSafe |
-| Vercel AI Gateway | Vercel AI Gateway の API キー | `https://ai-gateway.vercel.sh/typesafe` | `typesafe-ai/jev` | Vercel (自分の TypeSafe キーを登録していればそちら) |
-| ロリポップ！AIゲートウェイ | ロリポップ！AIゲートウェイの API キー | `https://ai-gateway.lolipop.jp` | `typesafe/jev-latest` | ロリポップ (円建ての前払いクレジット) |
-| Cloudflare AI Gateway | TypeSafe API キー + アカウント ID、ゲートウェイ ID、カスタムプロバイダの slug、任意でゲートウェイトークン | `https://gateway.ai.cloudflare.com/v1/{account}/{gateway}/custom-{slug}` | `jev-latest` | TypeSafe (Cloudflare はログ・キャッシュ・レート制限を担当) |
+1. **通行証** — `Authorization: Bearer <token>`。Turnstile を通った後に `/api/session` が発行する HMAC-SHA256 の署名付きトークンで、有効 2 時間、呼び出し元の IP に紐づきます。壊れている・期限切れ・IP が違えば 401 `session_expired`。
+2. **形** — 本文は 16KB 以下の JSON で、閉じた語彙のスキーマ (`src/worker/schema.ts`) に合うこと: 列挙値は決まった一覧から、数値は範囲内、カード表記は正規表現に合致、配列は長さに上限、未知のキーは拒否。合わなければ 400 `bad_request`。
+3. **瞬間流量** — IP ごと 10 秒に 20 回 (`JEV_BURST`、Cloudflare のレート制限バインディング)。超えたら 429 `slow_down` (`retry-after: 2`)。
+4. **1 日の予算** — Durable Object (`JEV_BUDGET`) が IP ごとと全体の回数を数え、日本時間 0 時にリセットします (既定 `DAILY_CALLS_PER_PLAYER=600`、`DAILY_CALLS_TOTAL=20000`)。どちらかを超えると 429 `tonight_is_over` (`{ resumesAt }`)。
+5. **上流** — Worker が実際の Jev リクエストを自分で組み立てます (「仕組み」参照)。ブラウザの JSON がそのまま Jev に届くことはありません。呼び先は運営の `JEV_ROUTE` が選ぶ 4 つの固定ホストのどれかで、ブラウザから来た URL は使いません (`src/worker/upstream.ts`)。上流の 402 (運営のクレジット切れ) は 429 `tonight_is_over` に、401/403 (キーの問題) はプレイヤーのせいにせず 503 `unavailable` に、それ以外の失敗は 502 `upstream_error` になります。
 
-### Vercel AI Gateway
-
-1. Vercel ダッシュボード → AI Gateway → **API keys** → キーを作成する (`vck_…`)。
-2. それを AI Gateway API キーとして貼り付ける。他に必要なものはありません。ゲートウェイは `https://ai-gateway.vercel.sh/typesafe` で TypeSafe API を話し、アプリはモデル id `typesafe-ai/jev` を指定します。
-3. 任意の BYOK: ゲートウェイのプロバイダ設定に自分の TypeSafe キーを登録すると、Vercel がそのキーで転送し、課金は TypeSafe 側になります。
-
-### ロリポップ！AIゲートウェイ
-
-1. [ai-gateway.lolipop.jp](https://ai-gateway.lolipop.jp/) → プロジェクト → **API キー** でキーを発行し、そのプロジェクトが `typesafe/jev-latest` を呼べることを確認する。
-2. それをロリポップ！AIゲートウェイの API キーとして貼り付ける。他に必要なものはありません。ゲートウェイは TypeSafe と同じ `POST /v1/systemone` ([型付き確率的判断](https://ai-gateway.lolipop.jp/docs/guides/features/probabilistic-decision)) を提供しており、アプリはモデル id `typesafe/jev-latest` を指定します。
-3. 課金は組織の前払いクレジットです。残高が尽きると 402 が返り、テーブルは一時停止してチャージを促します。
-
-### Cloudflare AI Gateway
-
-1. Cloudflare ダッシュボード → AI → **AI Gateway** → ゲートウェイを作成する。**ゲートウェイ ID** と **アカウント ID** (ダッシュボードの URL にある 16 進数 32 文字) を控える。
-2. そのゲートウェイにベース URL `https://api.typesafe.ai` の **カスタムプロバイダ** を追加し、slug (例: `typesafe`) を付ける。リクエスト URL は `…/custom-typesafe/v1/systemone` になります。`custom-` はアプリが付けるので、slug だけを貼り付けてください。
-3. jev-poker で「Cloudflare AI Gateway」を選び、TypeSafe API キー、アカウント ID、ゲートウェイ ID、slug を入力する。
-4. ゲートウェイが **認証付き** なら、ゲートウェイトークンを作成して「ゲートウェイトークン」に貼り付ける。`cf-aig-authorization` として送られます。
-
-### セキュリティ
-
-プロキシは自由な URL を一切受け取りません。経路 id (`typesafe`、`vercel`、`lolipop`、`cloudflare`)
-で固定の 4 ホストから選び、サーバー側で先頭・末尾を固定した正規表現を通った値だけを
-`encodeURIComponent` して埋め込みます。アカウント ID は `[0-9a-f]{32}`、ゲートウェイ ID は
-`[A-Za-z0-9_-]{1,64}`、プロバイダの slug は `[a-z0-9][a-z0-9-]{0,62}` かつ `custom-` 始まりでないこと、
-キーとトークンは印字可能な ASCII 512 文字までです。条件を満たさなければ 400 を返し、上流には接続しません。
-転送するのは `POST /v1/systemone` と `GET /v1/models` だけで、上流へのヘッダはゼロから組み立てる
-(アプリ自身の `X-*` ヘッダは一切通さない) ため、サーバーに保存・ログは一切ありません。
-脆弱性の報告は [SECURITY.md](SECURITY.md) を参照してください。
+`/api/session` と `/api/jev/decide` 以外のパスはすべて 404 `not_found`、`POST` 以外は 405
+`method_not_allowed` です。本番で `TURNSTILE_SECRET` か `SESSION_SECRET` が無ければ Worker は
+すべてのリクエストに 503 `unavailable` を返し、開いたまま動くことはありません (Vite の開発サーバー
+だけが `DEV_OPEN=1` でこれを飛ばします)。脆弱性の報告は [SECURITY.md](SECURITY.md) を参照してください。
 
 ## ローカルで動かす
 
 Node.js 24 と pnpm が必要です。
 
     pnpm install
-    pnpm dev          # Vite の開発サーバー。/api/jev は Pages Function と同じプロキシハンドラで動く
-    pnpm dev:pages    # ビルド + `wrangler pages dev dist` で本物の Pages Function を動かす
-    pnpm check        # lint + 型チェック + テスト + ビルド
+    JEV_API_KEY=sk-... pnpm dev   # Vite の開発サーバー。/api/* は Worker と同じハンドラで動き、
+                                   # 予算はメモリ上、Turnstile はスキップ (DEV_OPEN)
+    pnpm dev:worker                # ビルド + `wrangler dev`: 本物の Worker・Durable Object・
+                                    # レート制限。下記のシークレットが必要
+    pnpm check                     # lint + 型チェック + テスト + ビルド
 
-`pnpm dev:pages` には `wrangler` が必要です (dev dependency として入るので追加インストールは不要)。
+`pnpm dev:worker` はプロジェクト直下の `.dev.vars` からシークレットと変数を読みます —
+**Git 管理外なので、絶対にコミットしないでください**。
+
+    JEV_API_KEY=sk-...
+    JEV_ROUTE=typesafe
+    JEV_MODEL=jev-latest
+    TURNSTILE_SECRET=1x0000000000000000000000000000000AA
+    SESSION_SECRET=<任意のランダムな文字列。例: `openssl rand -base64 32`>
+
+上の `TURNSTILE_SECRET` は Cloudflare が公開している「必ず通る」テスト用シークレットのひとつです。
+対応するテスト用サイトキーをビルド前に `VITE_TURNSTILE_SITE_KEY` として設定すれば、
+`pnpm dev:worker` は本物のウィジェットなしで最後まで動きます。現行のペアは
+[developers.cloudflare.com/turnstile/troubleshooting/testing](https://developers.cloudflare.com/turnstile/troubleshooting/testing/)
+を参照してください。本番サイトの鍵をローカルで使い回さないでください。
+
 `.node-version` は、それを読むツール向けに Node 24 を固定しています。
 
-## Cloudflare Pages へデプロイ
+## Cloudflare Workers へデプロイ
 
-公式インスタンスは [jev-poker.syou.io](https://jev-poker.syou.io/) で、Cloudflare Pages の Git 連携により `main` から自動デプロイされます。自分で動かす場合:
+公式インスタンスは [jev-poker.syou.io](https://jev-poker.syou.io/) で、Cloudflare Workers Builds
+により `main` から自動デプロイされます。自分の運営として動かす場合:
 
 1. このリポジトリを GitHub にフォークまたはプッシュする。
-2. Cloudflare ダッシュボード → Workers & Pages → Create → Pages → リポジトリを接続する。
-3. ビルドコマンド `pnpm build`、出力ディレクトリ `dist`。環境変数 `NODE_VERSION=24` を設定する。
-4. `functions/` の Functions は自動でデプロイされます。シークレットは不要です。プレイヤーが自分の認証情報を持ち込みます。
+2. Cloudflare ダッシュボード → Turnstile → ウィジェットを作成する。モードは「Invisible」、ホスト名は
+   公開ドメインと `localhost`。サイトキーとシークレットを控える。ローカル開発では、確認していない
+   鍵を使い回さず、Cloudflare が公開しているテスト用の鍵のペアを使ってください —
+   [developers.cloudflare.com/turnstile/troubleshooting/testing](https://developers.cloudflare.com/turnstile/troubleshooting/testing/)。
+3. 3 つのシークレットを設定する。
+
+       wrangler secret put JEV_API_KEY
+       wrangler secret put TURNSTILE_SECRET
+       wrangler secret put SESSION_SECRET
+
+   `SESSION_SECRET` はセッショントークンに署名する HMAC 鍵です — 例えば `openssl rand -base64 32`
+   で生成してください。
+4. `wrangler.jsonc` の `vars` に `JEV_ROUTE` (`typesafe` / `vercel` / `lolipop` / `cloudflare`) と
+   `JEV_MODEL` を設定し、既定値 (`DAILY_CALLS_PER_PLAYER` / `DAILY_CALLS_TOTAL` = 日本時間の 1 日
+   あたり 600 / 20000) が合わなければ調整する。Cloudflare AI Gateway 経由なら `JEV_CF_ACCOUNT`・
+   `JEV_CF_GATEWAY`・`JEV_CF_PROVIDER` も必要です — **`custom-` 接頭辞を付けない slug 単体**を
+   入れること。`custom-…` を入れると、すべての判断が 503 `unavailable` になります。
+5. Cloudflare ダッシュボード → Workers & Pages → Create → Workers Builds でこのリポジトリの Git を
+   連携する。ビルドコマンドは `pnpm build`、デプロイコマンドは `wrangler deploy`。
+6. `VITE_TURNSTILE_SITE_KEY` (手順 2 の公開サイトキー。シークレットではありませんが、Vite が埋め込む
+   にはビルド時に存在している必要があります) を Workers Builds の **ビルド変数** として追加する。
+7. Worker に独自ドメインを割り当て、`index.html` の canonical と Open Graph の URL をそのドメインに
+   差し替える。
+8. 最初のデプロイの後、自分で 1 ハンド遊んでみる。鍵の入力を求められずに卓が開くこと、そして
+   Turnstile が対話的な判定を出す場合は、それが画面中央に見え、答えられることを確認する。
 
 任意の環境変数 `TYPESAFE_BASE_URL` は `typesafe` 経路の上流 API ルートだけを上書きします
 (ゲートウェイのホストはコード内の定数です)。`https://…` (ローカル作業なら `http://localhost…`)
@@ -139,14 +157,15 @@ Node.js 24 と pnpm が必要です。
 
 ## 構成
 
+    src/engine/       ポーカーエンジン (配札・ベッティング・サイドポット・役判定)、依存ゼロ
     src/characters/   御霊のデータ、台本、声の再生
-    src/jev/          アプリ専用: プロキシの経路 (connection) と先読みキャッシュ
+    src/jev/          アプリ専用: セッション/Turnstile クライアントと Worker 経由の CPU 判断バックエンド
+    src/worker/       Cloudflare Worker: 静的配信、/api/session、/api/jev/decide、予算の Durable Object
     src/ui/        React UI、ゲームループ、Jev の確率付き履歴、吹き出しとカットイン
     src/i18n/      en / ja 辞書
-    src/proxy/     プロキシハンドラと開発サーバー用アダプタ (ユニットテスト済み)
-    functions/     Cloudflare Pages Function のエントリ
+    src/proxy/     開発サーバーのリクエスト/レスポンスアダプタ (`pnpm dev` が使う)
     public/kitan/  公式素材 (画像・動画) と生成した声
-    scripts/       素材の取り込みと声の生成
+    scripts/       素材の取り込み、声の生成、文の許可リスト生成
     docs/superpowers/specs/  設計書
 
 ## 今後

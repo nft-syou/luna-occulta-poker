@@ -12,5 +12,6 @@
 - [ ] `pnpm check` passes locally
 - [ ] New behaviour has a test next to the code
 - [ ] User-facing strings were added to both `en.json` and `ja.json`
-- [ ] The proxy still contacts only the fixed upstream hosts and stores and logs nothing (if `src/proxy`, `functions/` or `src/jev/connection.ts` changed)
+- [ ] The Worker still contacts only the fixed upstream hosts and stores and logs nothing beyond the daily budget counts (if `src/worker` changed)
+- [ ] The browser still sends no prose — new `task` / `importantContext` strings are in `src/worker/prose-allowlist.json` (`pnpm prose:allowlist`), if `@jev-poker/agent`'s prose changed
 - [ ] `CHANGELOG.md` has an entry under Unreleased (for user-visible changes)
