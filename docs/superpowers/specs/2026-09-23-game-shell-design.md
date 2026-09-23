@@ -1,7 +1,8 @@
 # 宵闇の賭場 — ゲームの入口と運営キー化 設計書
 
 日付: 2026-09-23
-状態: 設計承認済み (チャットで ①サーバー ②画面の流れ ③コードの分け方 を提示しユーザー承認)
+状態: 設計承認済み (チャットで ①サーバー ②画面の流れ ③コードの分け方 を提示しユーザー承認。
+スペックのレビューで「ライブラリは直接いじらず npm から取る」に改訂)
 前提: `2026-09-22-luna-occulta-fanwork-design.md` (二次創作版の本体)
 
 ## 1. 目的
@@ -21,6 +22,8 @@
 - 速度の選択。「ふつう」固定。
 - 先読み。既定オフで UI からも消す (運営予算を 2〜3 倍食うため)。
 - アカウント・ログイン・ランキング。
+- `@jev-poker/engine` / `@jev-poker/agent` の変更。外部ライブラリとして npm から使うだけにする。
+- ベンチマーク。ライブラリの計測は元の jev-poker リポジトリで行う。
 
 ## 2. 決定事項
 
@@ -36,9 +39,26 @@
 | 設定 | 音 (BGM・効果音・声) と言語だけ。タイトルと卓のヘッダから開く |
 | 速度 | ふつう固定 |
 | 録画モード | URL に `?rec` を付けたときだけヘッダにボタンを出す |
-| `@jev-poker/agent` | 追加エクスポート 1 つ (§3.3)。既存の挙動と公開 API は変えない |
+| ライブラリ | `@jev-poker/engine` と `@jev-poker/agent` は npm の `^0.2.1` を使う。直接は変更しない。`packages/` と `bench/` はこのリポジトリから削除 (§3.0) |
 
 ## 3. サーバー
+
+### 3.0 リポジトリの整理 (段階 0)
+
+このリポジトリはゲームだけにする。ライブラリの開発とベンチマークは元の jev-poker リポジトリで続ける。
+
+- 削除: `packages/` (engine と agent)、`bench/`、`.changeset/`、`.github/workflows/release.yml`、
+  `scripts/verify-packages.mjs`。
+- `package.json`: 依存を `"@jev-poker/agent": "^0.2.1"`、`"@jev-poker/engine": "^0.2.1"` に
+  (`workspace:*` をやめる)。`bench*`・`build:packages`・`verify:packages`・`changeset`・`release` の
+  スクリプトと、それだけが使う devDependencies (`@changesets/cli`、`@arethetypeswrong/cli`、
+  `publint` など) を削る。`check` は `lint → typecheck → test → build` になる。
+- `pnpm-workspace.yaml` の `packages:` を削る。`tsconfig*.json` と `vite.config.ts` (Vitest の
+  `projects`) からパッケージとベンチの参照を削る。
+- CI (`.github/workflows/ci.yml`) からパッケージの検証と Node 20 の行列を削る。
+- README・CONTRIBUTING・CHANGELOG からライブラリとベンチマークの節を削り、元リポジトリと npm への
+  リンクに置き換える。
+- 振る舞いは何も変わらない。段階 0 の終わりに `pnpm check` が緑で、今のゲームがそのまま動くこと。
 
 ### 3.1 構成 (`wrangler.jsonc`)
 
@@ -110,18 +130,21 @@ interface DecideRequest {
 
 **組み立て** (`src/worker/decide.ts`):
 
-- `persona` = `personaPrompt(spirit(id).persona)`。
-- `task` と `importantContext` = `featureProse(...)` (下記)。引数はすべてリクエストの構造から
-  決める: `style` と `rangeEquity` は `prose` から、`preflop` は `hand.street` から、
-  `hasOpponentStats` は `table.opponentStats` が空でないか、`opponentTypes` は
-  `table.opponentTypes` の型の集合。
-- `questions` = `buildQuestions(legal, { street: hand.street, style })`。
+- `persona` = `personaPrompt(spirit(id).persona)` (公開 API)。ブラウザの送ったものは使わない。
+- `questions` = `buildQuestions(legal, { street: hand.street, style })` (公開 API)。
+- `task` と `importantContext` は、ライブラリが状況に応じて選ぶ**固定文**。ブラウザから受け取るが、
+  許可リストのどれかと**完全一致**する場合だけ通す (下記)。
 - `model` = `JEV_MODEL`。
 
-**`@jev-poker/agent` への追加**: `featuresFromView` の中で状況説明とガイダンス文を選んでいる部分を、
-純関数 `featureProse({ style, preflop, rangeEquity, hasOpponentStats, opponentTypes })` →
-`{ task, importantContext }` として切り出してエクスポートする。`featuresFromView` はこれを呼ぶだけに
-なり、出力は変わらない (既存のスナップショットテストで保証)。changeset は minor。
+**文の許可リスト** (`src/worker/prose-allowlist.json`、ビルド時に生成してコミット):
+
+- `scripts/gen-prose-allowlist.ts` が公開 API の `featuresFromView` を、ゲームが使う組み合わせ
+  (プリフロップ/ポストフロップ × `style` × `rangeEquity` × 相手の統計あり/なし × 相手の型それぞれ)
+  の合成局面で呼び、出てきた `task` と `importantContext` の全文を集めて書き出す。
+- 形は `{ tasks: string[], lines: string[] }`。サーバーは `task ∈ tasks`、`importantContext` の
+  各行 `∈ lines`、行数 ≤ 20、重複なし、を検査する。
+- ライブラリの版を上げて文が変わると、一覧を作り直して比較するテストが落ちる。そのときは
+  `pnpm prose:allowlist` で作り直してコミットする。
 
 ### 3.4 予算 (`src/worker/budget.ts`)
 
@@ -228,7 +251,8 @@ BYOK ハンドラ、`storage.ts` の接続情報の保存と読み込み、席�
 - **一番大事**: 乱数で 300 局 (六人卓と差し向かい、3 つのレート) を回し、実際に出た全リクエストが
   §3.3 の検査を通ること。同じリクエストの文字列フィールドに任意の文章を混ぜたもの、未知のキーを
   足したもの、範囲外の数値にしたものは必ず落ちること。
-- `featureProse`: 切り出し前後で `featuresFromView` の出力が一致すること (既存スナップショット)。
+- 許可リスト: 生成スクリプトの結果とコミット済みの JSON が一致すること。300 局のテストで出た
+  すべての `task` と `importantContext` が一覧に含まれること。一覧に無い一文を混ぜたら落ちること。
 - 通行証: 発行・検証・期限切れ・署名改ざん・IP 違いで落ちること。
 - 予算: IP ごとの上限、全体の上限、日本時間 0 時をまたいだ切り替わり、古い日の掃除。
 - ハンドラ: 各段で落ちたときの状態コードと本文、上流 402/401/失敗の変換、応答から余計な項目が
@@ -241,7 +265,8 @@ BYOK ハンドラ、`storage.ts` の接続情報の保存と読み込み、席�
 
 ## 6. 段階
 
-1. **サーバーの新しい口とバックエンド差し替え**: `featureProse` の切り出し、`schema.ts`、
+0. **リポジトリの整理**: §3.0。`packages/` と `bench/` を消して npm 版に切り替える。
+1. **サーバーの新しい口とバックエンド差し替え**: 文の許可リストの生成、`schema.ts`、
    `decide.ts`、開発サーバーのプラグイン (予算はメモリ、Turnstile はテストキー)、`gameBackend.ts`。
    この段階の終わりに、今の画面のままローカルで遊べる。
 2. **画面の作り替え**: タイトル、卓を整える、設定ダイアログ、`tableChoice.ts`、デバッグ UI と
