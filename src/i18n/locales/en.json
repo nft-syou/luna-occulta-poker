@@ -306,5 +306,38 @@
     "bgmVolume": "Music volume",
     "se": "Sound effects",
     "seVolume": "Effects volume"
+  },
+  "title": {
+    "tagline": "Meet me under the eaten moon",
+    "play": "Play",
+    "watch": "Watch",
+    "settings": "Settings"
+  },
+  "tableSetup": {
+    "titlePlay": "Set the table",
+    "titleWatch": "A table to watch",
+    "format": "Table",
+    "six": "Six-handed",
+    "sixNote": "You and all five spirits",
+    "hu": "Heads-up",
+    "huNote": "One spirit, one on one",
+    "opponent": "Opponent",
+    "rate": "Stakes",
+    "rate_yoi": "Dusk",
+    "rate_yoiNote": "100 BB · a calm table",
+    "rate_shinkou": "Midnight",
+    "rate_shinkouNote": "50 BB · quicker showdowns",
+    "rate_shoku": "Eclipse",
+    "rate_shokuNote": "25 BB · all-ins and cut-ins",
+    "start": "Deal",
+    "watch": "Watch",
+    "back": "Back",
+    "preparing": "Waiting for the moon…",
+    "turnstileFailed": "The moon slipped behind a cloud. Please try again."
+  },
+  "settings": {
+    "title": "Settings",
+    "language": "Language",
+    "close": "Close"
   }
 }

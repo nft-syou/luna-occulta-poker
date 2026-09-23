@@ -1980,6 +1980,80 @@ body.showcase .app {
   }
 }
 
+/* --- Title screen, table setup ------------------------------------------- */
+.title-screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  min-height: 60vh;
+  gap: 18px;
+}
+.title-name {
+  font-size: 3rem;
+  letter-spacing: 0.3em;
+  margin: 0;
+}
+.title-sub,
+.title-tagline {
+  color: var(--kitan-sublabel);
+  margin: 0;
+}
+.title-tagline {
+  color: var(--kitan-kindei-hi);
+}
+.title-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: min(100%, 280px);
+}
+.title-play {
+  min-height: 52px;
+  font-size: 1.2rem;
+}
+.table-setup {
+  max-width: 720px;
+  margin: 0 auto;
+}
+.fuda-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 10px;
+  margin: 12px 0;
+}
+.fuda {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  text-align: center;
+  background:
+    var(--kitan-lacquer) padding-box,
+    var(--kitan-quiet-edge) border-box;
+}
+.fuda.checked {
+  background:
+    var(--kitan-lacquer) padding-box,
+    var(--kitan-gold-edge) border-box;
+}
+.fuda-face {
+  width: 56px;
+  height: 56px;
+  border-radius: var(--kitan-rounded-md);
+  border: 1px solid var(--kitan-line);
+  background: var(--kitan-panel);
+  object-fit: cover;
+}
+.fuda-label {
+  font-weight: 800;
+}
+.fuda-note {
+  font-size: 11px;
+  color: var(--kitan-sublabel);
+}
+
 /* --- Reduced motion ------------------------------------------------------- */
 /* Nothing slides, flips, shakes or pulses. The overlays still have to clear themselves,
    so they keep a plain opacity fade over the same window instead of a movement. */

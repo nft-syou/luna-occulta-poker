@@ -306,5 +306,38 @@
     "bgmVolume": "BGM の大きさ",
     "se": "効果音",
     "seVolume": "効果音の大きさ"
+  },
+  "title": {
+    "tagline": "喰われた月の下で、逢いましょう",
+    "play": "開帳",
+    "watch": "見物",
+    "settings": "設定"
+  },
+  "tableSetup": {
+    "titlePlay": "卓を整える",
+    "titleWatch": "見物の卓",
+    "format": "卓の形",
+    "six": "六人卓",
+    "sixNote": "あるじどのと御霊五人",
+    "hu": "差し向かい",
+    "huNote": "御霊ひとりと一対一",
+    "opponent": "相手",
+    "rate": "レート",
+    "rate_yoi": "宵",
+    "rate_yoiNote": "100BB・落ち着いた卓",
+    "rate_shinkou": "深更",
+    "rate_shinkouNote": "50BB・勝負が早い",
+    "rate_shoku": "蝕",
+    "rate_shokuNote": "25BB・オールインとカットインが多い",
+    "start": "開帳",
+    "watch": "見物する",
+    "back": "戻る",
+    "preparing": "月を待っています…",
+    "turnstileFailed": "月が雲に隠れました。もう一度お試しください。"
+  },
+  "settings": {
+    "title": "設定",
+    "language": "言語",
+    "close": "閉じる"
   }
 }
