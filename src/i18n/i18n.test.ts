@@ -25,11 +25,27 @@ describe("i18n", () => {
   });
 
   it("detects the language from storage first, then the browser", () => {
-    expect(detectLanguage("ja", "en-US")).toBe("ja");
-    expect(detectLanguage("en", "ja-JP")).toBe("en");
-    expect(detectLanguage(null, "ja-JP")).toBe("ja");
-    expect(detectLanguage(null, "fr")).toBe("en");
+    expect(detectLanguage("ja", { language: "en-US" })).toBe("ja");
+    expect(detectLanguage("en", { language: "ja-JP" })).toBe("en");
+    expect(detectLanguage(null, { language: "ja-JP" })).toBe("ja");
+    expect(detectLanguage(null, { language: "fr" })).toBe("en");
     expect(detectLanguage("xx", undefined)).toBe("en");
+  });
+
+  it("takes the first Japanese or English entry of the browser's ordered list", () => {
+    expect(detectLanguage(null, { languages: ["ja-JP", "en-US"], language: "en-US" })).toBe("ja");
+    expect(detectLanguage(null, { languages: ["en-GB", "ja"], language: "ja" })).toBe("en");
+    // Languages the table does not speak are passed over, not taken as English.
+    expect(detectLanguage(null, { languages: ["fr-FR", "ja", "en"], language: "fr-FR" })).toBe(
+      "ja",
+    );
+    expect(detectLanguage(null, { languages: ["de", "fr"], language: "de" })).toBe("en");
+    // An empty list falls back to the single language.
+    expect(detectLanguage(null, { languages: [], language: "ja-JP" })).toBe("ja");
+    expect(detectLanguage(null, { languages: ["JA-jp"] })).toBe("ja");
+    expect(detectLanguage(null, {})).toBe("en");
+    // A choice the player made still wins over the browser.
+    expect(detectLanguage("en", { languages: ["ja-JP"], language: "ja-JP" })).toBe("en");
   });
 
   it("initializes once and translates", () => {

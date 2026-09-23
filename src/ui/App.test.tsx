@@ -168,4 +168,16 @@ describe("App", () => {
     expect(titleHeading()).toBeInTheDocument();
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
+
+  it("stores a language only when the player picks one in the settings", async () => {
+    await renderApp();
+    // A first visit follows the browser and writes nothing down.
+    expect(localStorage.getItem("jev-poker.lang")).toBeNull();
+
+    fireEvent.click(screen.getByRole("button", { name: "Settings" }));
+    fireEvent.change(screen.getByLabelText("Language"), { target: { value: "ja" } });
+    expect(localStorage.getItem("jev-poker.lang")).toBe("ja");
+    fireEvent.change(screen.getByLabelText("言語"), { target: { value: "en" } });
+    expect(localStorage.getItem("jev-poker.lang")).toBe("en");
+  });
 });

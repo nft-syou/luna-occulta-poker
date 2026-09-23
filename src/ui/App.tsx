@@ -25,7 +25,8 @@ import {
 
 type Screen = "title" | "setup" | "table";
 
-const initialLanguage = detectLanguage(loadLanguage(), globalThis.navigator?.language);
+// Only an explicit pick in the settings is ever stored; a first visit follows the browser.
+const initialLanguage = detectLanguage(loadLanguage(), globalThis.navigator);
 initI18n(initialLanguage);
 // Players once brought their own key; the operator holds it now, so none may linger here.
 forgetOldCredentials();
