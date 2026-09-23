@@ -11,7 +11,15 @@ export function TitleScreen({ onPlay, onWatch, onSettings }: Props) {
   const { t } = useTranslation();
   return (
     <section className="title-screen">
-      <h1 className="title-name">{t("app.title")}</h1>
+      <h1 className="title-name">
+        <img
+          className="title-logo"
+          src="/logo.webp"
+          alt={t("app.title")}
+          width={1600}
+          height={864}
+        />
+      </h1>
       <p className="title-sub">{t("app.subtitle")}</p>
       <p className="title-tagline">{t("title.tagline")}</p>
       <div className="title-actions">

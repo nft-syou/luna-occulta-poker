@@ -1,13 +1,21 @@
 {
   "name": "宵闇の賭場 — 月蝕綺譚 二次創作ポーカー",
   "short_name": "宵闇の賭場",
-  "description": "月蝕綺譚 -Luna Occulta- の非公式二次創作ポーカー。御霊たちは TypeSafe Jev で考えます。An unofficial Luna Occulta fan poker.",
+  "description": "月蝕綺譚 -Luna Occulta- の非公式二次創作ポーカー。An unofficial Luna Occulta fan poker.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#131320",
   "theme_color": "#131320",
   "icons": [
-    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" }
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
   ]
 }

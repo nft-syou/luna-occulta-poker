@@ -2191,9 +2191,18 @@ body.showcase .app {
   gap: 18px;
 }
 .title-name {
-  font-size: 3rem;
-  letter-spacing: 0.3em;
   margin: 0;
+  line-height: 0;
+}
+/* The brushed logo carries its own night: fade its edges into the page's so no box shows. */
+.title-logo {
+  display: block;
+  width: min(100%, 760px);
+  height: auto;
+  max-height: 40vh;
+  object-fit: contain;
+  -webkit-mask-image: radial-gradient(ellipse 50% 50% at 50% 50%, #000 78%, transparent 100%);
+  mask-image: radial-gradient(ellipse 50% 50% at 50% 50%, #000 78%, transparent 100%);
 }
 .title-sub,
 .title-tagline {

@@ -1,10 +1,16 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="t">
   <title id="t">宵闇の賭場</title>
-  <!-- 式札: a tall tablet drawn in gold lines on the indigo dark. No ring, no seal. -->
-  <rect width="64" height="64" rx="12" fill="#131320"/>
-  <path d="M22 10h20l4 6v38H18V16z" fill="#100e1c" stroke="#d9a94c" stroke-width="2" stroke-linejoin="round"/>
-  <path d="M24 14h16" stroke="#d9a94c" stroke-width="1.5" stroke-linecap="round"/>
-  <path d="M32 22v24" stroke="#f0ce7e" stroke-width="2.5" stroke-linecap="round"/>
-  <path d="M26 30h12M26 38h12" stroke="#d9a94c" stroke-width="1.5" stroke-linecap="round"/>
-  <circle cx="32" cy="19" r="1.4" fill="#f0ce7e"/>
+  <!-- The logo's eclipse: a black moon, a crimson corona and a gold edge of light on the right. -->
+  <defs>
+    <filter id="corona" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="2.8"/>
+    </filter>
+    <filter id="edge" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="0.6"/>
+    </filter>
+  </defs>
+  <rect width="64" height="64" rx="13" fill="#131320"/>
+  <circle cx="32" cy="32" r="23.5" fill="#961c34" filter="url(#corona)"/>
+  <circle cx="32" cy="32" r="22.4" fill="#e8c478" filter="url(#edge)"/>
+  <circle cx="30.5" cy="32" r="21.8" fill="#0a0a12"/>
 </svg>
