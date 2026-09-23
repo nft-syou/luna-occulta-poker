@@ -14,7 +14,7 @@
     { "name": "JEV_BURST", "namespace_id": "1001", "simple": { "limit": 20, "period": 10 } }
   ],
   "vars": {
-    "JEV_ROUTE": "typesafe",
+    "JEV_ROUTE": "lolipop",
     "JEV_MODEL": "jev-latest",
     "DAILY_CALLS_PER_PLAYER": "600",
     "DAILY_CALLS_TOTAL": "20000"

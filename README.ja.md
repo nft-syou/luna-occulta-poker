@@ -7,7 +7,7 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6?logo=typescript&logoColor=white)](tsconfig.json)
 [![Deploys to Cloudflare Workers](https://img.shields.io/badge/deploys%20to-Cloudflare%20Workers-F38020?logo=cloudflare&logoColor=white)](#cloudflare-workers-へデプロイ)
 
-**遊ぶのに準備は要りません** — キーもアカウントも不要で、サイトを開いて座るだけです。自分で運営する場合は [Cloudflare Workers へデプロイ](#cloudflare-workers-へデプロイ) を参照してください。
+**[yoiyami.syou.io](https://yoiyami.syou.io/) で遊べます。** **遊ぶのに準備は要りません** — キーもアカウントも不要で、サイトを開いて座るだけです。自分で運営する場合は [Cloudflare Workers へデプロイ](#cloudflare-workers-へデプロイ) を参照してください。
 
 **English version: [README.md](README.md)**
 
