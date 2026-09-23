@@ -84,10 +84,10 @@ function renderBubble(props: Partial<Parameters<typeof DecisionBubble>[0]> = {})
 }
 
 describe("DecisionBubble", () => {
-  it("announces the persona while Jev is thinking", () => {
+  it("announces the persona while the spirit is thinking", () => {
     renderBubble({ thinking: true });
     expect(screen.getByText("LAG")).toBeInTheDocument();
-    expect(screen.getByText("Jev thinking…")).toBeInTheDocument();
+    expect(screen.getByText("Thinking…")).toBeInTheDocument();
   });
 
   it("shows the action and one bar per label, sized by probability", () => {
@@ -134,12 +134,12 @@ describe("DecisionBubble", () => {
         visibleUntil={null}
       />,
     );
-    expect(screen.getByText("Jev thinking…")).toBeInTheDocument();
+    expect(screen.getByText("Thinking…")).toBeInTheDocument();
     expect(screen.queryByText("RAISE to 12 BB")).not.toBeInTheDocument();
 
     // Past the 600 ms hold the bubble must move on by itself, not wait to be unmounted.
     act(() => void vi.advanceTimersByTime(500));
-    expect(screen.queryByText("Jev thinking…")).not.toBeInTheDocument();
+    expect(screen.queryByText("Thinking…")).not.toBeInTheDocument();
     expect(screen.getByText("RAISE to 12 BB")).toBeInTheDocument();
   });
 
@@ -163,7 +163,7 @@ describe("DecisionBubble", () => {
     // Max speed has no engine delay at all, so the hold must be short enough that the
     // decision is on screen before the next seat's answer lands.
     act(() => void vi.advanceTimersByTime(190));
-    expect(screen.queryByText("Jev thinking…")).not.toBeInTheDocument();
+    expect(screen.queryByText("Thinking…")).not.toBeInTheDocument();
     expect(screen.getByText("RAISE to 12 BB")).toBeInTheDocument();
 
     // ...and short enough that it clears again well before a second has passed.
@@ -188,7 +188,7 @@ describe("DecisionBubble", () => {
       />,
     );
     // No pretend thinking for an answer that was already in hand: the bolt flashes instead.
-    expect(screen.queryByText("Jev thinking…")).not.toBeInTheDocument();
+    expect(screen.queryByText("Thinking…")).not.toBeInTheDocument();
     expect(screen.getByText("⚡")).toBeInTheDocument();
 
     // Just past the 300 ms flash.

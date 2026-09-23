@@ -1,7 +1,7 @@
 {
   "app": {
     "title": "Yoiyami Poker",
-    "subtitle": "An unofficial Luna Occulta fan poker — the spirits think with TypeSafe Jev",
+    "subtitle": "An unofficial Luna Occulta fan poker",
     "source": "Source (MIT)",
     "fanworkNotice": "An unofficial fan work based on “月蝕綺譚 -Luna Occulta-”. Not affiliated with the official game.",
     "fanworksLink": "Luna Occulta fan-work guidelines",
@@ -28,8 +28,7 @@
     "leave": "Leave table",
     "spectating": "Spectator mode",
     "gameOver": "Game over",
-    "noBackend": "No connection: the table cannot ask Jev.",
-    "jevError": "Jev could not decide ({{error}}); the CPU played safe.",
+    "noBackend": "No connection: the spirits cannot decide.",
     "handsPerMin": "{{rate}} hands/min",
     "face": "{{name}}'s face",
     "paused": "Paused"
@@ -50,7 +49,7 @@
   "showcase": {
     "toggle": "Recording mode",
     "exit": "Exit recording mode",
-    "thinking": "Jev thinking…",
+    "thinking": "Thinking…",
     "waiting": "Waiting for the first decision…",
     "poweredBy": "Powered by TypeSafe Jev",
     "poweredByModel": "Powered by TypeSafe Jev · {{model}}",
@@ -107,8 +106,6 @@
     "pfr": "PFR %",
     "showdownsWon": "SD won",
     "allIns": "All-ins",
-    "jevLatency": "Jev ms",
-    "fallbacks": "Fallbacks",
     "bluff": "Bluff %",
     "none": "–",
     "readAs": "read as {{type}}",
@@ -162,12 +159,12 @@
     "award": "{{name}} wins {{amount}}",
     "rebuy": "{{name}} rebuys for {{amount}}",
     "handEnded": "Hand #{{number}} over",
-    "jev": "Jev",
+    "jev": "Read",
     "prefetched": "⚡ prefetched",
     "probabilities": "Probabilities",
     "sizing": "Sizing",
     "bluff": "Bluff intent",
-    "fallback": "Fallback: Jev was unavailable",
+    "fallback": "The spirit could not decide, so it played safe",
     "model": "Model",
     "latency": "{{ms}} ms"
   },

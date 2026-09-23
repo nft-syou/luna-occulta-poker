@@ -1,7 +1,7 @@
 {
   "app": {
     "title": "宵闇の賭場",
-    "subtitle": "月蝕綺譚 二次創作ポーカー ― 御霊たちは TypeSafe Jev で考える",
+    "subtitle": "月蝕綺譚 二次創作ポーカー",
     "source": "ソースコード (MIT)",
     "fanworkNotice": "本作は『月蝕綺譚 -Luna Occulta-』の非公式二次創作です。公式とは関係ありません。",
     "fanworksLink": "月蝕綺譚 二次創作の掟",
@@ -28,8 +28,7 @@
     "leave": "席を立つ",
     "spectating": "見物",
     "gameOver": "今宵はここまで",
-    "noBackend": "接続設定が無いため Jev に問い合わせできません。",
-    "jevError": "Jev が判断できませんでした ({{error}})。CPU は安全な手を選びました。",
+    "noBackend": "接続できないため、御霊が判断できません。",
     "handsPerMin": "{{rate}} 局/分",
     "face": "{{name}}の顔",
     "paused": "一時停止中"
@@ -50,7 +49,7 @@
   "showcase": {
     "toggle": "録画モード",
     "exit": "録画モードを終了",
-    "thinking": "Jev が思考中…",
+    "thinking": "思案中…",
     "waiting": "最初の判断を待っています…",
     "poweredBy": "Powered by TypeSafe Jev",
     "poweredByModel": "Powered by TypeSafe Jev · {{model}}",
@@ -107,8 +106,6 @@
     "pfr": "PFR",
     "showdownsWon": "SD 勝",
     "allIns": "オールイン",
-    "jevLatency": "Jev ms",
-    "fallbacks": "フォールバック",
     "bluff": "ブラフ",
     "none": "–",
     "readAs": "{{type}}と読まれている",
@@ -162,12 +159,12 @@
     "award": "{{name}} が {{amount}} を獲得",
     "rebuy": "{{name}} が {{amount}} でリバイ",
     "handEnded": "第{{number}}局、しまい",
-    "jev": "Jev",
+    "jev": "読み",
     "prefetched": "⚡ 先読み済み",
     "probabilities": "確率",
     "sizing": "サイズ",
     "bluff": "ブラフ意図",
-    "fallback": "フォールバック: Jev が利用できませんでした",
+    "fallback": "御霊が判断できなかったため、安全な手を選びました",
     "model": "モデル",
     "latency": "{{ms}} ms"
   },

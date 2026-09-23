@@ -13,6 +13,9 @@ describe("TitleScreen", () => {
     render(<TitleScreen onPlay={() => {}} onWatch={() => {}} onSettings={() => {}} />);
     expect(screen.getByRole("heading", { name: "Yoiyami Poker" })).toBeInTheDocument();
     expect(screen.getByText("Meet me under the eaten moon")).toBeInTheDocument();
+    // The fan-work line stays; the engine behind the spirits is credited in the footer only.
+    expect(screen.getByText("An unofficial Luna Occulta fan poker")).toBeInTheDocument();
+    expect(screen.queryByText(/Jev/)).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Play" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Watch" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Settings" })).toBeInTheDocument();

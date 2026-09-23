@@ -134,15 +134,13 @@ export function StatsPanel({
               <th scope="col">{t("stats.showdownsWon")}</th>
               <th scope="col">{t("stats.allIns")}</th>
               <th scope="col">{t("stats.net")}</th>
-              <th scope="col">{t("stats.jevLatency")}</th>
-              <th scope="col">{t("stats.fallbacks")}</th>
               <th scope="col">{t("stats.bluff")}</th>
             </tr>
           </thead>
           <tbody>
             {seats.map((seat) => {
               const stats = shownStats(seat);
-              // Humans never ask Jev, so their Jev columns stay empty rather than reading 0.
+              // Only a 御霊 has a bluff intent, so a human's column stays empty rather than 0.
               const jev = seat.kind === "cpu";
               const answered = stats.jevDecisions - stats.jevFallbacks;
               return (
@@ -160,12 +158,6 @@ export function StatsPanel({
                   <td>{`${stats.showdownsWon}/${stats.showdowns}`}</td>
                   <td>{stats.allIns}</td>
                   <td className={netClass(stats.netChips)}>{signed(stats.netChips)}</td>
-                  <td>
-                    {jev && stats.jevDecisions > 0
-                      ? numbers.format(Math.round(stats.jevLatencyMs / stats.jevDecisions))
-                      : none}
-                  </td>
-                  <td>{jev && stats.jevDecisions > 0 ? stats.jevFallbacks : none}</td>
                   <td>{jev ? pct(stats.jevBluffSum, answered) : none}</td>
                 </tr>
               );

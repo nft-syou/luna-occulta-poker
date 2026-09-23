@@ -81,8 +81,8 @@ describe("App", () => {
 
     await waitFor(() => expect(screen.getByText("Spectator mode")).toBeInTheDocument());
     expect(screen.getByRole("heading", { name: "Hand history" })).toBeInTheDocument();
-    // Every CPU action carries the Jev decision the history panel expands.
-    await waitFor(() => expect(screen.getAllByText("Jev").length).toBeGreaterThan(0), {
+    // Every CPU action carries the decision (its "read") the history panel expands.
+    await waitFor(() => expect(screen.getAllByText("Read").length).toBeGreaterThan(0), {
       timeout: 15_000,
     });
     // A pass first, then the decisions from the Worker's decide endpoint, not from the
@@ -94,7 +94,7 @@ describe("App", () => {
     });
     expect(urls.slice(1).every((url) => url === "/api/jev/decide")).toBe(true);
     expect(urls.length).toBeGreaterThan(1);
-    expect(screen.queryByText("Fallback: Jev was unavailable")).not.toBeInTheDocument();
+    expect(screen.queryByText(/could not decide/)).not.toBeInTheDocument();
     // No recording mode unless the page was opened for it.
     expect(screen.queryByRole("button", { name: "Recording mode" })).not.toBeInTheDocument();
 

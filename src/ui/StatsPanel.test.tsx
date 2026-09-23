@@ -145,9 +145,9 @@ describe("StatsPanel", () => {
     expect((rows[1] as HTMLElement).querySelector(".neg")).not.toBeNull();
   });
 
-  it("shows the session rates and hides the Jev columns from humans", () => {
+  it("shows the session rates and hides the bluff column from humans", () => {
     renderPanel();
-    // player, hands, win %, VPIP %, PFR %, SD won, all-ins, net, Jev ms, fallbacks, bluff %
+    // player, hands, win %, VPIP %, PFR %, SD won, all-ins, net, bluff %
     expect(cells(statsRow("Rocky"))).toEqual([
       "Rocky",
       "10",
@@ -157,11 +157,12 @@ describe("StatsPanel", () => {
       "3/4",
       "2",
       "+100",
-      "200",
-      "2",
       "30%",
     ]);
-    expect(cells(statsRow("You")).slice(8)).toEqual(["–", "–", "–"]);
+    expect(cells(statsRow("You")).slice(8)).toEqual(["–"]);
+    // No latency or fallback columns: the table is about the players, not the service.
+    expect(screen.queryByRole("columnheader", { name: "Jev ms" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("columnheader", { name: "Fallbacks" })).not.toBeInTheDocument();
     // A seat that has not finished a hand has no rates to show.
     expect(cells(statsRow("Lars")).slice(1, 5)).toEqual(["0", "–", "–", "–"]);
     expect(screen.queryByRole("button", { name: "Reset all-time stats" })).not.toBeInTheDocument();

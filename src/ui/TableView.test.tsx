@@ -213,7 +213,7 @@ describe("TableView", () => {
     const bubble = container.querySelector(".showcase-bubble");
     expect(bubble).not.toBeNull();
     expect(bubble?.getAttribute("data-seat")).toBe("1");
-    expect(screen.getByText("Jev thinking…")).toBeInTheDocument();
+    expect(bubble).toHaveTextContent("Thinking…");
   });
 
   it("keeps the felt and one side panel on a wide screen", () => {
