@@ -27,7 +27,9 @@ export function nextJstMidnight(ms: number): string {
 
 /**
  * One call against the day's budget. The storage holds only today: a new day wipes it, so
- * yesterday's rows never pile up. Callers serialise access (the Durable Object does).
+ * yesterday's rows never pile up. This must stay a storage-only read-modify-write with no
+ * non-storage awaits: the Durable Object's input gates serialise storage calls against every
+ * other request to the same instance, and that's the only thing that makes this safe.
  */
 export async function takeCall(
   storage: BudgetStorage,
