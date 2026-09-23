@@ -17,9 +17,19 @@ export function payloadTooLargeResponse(): Response {
   });
 }
 
+const LOOPBACK = new Set(["127.0.0.1", "::1", "::ffff:127.0.0.1"]);
+
 /**
- * Bridges Node's http objects to the WHATWG pair `handleJevProxy` speaks, so the Vite dev
- * server can run the very same proxy code as the deployed Pages Function.
+ * True only for a connection from this machine. The dev server spends the operator's key on
+ * every request it answers, so `vite --host` must not open that to the rest of the network.
+ */
+export function isLoopback(remoteAddress: string | undefined): boolean {
+  return remoteAddress !== undefined && LOOPBACK.has(remoteAddress);
+}
+
+/**
+ * Bridges Node's http objects to the WHATWG pair `handleApi` speaks, so the Vite dev server
+ * can run the very same handler as the deployed Worker.
  */
 export async function toWebRequest(req: IncomingMessage, origin: string): Promise<Request> {
   const url = new URL(req.url ?? "/", origin);

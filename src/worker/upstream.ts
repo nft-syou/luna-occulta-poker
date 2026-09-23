@@ -49,9 +49,10 @@ export function isJevRoute(value: unknown): value is JevRoute {
 }
 
 /**
- * The URL segment is `custom-<slug>`, so the slug itself must not carry that prefix — one
- * `custom-` is stripped on the way in, and a second one (`custom-custom-x`) is a mistake the
- * player has to see in the modal rather than a 400 on every hand.
+ * The URL segment is `custom-<slug>`, so the slug itself must not carry that prefix: the
+ * operator sets `JEV_CF_PROVIDER` to the bare slug, and a `custom-…` value (which would build
+ * `custom-custom-x`) is refused here, so the Worker answers `503 unavailable` instead of
+ * calling a gateway path that does not exist.
  */
 export function isProviderSlug(slug: string): boolean {
   return CF_PROVIDER_SLUG_PATTERN.test(slug) && !slug.startsWith("custom-");

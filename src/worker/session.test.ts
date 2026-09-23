@@ -100,6 +100,25 @@ describe("turnstile", () => {
     expect((await fail.issue(undefined, "1.2.3.4")).status).toBe(403);
   });
 
+  it("asks Turnstile about the real address and binds the pass to the key", async () => {
+    const f = vi.fn(
+      async (_url: RequestInfo | URL, _init?: RequestInit) =>
+        new Response(JSON.stringify({ success: true })),
+    );
+    const s = createSessions({
+      sessionSecret: "s3cret",
+      turnstileSecret: "sec",
+      now: () => NOW,
+      fetch: f,
+    });
+    const res = await s.issue({ turnstileToken: "tok" }, "2001:db8::1", "2001:db8:0:0::/64");
+    const form = new URLSearchParams((f.mock.calls[0] as [string, RequestInit])[1].body as string);
+    expect(form.get("remoteip")).toBe("2001:db8::1");
+    const { token } = (await res.json()) as { token: string };
+    expect(await s.verify(token, "2001:db8:0:0::/64")).toBe(true);
+    expect(await s.verify(token, "2001:db8::1")).toBe(false);
+  });
+
   it("refuses to work without its secrets", async () => {
     const f = vi.fn(async () => new Response(JSON.stringify({ success: true })));
     // A pass that would be valid, were an empty secret acceptable.

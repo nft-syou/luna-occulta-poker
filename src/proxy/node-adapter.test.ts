@@ -2,6 +2,7 @@ import type { IncomingMessage, ServerResponse } from "node:http";
 import { Readable } from "node:stream";
 import { describe, expect, it } from "vitest";
 import {
+  isLoopback,
   MAX_REQUEST_BODY_BYTES,
   PayloadTooLargeError,
   payloadTooLargeResponse,
@@ -41,15 +42,15 @@ describe("toWebRequest", () => {
     const request = await toWebRequest(
       nodeRequest(
         "POST",
-        "/v1/systemone?x=1",
-        { "content-type": "application/json", "x-typesafe-key": "sk-1" },
+        "/api/jev/decide?x=1",
+        { "content-type": "application/json", authorization: "Bearer dev" },
         '{"state":1}',
       ),
       "http://localhost:5173",
     );
     expect(request.method).toBe("POST");
-    expect(request.url).toBe("http://localhost:5173/v1/systemone?x=1");
-    expect(request.headers.get("x-typesafe-key")).toBe("sk-1");
+    expect(request.url).toBe("http://localhost:5173/api/jev/decide?x=1");
+    expect(request.headers.get("authorization")).toBe("Bearer dev");
     expect(await request.text()).toBe('{"state":1}');
   });
 
@@ -107,5 +108,23 @@ describe("writeWebResponse", () => {
     expect(state.headers["content-type"]).toBe("application/json");
     expect(state.headers["cache-control"]).toBe("no-store");
     expect(state.body).toBe('{"error":"invalid_route"}');
+  });
+});
+
+describe("isLoopback", () => {
+  it("lets only this machine in", () => {
+    for (const address of ["127.0.0.1", "::1", "::ffff:127.0.0.1"]) {
+      expect(isLoopback(address)).toBe(true);
+    }
+    for (const address of [
+      "192.168.1.20",
+      "10.0.0.5",
+      "fe80::1",
+      "::ffff:192.168.1.20",
+      "",
+      undefined,
+    ]) {
+      expect(isLoopback(address)).toBe(false);
+    }
   });
 });

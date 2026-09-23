@@ -1,7 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
-import { type ApiDeps, handleApi, OPEN_SESSIONS } from "./api";
+import { type ApiDeps, clientKey, handleApi, OPEN_SESSIONS } from "./api";
 import { MemoryBudget } from "./budget";
 import { VALID } from "./fixtures";
+import { MAX_BODY_BYTES } from "./schema";
 
 const ANSWER = {
   model: "jev-latest",
@@ -144,5 +145,114 @@ describe("handleApi", () => {
     // makes the fallback explicit rather than incidental.
     const res = await handleApi(decide(VALID), deps());
     expect(res.status).toBe(200);
+  });
+
+  it("asks the gateways for Jev by the id each one lists it under", async () => {
+    for (const [route, model, host] of [
+      ["vercel", "typesafe-ai/jev", "https://ai-gateway.vercel.sh/typesafe/"],
+      ["lolipop", "typesafe/jev-latest", "https://ai-gateway.lolipop.jp/"],
+    ] as const) {
+      const d = deps({ env: { JEV_API_KEY: "sk-op", DEV_OPEN: "1", JEV_ROUTE: route } });
+      expect((await handleApi(decide(VALID), d)).status).toBe(200);
+      const [url, init] = vi.mocked(d.fetch).mock.calls[0] as [string, RequestInit];
+      expect(url.startsWith(host)).toBe(true);
+      expect(JSON.parse(init.body as string).model).toBe(model);
+    }
+  });
+
+  it("slows a burst of session requests down before asking Turnstile", async () => {
+    const sessions = { ...OPEN_SESSIONS, issue: vi.fn(OPEN_SESSIONS.issue) };
+    const limit = vi.fn(async (_o: { key: string }) => ({ success: false }));
+    const res = await handleApi(
+      new Request("http://x/api/session", {
+        method: "POST",
+        headers: { "content-type": "application/json", "cf-connecting-ip": "1.2.3.4" },
+        body: JSON.stringify({ turnstileToken: "tok" }),
+      }),
+      deps({ sessions, burst: { limit } }),
+    );
+    expect(res.status).toBe(429);
+    expect(res.headers.get("retry-after")).toBe("2");
+    expect(await res.json()).toEqual({ error: "slow_down" });
+    expect(limit).toHaveBeenCalledWith({ key: "1.2.3.4" });
+    expect(sessions.issue).not.toHaveBeenCalled();
+  });
+
+  it("refuses a body whose declared length is too large without reading it", async () => {
+    const big = (path: string) =>
+      new Request(`http://x${path}`, {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          authorization: "Bearer dev",
+          "content-length": String(MAX_BODY_BYTES + 1),
+        },
+        body: JSON.stringify(VALID),
+      });
+    const d = deps();
+    const decideReq = big("/api/jev/decide");
+    expect((await handleApi(decideReq, d)).status).toBe(400);
+    expect(decideReq.bodyUsed).toBe(false);
+    expect(d.fetch).not.toHaveBeenCalled();
+
+    // The session path hands Turnstile no body at all, which it answers 403 turnstile_failed.
+    const issue = vi.fn(OPEN_SESSIONS.issue);
+    const sessionReq = big("/api/session");
+    await handleApi(sessionReq, deps({ sessions: { ...OPEN_SESSIONS, issue } }));
+    expect(sessionReq.bodyUsed).toBe(false);
+    expect(issue.mock.calls[0]?.[0]).toBeUndefined();
+  });
+
+  it("counts an IPv6 player by their /64, so a new address in it is the same player", async () => {
+    const limit = vi.fn(async (_o: { key: string }) => ({ success: true }));
+    const budget = new MemoryBudget();
+    const take = vi.spyOn(budget, "take");
+    const issue = vi.fn(async (_body: unknown, _ip: string, _key?: string) => new Response("{}"));
+    const verify = vi.fn(async (_token: string | null, _key: string) => true);
+    const d = deps({ burst: { limit }, budget, sessions: { issue, verify } });
+    const ip = "2001:db8:1:2:aaaa:bbbb:cccc:dddd";
+    await handleApi(decide(VALID, { "cf-connecting-ip": ip }), d);
+    expect(verify).toHaveBeenCalledWith("dev", "2001:db8:1:2::/64");
+    expect(limit).toHaveBeenCalledWith({ key: "2001:db8:1:2::/64" });
+    expect(take.mock.calls[0]?.[0]).toBe("2001:db8:1:2::/64");
+    await handleApi(
+      new Request("http://x/api/session", {
+        method: "POST",
+        headers: { "cf-connecting-ip": ip },
+        body: "{}",
+      }),
+      d,
+    );
+    // Turnstile still hears the real address; the pass is bound to the /64.
+    expect(issue).toHaveBeenCalledWith({}, ip, "2001:db8:1:2::/64");
+  });
+});
+
+describe("clientKey", () => {
+  it("keeps IPv4 as it is", () => {
+    expect(clientKey("203.0.113.7")).toBe("203.0.113.7");
+  });
+
+  it("reads a v4-mapped IPv6 address as the IPv4 it carries", () => {
+    expect(clientKey("::ffff:203.0.113.7")).toBe("203.0.113.7");
+    expect(clientKey("::FFFF:203.0.113.7")).toBe("203.0.113.7");
+    expect(clientKey("::ffff:cb00:7107")).toBe("203.0.113.7");
+  });
+
+  it("keys a full IPv6 address by its /64", () => {
+    expect(clientKey("2001:0db8:0001:0002:aaaa:bbbb:cccc:dddd")).toBe("2001:db8:1:2::/64");
+    expect(clientKey("2001:DB8:1:2:AAAA:BBBB:CCCC:DDDD")).toBe("2001:db8:1:2::/64");
+  });
+
+  it("keys a compressed IPv6 address by its /64", () => {
+    expect(clientKey("2001:db8::1")).toBe("2001:db8:0:0::/64");
+    expect(clientKey("2001:db8:1:2::")).toBe("2001:db8:1:2::/64");
+    expect(clientKey("::1")).toBe("0:0:0:0::/64");
+    expect(clientKey("fe80::1%eth0")).toBe("fe80:0:0:0::/64");
+  });
+
+  it("leaves anything it cannot read alone", () => {
+    expect(clientKey("not an ip")).toBe("not an ip");
+    expect(clientKey("1:2:3:4:5:6:7:8:9")).toBe("1:2:3:4:5:6:7:8:9");
   });
 });

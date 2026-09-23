@@ -142,7 +142,7 @@ interface DecideRequest {
   (プリフロップ/ポストフロップ × `style` × `rangeEquity` × 相手の統計あり/なし × 相手の型それぞれ)
   の合成局面で呼び、出てきた `task` と `importantContext` の全文を集めて書き出す。
 - 形は `{ tasks: string[], lines: string[] }`。サーバーは `task ∈ tasks`、`importantContext` の
-  各行 `∈ lines`、行数 ≤ 20、重複なし、を検査する。
+  各行 `∈ lines`、行数 ≤ 許可リストの行数、重複なし、を検査する。
 - ライブラリの版を上げて文が変わると、一覧を作り直して比較するテストが落ちる。そのときは
   `pnpm prose:allowlist` で作り直してコミットする。
 

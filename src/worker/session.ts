@@ -112,7 +112,7 @@ export function createSessions(o: {
   // The Worker already refuses to run unguarded; this is the same refusal one layer down.
   const configured = Boolean(o.sessionSecret) && Boolean(o.turnstileSecret);
   return {
-    async issue(body, ip) {
+    async issue(body, ip, key = ip) {
       if (!configured) return json(503, { error: "unavailable" });
       const turnstileToken = turnstileTokenOf(body);
       if (
@@ -123,10 +123,10 @@ export function createSessions(o: {
       }
       const exp = o.now() + SESSION_TTL_MS;
       return json(200, {
-        token: await signToken(o.sessionSecret, { ip, exp }),
+        token: await signToken(o.sessionSecret, { ip: key, exp }),
         expiresAt: new Date(exp).toISOString(),
       });
     },
-    verify: async (token, ip) => configured && verifyToken(o.sessionSecret, token, ip, o.now()),
+    verify: async (token, key) => configured && verifyToken(o.sessionSecret, token, key, o.now()),
   };
 }

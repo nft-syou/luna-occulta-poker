@@ -1,7 +1,12 @@
 /// <reference types="vitest/config" />
 import react from "@vitejs/plugin-react";
 import { defineConfig, type Plugin } from "vite";
-import { PayloadTooLargeError, toWebRequest, writeWebResponse } from "./src/proxy/node-adapter.ts";
+import {
+  isLoopback,
+  PayloadTooLargeError,
+  toWebRequest,
+  writeWebResponse,
+} from "./src/proxy/node-adapter.ts";
 // Explicit `.ts` extensions: Vite's native config loader rejects extensionless source imports.
 import { handleApi, json, OPEN_SESSIONS } from "./src/worker/api.ts";
 import { MemoryBudget } from "./src/worker/budget.ts";
@@ -9,7 +14,8 @@ import { MemoryBudget } from "./src/worker/budget.ts";
 /**
  * `pnpm dev` serves `/api/*` with the Worker's own handler. The operator key comes from the
  * `JEV_API_KEY` environment variable; Turnstile and the session secret are skipped (`DEV_OPEN`),
- * and the budget lives in memory.
+ * and the budget lives in memory. Only this machine is answered: `vite --host` must not lend
+ * the operator key to everyone on the network.
  */
 function apiDev(): Plugin {
   const budget = new MemoryBudget();
@@ -19,6 +25,10 @@ function apiDev(): Plugin {
     configureServer(server) {
       server.middlewares.use("/api", (req, res, next) => {
         void (async () => {
+          if (!isLoopback(req.socket.remoteAddress)) {
+            await writeWebResponse(res, json(403, { error: "forbidden" }));
+            return;
+          }
           // Connect strips the mount prefix; put it back so the handler sees the real path.
           req.url = `/api${req.url ?? ""}`;
           let request: Request;
