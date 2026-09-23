@@ -56,6 +56,29 @@ describe("pickAnswer", () => {
     expect(pickAnswer({ answers: {} })).toBeNull();
     expect(pickAnswer(null)).toBeNull();
   });
+  it("refuses null in place of an object at any level, instead of throwing", () => {
+    expect(pickAnswer({ model: "jev-latest", answers: null })).toBeNull();
+    expect(
+      pickAnswer({
+        model: "jev-latest",
+        answers: {
+          action: null,
+          sizing: ANSWER.answers.sizing,
+          bluff_intent: ANSWER.answers.bluff_intent,
+        },
+      }),
+    ).toBeNull();
+    expect(
+      pickAnswer({
+        model: "jev-latest",
+        answers: {
+          action: { choice: "bet_or_raise", probabilities: null },
+          sizing: ANSWER.answers.sizing,
+          bluff_intent: ANSWER.answers.bluff_intent,
+        },
+      }),
+    ).toBeNull();
+  });
 });
 
 describe("callJev", () => {
@@ -84,6 +107,14 @@ describe("callJev", () => {
       throw new Error("down");
     });
     expect((await callJev(VALID, CFG, broken)).kind).toBe("error");
+  });
+
+  it("turns a 200 with a null answers.action into error, without rejecting", async () => {
+    const malformed = {
+      ...ANSWER,
+      answers: { ...ANSWER.answers, action: null },
+    };
+    await expect(callJev(VALID, CFG, respond(200, malformed))).resolves.toEqual({ kind: "error" });
   });
 
   it("sends the cloudflare gateway token as cf-aig-authorization, mirroring the proxy", async () => {

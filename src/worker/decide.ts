@@ -58,19 +58,24 @@ export function buildJevBody(req: DecideRequest, model: string) {
 
 const finite = (v: unknown): v is number => typeof v === "number" && Number.isFinite(v);
 
+/** `typeof null === "object"`, so every object-shaped field is checked against this, not `typeof`. */
+const isRecord = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null;
+
 export function pickAnswer(json: unknown): DecideAnswer | null {
-  if (typeof json !== "object" || json === null) return null;
-  const j = json as { model?: unknown; answers?: Record<string, Record<string, unknown>> };
+  if (!isRecord(json)) return null;
+  const j = json as { model?: unknown; answers?: unknown };
+  if (typeof j.model !== "string") return null;
   const a = j.answers;
-  if (typeof j.model !== "string" || a === undefined) return null;
+  if (!isRecord(a)) return null;
   const action = a.action;
   const sizing = a.sizing;
   const bluff = a.bluff_intent;
-  if (action === undefined || sizing === undefined || bluff === undefined) return null;
-  if (typeof action.choice !== "string" || typeof action.probabilities !== "object") return null;
+  if (!isRecord(action) || !isRecord(sizing) || !isRecord(bluff)) return null;
+  if (typeof action.choice !== "string") return null;
+  if (!isRecord(action.probabilities)) return null;
   if (!finite(sizing.score) || !finite(bluff.noul)) return null;
   const probabilities: Record<string, number> = {};
-  for (const [k, v] of Object.entries(action.probabilities as Record<string, unknown>)) {
+  for (const [k, v] of Object.entries(action.probabilities)) {
     if (finite(v)) probabilities[k] = v;
   }
   return {
