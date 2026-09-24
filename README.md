@@ -58,7 +58,7 @@ bounded. The full list of checks is in [SECURITY.md](SECURITY.md).
 Requires Node.js 24 and pnpm 12.
 
     pnpm install
-    JEV_API_KEY=sk-... JEV_ROUTE=lolipop pnpm dev   # the app, with the Worker's handler at /api
+    JEV_API_KEY=sk-... pnpm dev                     # the app, with the Worker's handler at /api
     pnpm check                                      # lint + typecheck + tests + build
 
 `pnpm dev` skips Turnstile and keeps the budget in memory. To run the real Worker, Durable
@@ -66,7 +66,7 @@ Object and rate limit instead, put the secrets in a git-ignored `.dev.vars` and 
 `pnpm dev:worker`:
 
     JEV_API_KEY=sk-...
-    JEV_ROUTE=lolipop
+    JEV_ROUTE=typesafe
     TURNSTILE_SECRET=<a Cloudflare test secret>
     SESSION_SECRET=<openssl rand -base64 32>
 

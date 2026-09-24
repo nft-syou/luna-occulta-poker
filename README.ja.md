@@ -54,14 +54,14 @@ Jev を呼び、答えだけを返します。通行証は見えない Turnstile
 Node.js 24 と pnpm 12 が必要です。
 
     pnpm install
-    JEV_API_KEY=sk-... JEV_ROUTE=lolipop pnpm dev   # アプリ本体。/api は Worker と同じハンドラ
+    JEV_API_KEY=sk-... pnpm dev                     # アプリ本体。/api は Worker と同じハンドラ
     pnpm check                                      # lint + 型チェック + テスト + ビルド
 
 `pnpm dev` は Turnstile を飛ばし、予算はメモリ上で数えます。本物の Worker・Durable Object・
 レート制限で動かすときは、Git 管理外の `.dev.vars` にシークレットを書いて `pnpm dev:worker` を使います。
 
     JEV_API_KEY=sk-...
-    JEV_ROUTE=lolipop
+    JEV_ROUTE=typesafe
     TURNSTILE_SECRET=<Cloudflare のテスト用シークレット>
     SESSION_SECRET=<openssl rand -base64 32>
 
